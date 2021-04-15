@@ -7,8 +7,10 @@ Firmware Vulnerabilities Detection System
 * https://github.com/fkie-cad/FACT_core
 
 ## running environment
-Ubuntu18.04
-python3
+* Ubuntu18.04
+* python3:virtualenv,angr
+
+## DataSet
 
 ## Usage
 see in [wiki](https://github.com/cascades-sjtu/FirmVulHub/wiki)
