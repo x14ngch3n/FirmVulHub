@@ -1,4 +1,5 @@
 # FirmVulHub
+![GitHub](https://img.shields.io/github/license/cascades-sjtu/FirmVulHub)
 Firmware Vulnerabilities Detection System
 
 ## useful links
