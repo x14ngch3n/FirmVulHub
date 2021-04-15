@@ -8,9 +8,11 @@ Firmware Vulnerabilities Detection System
 
 ## running environment
 * Ubuntu18.04
-* python3:virtualenv,angr
+* python3:angr(virtualenv)
 
 ## DataSet
+
+## Repo Structure
 
 ## Usage
 see in [wiki](https://github.com/cascades-sjtu/FirmVulHub/wiki)
