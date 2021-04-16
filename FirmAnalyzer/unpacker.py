@@ -20,5 +20,5 @@ def unpackFirmware(firmwarePath):
     firmwareUnpackDir = '~/firmUnpack/'
     firmwareUnpackPath = firmwareUnpackDir + firmwarePath.split(
         '/')[-1] + '.upacked'
-
+    runCommand('bash ')
     return firmwareUnpackPath
