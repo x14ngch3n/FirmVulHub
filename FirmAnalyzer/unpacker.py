@@ -17,6 +17,8 @@ def unpackFirmware(firmwarePath):
     '''
     unpack the firmware using Binwalk
     '''
-    FirmUnpackDir = '~/FirmUnpack/'
-    unpackFirmwarePath = FirmUnpackDir + firmwarePath.split(
+    firmwareUnpackDir = '~/firmUnpack/'
+    firmwareUnpackPath = firmwareUnpackDir + firmwarePath.split(
         '/')[-1] + '.upacked'
+
+    return firmwareUnpackPath

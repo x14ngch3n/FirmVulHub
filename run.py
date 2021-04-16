@@ -1,7 +1,7 @@
 import sys
 import json
 import os
-from FirmAnalyzer import unpacker
+from FirmAnalyzer.unpacker import unpackFirmware
 
 
 class Project():
@@ -25,7 +25,7 @@ class Project():
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print('Usage' + sys.argv[0] + 'ConfigPath')
+        print('Usage:python3 ' + sys.argv[0] + ' configPath')
         sys.exit(0)
     else:
         configPath = sys.argv[1]
