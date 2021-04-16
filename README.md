@@ -2,14 +2,19 @@
 ![GitHub](https://img.shields.io/github/license/cascades-sjtu/FirmVulHub)
 Firmware Vulnerabilities Detection System
 
-## useful links
+## Useful Links
 * https://github.com/angr/angr
 * https://github.com/ucsb-seclab/karonte
 * https://github.com/fkie-cad/FACT_core
+* https://github.com/ReFirmLabs/binwalk
 
-## running environment
+## Related Papers
+
+
+## Running Environment
 * Ubuntu18.04
-* python3:angr(virtualenv)
+* python3(virtualenv,angr)
+* binwalk(full installed)
 
 ## DataSet
 

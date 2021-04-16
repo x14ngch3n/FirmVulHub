@@ -15,10 +15,11 @@ def runCommand(command):
 
 def unpackFirmware(firmwarePath):
     '''
-    unpack the firmware using Binwalk
+    unpack the firmware using extractFirmware.sh
     '''
     firmwareUnpackDir = '~/firmUnpack/'
     firmwareUnpackPath = firmwareUnpackDir + firmwarePath.split(
         '/')[-1] + '.upacked'
-    runCommand('bash ')
+    runCommand('bash extractFirmware.sh' + firmwarePath + ' ' +
+               firmwareUnpackPath)
     return firmwareUnpackPath

@@ -1,7 +1,6 @@
 import sys
 import json
 import os
-import angr
 from FirmAnalyzer.unpacker import unpackFirmware
 
 
