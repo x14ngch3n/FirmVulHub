@@ -1,1 +1,1 @@
-import angr
+print('Starting FirmAnalyzer')
