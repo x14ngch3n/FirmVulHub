@@ -1,0 +1,586 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<meta name="format-detection" content="telephone=no">
+<meta name="viewport" content="width=device-width">
+<link rel="stylesheet" type="text/css" href="css/style_mobile.css" media="all" />
+<link href="css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPAction.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPWLanRadio.js"></script>
+<script type="text/javascript">
+	var savetime = 50;
+	var warning = null;	//disconnect: null     warning: true      connected: false
+	var triple_band = false;
+
+	//data structure
+	var datalist = new Array();
+	function WlanSettings(radio, settingsObj, securityObj)
+	{
+		this.radioStr = radio;
+		this.setting = settingsObj;
+		this.security = securityObj;
+	}
+
+	function getWlanData(radio)
+	{
+		for(obj in datalist)
+		{
+			if(radio == datalist[obj].radioStr)
+			{
+				return datalist[obj];
+			}
+		}
+		return null;
+	}
+
+	function smartBtn_onClick()
+	{
+		var smart = !($("#smart_btn_ck").prop('checked'));
+
+		OnChangeSmartBtn(smart);
+	}
+
+	
+	function InitWLanSettings()
+	{
+		var result_smartconnect = null;
+		var get_5g_2 = false;
+
+		//wireless
+		//#ifdef featureSmartConnect
+		if(currentDevice.featureSmartConnect)
+		{
+			var getSmartconnectSettingsResponse = new SOAPGetSmartconnectSettingsResponse();
+			var soapAction = new SOAPAction();
+			result_smartconnect = soapAction.sendSOAPAction("GetSmartconnectSettings", null, getSmartconnectSettingsResponse);
+		}
+
+		$.when(result_smartconnect).done(function(obj){
+			//#ifdef featureSmartConnect
+			if(currentDevice.featureSmartConnect)
+			{
+				var smart = false;
+				if(obj.Enabled == "true")	//get 2.4GHz only
+				{
+					smart = true;
+				}
+				OnChangeSmartBtn(smart);
+
+				if(triple_band)
+				{
+					get_5g_2 = true;
+				}
+				else
+				{
+					get_5g_2 = false;
+				}
+			}
+
+			//for alpha bug
+			$.when(get_wireless("RADIO_2.4GHz"))
+			.then(function(){
+				return $.when(get_wireless("RADIO_5GHz"));
+			})
+			.then(function(){
+				if(get_5g_2)
+					return $.when(get_wireless("RADIO_5GHz_2"));
+			})
+			.done(function(){
+				for(obj in datalist)
+				{
+					var wlanObj = datalist[obj];
+					show_wireless_info(wlanObj.radioStr, wlanObj.setting, wlanObj.security);
+
+					if((wlanObj.setting.Enabled == "true")&&(wlanObj.setting.RadioEnabled == "true"))
+					{
+						if(warning == null)
+						{
+							warning = true;
+						}
+
+						if(wlanObj.security.Enabled == "true")
+						{
+							warning = false;
+						}
+					}
+				}
+				if(warning == null)
+				{
+					$("#mobile_wifi_status").attr("src", "image/mobile_wifi_disconnected.png");
+				}
+				else if(warning == false)
+				{
+					$("#mobile_wifi_status").attr("src", "image/mobile_wifi_connected.png");
+				}
+				else
+				{
+					$("#mobile_wifi_status").attr("src", "image/mobile_wifi_conwarn.png");
+				}
+			});
+
+		});
+	
+	}
+
+	function get_wireless(radioID)
+	{
+		var getWLanRadioSettings = new SOAPGetWLanRadioSettings();
+		var getWLanRadioSecurity = new SOAPGetWLanRadioSecurity();
+		var setting = new SOAPGetWLanRadioSettingsResponse();
+		var security = new SOAPGetWLanRadioSecurityResponse();
+		var radioStr;
+
+		switch(radioID)
+		{
+			case "RADIO_2.4GHz":
+				radioStr = "24G";
+				break;
+			case "RADIO_5GHz":
+				radioStr = "5G";
+				break;
+			case "RADIO_5GHz_2":
+				radioStr = "5G_2";
+				break;
+		}
+
+		getWLanRadioSettings.RadioID = radioID;
+		var soapAction = new SOAPAction();
+		var result = soapAction.sendSOAPAction("GetWLanRadioSettings", getWLanRadioSettings, setting);
+
+		getWLanRadioSecurity.RadioID = radioID;
+		var result_security = soapAction.sendSOAPAction("GetWLanRadioSecurity", getWLanRadioSecurity, security);
+
+		var deferred = $.Deferred();
+		$.when(result, result_security)
+		.done(function(obj){
+			var wlanData = new WlanSettings(radioStr, setting, security);
+			datalist.push(wlanData);
+			deferred.resolve();
+		})
+		.fail(function(obj){
+			deferred.resolve();
+		});
+		return deferred.promise();
+	}
+
+	function show_wireless_info(radioID, settingObj, securityObj)
+	{
+		var ssid = settingObj.SSID;
+		var key = securityObj.Key;
+
+		$("#ssid_"+ radioID).val(settingObj.SSID);
+		$("#password_"+ radioID).val(securityObj.Key);
+	}
+
+	function OnChangeSmartBtn(enable)
+	{
+		$("#smart_btn_ck").val(enable);
+		SetCheckBoxEnable("smart_btn", true, enable);
+
+		if(enable)
+		{
+			$("#wifi_24G_title").html(I18N("j", "Wi-Fi Name") + ":");
+			$("#wifi_5G").hide();
+			$("#wifi_5G_2").hide();
+		}
+		else
+		{
+			$("#wifi_24G_title").html(I18N("j", "2.4GHz Wi-Fi Name") + ":");
+			$("#wifi_5G").show();
+			if(triple_band)
+			{
+				$("#wifi_5G_2").show();
+			}
+			else
+			{
+				$("#wifi_5G_2").hide();
+			}
+			//$("#wifi_5G_2").show();
+		}
+	}
+
+	function createWlanSettings(radio)
+	{
+		var setting = new SOAPSetWLanRadioSettings();
+		var radioData = getWlanData(radio);
+
+		if(radio == "24G")
+		{
+			setting.RadioID = "RADIO_2.4GHz";
+			setting.Mode = "802.11bgn";
+			setting.ChannelWidth = "0";
+		}
+		else	// 5G
+		{
+			if(radio == "5G")
+			{
+				setting.RadioID = "RADIO_5GHz";
+			}
+			else
+			{
+				setting.RadioID = "RADIO_5GHz_2";
+			}
+			setting.Mode = "802.11anac";
+			setting.ChannelWidth = "1";	//20/40/80
+		}
+		setting.SSID = HTMLEncode($("#ssid_"+radio).val());
+		setting.Qos = radioData.setting.Qos;
+		setting.ScheduleName = radioData.setting.ScheduleName;
+		setting.TXPower = radioData.setting.TXPower;
+		setting.Coexistence = radioData.setting.Coexistence;
+
+		return setting;
+	}
+
+	function createWlanSecurity(radio)
+	{
+		var security = new SOAPSetWLanRadioSecurity();
+		var radioData = getWlanData(radio);
+		var key = $("#password_"+radio).val();
+
+		if(radio == "24G")
+		{
+			security.RadioID = "RADIO_2.4GHz";
+		}
+		else	// 5G
+		{
+			if(radio == "5G")
+			{
+				security.RadioID = "RADIO_5GHz";
+			}
+			else
+			{
+				security.RadioID = "RADIO_5GHz_2";
+			}
+		}
+
+		if(key == "")
+		{
+			security.Enabled = false;
+		}
+		else
+		{
+			security.Enabled = true;
+			security.Type = "WPAORWPA2-PSK";
+			security.Encryption = "TKIPORAES";
+			security.Key = $("#password_"+radio).val();
+			security.KeyRenewal = "3600";
+		}
+
+		return security;
+	}
+	
+	function SaveWLanSettings()
+	{
+		var soapAction = new SOAPAction();
+		var setting;
+		var security;
+
+		//smart connect
+		var result_smartconnect = null;
+		var smart = false;
+		//#ifdef featureSmartConnect
+		if(currentDevice.featureSmartConnect)
+		{	
+			if($("#smart_btn_ck").prop('checked'))
+			{
+				smart = true;
+			}
+			
+			var setSmartconnectSettings = new SOAPSetSmartconnectSettings();
+			setSmartconnectSettings.Enabled = smart;
+			soapAction.SetMultipleSOAP("SetSmartconnectSettings", setSmartconnectSettings, null);
+		}
+
+		//2.4 G
+		setting = createWlanSettings("24G");
+		soapAction.SetMultipleSOAP("SetWLanRadioSettings", setting, null);
+
+		security = createWlanSecurity("24G");
+		soapAction.SetMultipleSOAP("SetWLanRadioSecurity", security, null);
+
+		// 5G
+		var result_5g = null;
+		var result_5g_security = null;
+		if(smart == false)
+		{
+			setting = createWlanSettings("5G");
+			soapAction.SetMultipleSOAP("SetWLanRadioSettings", setting, null);
+
+			security = createWlanSecurity("5G");
+			soapAction.SetMultipleSOAP("SetWLanRadioSecurity", security, null);
+		}
+
+		// 5G 2
+		var result_5g2 = null;
+		var result_5g2_security = null;
+		//#ifdef featureSmartConnect
+		if(currentDevice.featureSmartConnect && triple_band)
+		{	
+			if(smart == false)
+			{
+				setting = createWlanSettings("5G_2");
+				soapAction.SetMultipleSOAP("SetWLanRadioSettings", setting, null);
+
+				security = createWlanSecurity("5G_2");
+				soapAction.SetMultipleSOAP("SetWLanRadioSecurity", security, null);
+			}
+		}
+		soapAction.SendMultipleSOAPAction("SetMultipleActions");
+
+		
+		document.getElementById("mobile_popalert").style.display = "block";
+		document.getElementById("mobile_saving").style.display = "block";
+		document.getElementById("mbwifi_save_num").innerHTML = savetime;
+		var timer = setInterval("ReciprocalSaveTime()", 1000);
+		setTimeout("clearInterval("+timer+");window.location.reload()", savetime*1000);
+	}
+	
+	function ReciprocalSaveTime()
+	{
+		if(savetime > 0)
+			savetime--;
+		document.getElementById("mbwifi_save_num").innerHTML = savetime;
+	}
+	
+	function returnToHome()
+	{
+		location.href="/MobileHome.html";
+	}
+
+</script>
+</head>
+
+<body>
+	<form name="mobile_wifi_form" id="mobile_wifi_form" method="POST" action="">
+		<table class="mobile_div_blank" cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+			<tr>
+				<td>
+					<table class="tbl_logo" border="0">
+						<tr class="bottom">
+							<td class="btn_home" width="25%" align="center" style="cursor:pointer;" onclick="returnToHome()">
+								<img src="image/mobile_sp.gif" height="1" width="8">
+								<span class="textwhite"><script>I18N("h", "Home");</script></span>
+							</td>
+							<td width="40%" align="center">
+								<img src="image/mobile_dlink_logo.png" width="102px" height="20px">
+							</td>
+							<td width="25%"></td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<table cellspacing="0" cellpadding="0" width="100%" height="60px" align="center" border="0">
+						<tr>
+							<td width="10%" align="right" valign="center">
+								<img id="mobile_wifi_status" src="image/mobile_wifi_connected.png" width="60" height="45">
+							</td>
+							<td width="90%" align="left">
+								<b><span class="textlarge"><script>I18N("h", "Wi-Fi Settings");</script></span></b>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td align="left">
+					<div width="90%" style="display:table-cell;">
+						<!-- smart connect -->
+						<div id="smart_connect" style="display:none;padding: 0 10px;">
+							<div class="input_desc">
+								<b><span class="textnormal"><script>I18N("h", "Smart Connect");</script>:</span></b>
+							</div>
+							<div id="smart_btn" class="checkbox_on" style="margin: 0 5px;" onclick="smartBtn_onClick()">
+								<input type="checkbox" id="smart_btn_ck" name="smart_btn_ck" checked>
+							</div>
+							<img src="image/mobile_line.png" width="100%">
+						</div>
+						<!-- - start of wifi 2.4GHz block -->
+						<div id="wifi_24G" style="padding: 0 10px;">
+							<div class="input_desc">
+								<b><span id="wifi_24G_title" class="textnormal"><script>I18N("h", "2.4GHz Wi-Fi Name");</script>:</span></b>
+							</div>
+							<div class="input_text">
+								<input id="ssid_24G" name="ssid_24G" type="text" size="24" maxlength="32"/>
+							</div>
+							<div class="input_desc">
+								<b><span class="textnormal"><script>I18N("h", "Password");</script>:</span></b>
+							</div>
+							<div class="input_text">
+								<input id="password_24G" name="password_24G" type="text" size="24" maxlength="63">
+							</div>
+						</div>
+						<!--- end of wifi 2.4GHz block -->
+						<!--- start of wifi 5GHz block -->
+						<div id="wifi_5G" style="padding: 0 10px;">
+							<img src="image/mobile_line.png" width="100%">
+							<div class="input_desc">
+								<b><span class="textnormal"><script>I18N("h", "5GHz Wi-Fi Name");</script>:</span></b>
+							</div>
+							<div class="input_text">
+								<input id="ssid_5G" name="ssid_5G" type="text" size="24" maxlength="32"/>
+							</div>
+							<div class="input_desc">
+								<b><span class="textnormal"><script>I18N("h", "Password");</script>:</span></b>
+							</div>
+							<div class="input_text">
+								<input id="password_5G" name="password_5G" type="text" size="24" maxlength="63">
+							</div>
+							<img src="image/mobile_line.png" width="100%">
+						</div>
+						<!--- end of wifi 5GHz block -->
+						<!--- start of wifi 5GHz-2 block -->
+						<div id="wifi_5G_2" style="display:none; padding: 0 10px;">
+							<div class="input_desc">
+								<b><span class="textnormal"><script>I18N("h", "5GHz 2rd Wi-Fi Name");</script>:</span></b>
+							</div>
+							<div class="input_text">
+								<input id="ssid_5G_2" name="ssid_5G_2" type="text" size="24" maxlength="32"/>
+							</div>
+							<div class="input_desc">
+								<b><span class="textnormal"><script>I18N("h", "Password");</script>:</span></b>
+							</div>
+							<div class="input_text">
+								<input id="password_5G_2" name="password_5G_2" type="text" size="24" maxlength="63">
+							</div>
+						</div>
+						<!--- end of wifi 5GHz-2 block -->
+						<div class="emptyline"></div>
+						<div>
+							<table cellspacing="0" cellpadding="0" width="90%" align="center" border="0">
+								<tr>
+									<td class="btn_save" onclick="document.getElementById('submit_check_data').click();changeTimeoutAction();">
+										<input id="submit_check_data" class="submit" type="submit" value="Submit" style="display:none"/>
+										<b><span class="textnormal"><script>I18N("h", "Save");</script></span></b>
+									</td>
+								</tr>
+								<tr class="emptyline"></tr>
+								<tr>
+									<td align="center">
+										<span class="textcr"><span id="copyright"><script>I18N("h", "COPYRIGHT");</script></span></span>
+									</td>
+								</tr>
+							</table>
+						</div>
+						<div class="emptyline"></div>
+					</div>
+				</td>
+			</tr>
+		</table>
+		<div id="mobile_popalert" class="mobile_popalert_msg" style="display:none">
+			<div class="mobile_alertpopbody">
+				<table id="mobile_saving" class="mobile_popalert_table" cellspacing="0" cellpadding="0" border="0" style="display:none">
+					<tbody>
+						<tr class="emptyline"></tr>
+						<tr class="emptyline"></tr>
+						<tr>
+							<td width="250px" align="center">
+								<img src="image/loading.gif">
+							</td>
+						</tr>
+						<tr>
+							<td><B><span id="mbwifi_save_num" class="textsmall"></span></B></td>
+						</tr>
+						<tr>
+							<td width="250px" align="center">
+								<span class="textsmall"><script>I18N("h", "Your changes are being saved, please wait...");</script></span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</form>
+</body>
+<script type="text/javascript" charset="utf-8">
+	$(document).ready( function() {
+		$("input").keydown(function () {	changeTimeoutAction();	});
+
+		//#ifdef featureSmartConnect
+		if(currentDevice.featureSmartConnect)
+		{
+			$("#smart_connect").show();
+
+			OnChangeSmartBtn(false);
+		}
+
+		InitWLanSettings();
+		startTimeout();
+
+		
+		$.validator.setDefaults( { submitHandler: function(form) { form.submit(); } } );
+		
+		// Check Is WPA
+		$.validator.addMethod("checkWPAPassword", function( value, element ) {
+			var returnVal = true;
+			if (value.length != 0)
+			{
+				if (value.length > 63 || value.length < 8)
+				{
+					returnVal = false;
+				}
+			}
+			else
+			{
+				returnVal = true;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.password_WPACheck);
+		
+		// check wifi ssid
+		$.validator.addMethod("checkssid", function( value, element ) {
+			var returnVal = true;
+			if (value == "")
+			{
+				returnVal = false;
+			}
+			else
+			{
+				returnVal = true;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.ssid);
+		
+		$('#mobile_wifi_form').validate({
+			rules: {
+				//ssid_24G: "required",
+				ssid_24G: {
+					checkssid: true
+				},
+				password_24G: {
+					checkWPAPassword: true
+				},
+				//ssid_5G: "required",
+				ssid_5G: {
+					checkssid: true
+				},
+				password_5G: {
+					checkWPAPassword: true
+				},
+				//ssid_5G_2: "required",
+				ssid_5G_2: {
+					checkssid: true
+				},
+				password_5G_2: {
+					checkWPAPassword: true
+				}
+			},
+			submitHandler: function(form) {
+				SaveWLanSettings();
+			}
+		});
+	});
+</script>
+</html>

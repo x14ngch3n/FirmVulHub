@@ -1,0 +1,290 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="/css/jquery.selectbox.css" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/WebsiteFilter.js"></script>
+
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+	var _ReciprocalRebootNumber = 80;
+	// Set up the limit total WebsiteFilter
+	var Limit_TotalFilterRules = 24;
+	//data list
+	var datalist;
+	
+	function Load_HTML()	{	$("#header").load("header.html");	}
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+		
+		datalist = new Datalist();		
+	}
+	function GetXML()	{	HNAP.GetXMLAsync("GetWebFilterSettings", null, "GetValue", function(xml)	{	GetResult_1st(xml)	});	}
+	function GetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var GetFilter_List = result_xml.Get("GetWebFilterSettingsResponse/WebFilterURLs/string#");
+			for(var i = 1; i <= GetFilter_List; i ++)
+			{
+				var WebFilter_List = result_xml.Get("GetWebFilterSettingsResponse/WebFilterURLs/string:" + i);
+				
+				var data = new Data(decode_char_text(WebFilter_List));
+				datalist.push(data);
+			}
+			var GetFilter_Method = result_xml.Get("GetWebFilterSettingsResponse/WebFilterMethod");
+			switch(GetFilter_Method)
+			{
+				case "DENY":	document.getElementById("filter_Website").options[0].selected = true;	break;
+				case "ALLOW":	document.getElementById("filter_Website").options[1].selected = true;	break;
+			}
+			check_TotalRule(Limit_TotalFilterRules, datalist.length());
+
+			$("#filter_Website").selectbox({width:450});
+			CheckNetworkStatus();
+			document.getElementById("main").style.display = "inline";
+			
+			$("select").change(function () {	save_button_changed();	});
+			$("input").keydown(function () {	save_button_changed();	});
+			$("input").change(function () {	save_button_changed();	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_1st");	}	}
+	}
+	function CheckConnectionStatus()
+	{
+		$.ajax({
+			cache : false,
+			url : "./js/CheckConnection",
+			timeout : 5000,
+			type : "GET",
+			success : function(data) { SetXML(); },
+			error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+		});
+	}
+	function SetXML()
+	{
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		HNAP.GetXMLAsync("SetWebFilterSettings", null, "GetXML", function(xml)	{	SetResult_1st(xml)	});
+	}
+	function SetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var Get_FilterMethod = document.getElementById("filter_Website").value;
+			switch(Get_FilterMethod)
+			{
+				case "1":	result_xml.Set("SetWebFilterSettings/WebFilterMethod", "DENY");		break;
+				case "2":	result_xml.Set("SetWebFilterSettings/WebFilterMethod", "ALLOW");	break;
+			}
+			result_xml.Set("SetWebFilterSettings/NumberOfEntry", datalist.length());
+			for (var i = 0; i < datalist.length(); i ++)
+			{
+				result_xml.Set("SetWebFilterSettings/WebFilterURLs/string:" + (i+1), encode_char_text(datalist.list[i].website));
+			}
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetWebFilterSettings", result_xml, function(xml)	{	SetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_1st");	}	}
+	}
+	function SetResult_2nd(result_xml)
+	{
+		var SetResult_2nd = result_xml.Get("SetWebFilterSettingsResponse/SetWebFilterSettingsResult");
+		if (SetResult_2nd == "OK")		{	setTimeout("waitSettingFinished()", 1000);	}
+		else if (SetResult_2nd == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_2nd");	}	window.location.reload();	}
+		else if (SetResult_2nd == "REBOOT") {	HNAP.GetXMLAsync("Reboot", null, "GetXML", function(xml)	{	SetResult_3rd(xml)	});	}
+	}
+	function SetResult_3rd(result_xml)
+	{
+		if (result_xml != null)	{	HNAP.SetXMLAsync("Reboot", result_xml, function(xml)	{	SetResult_4th(xml);	});}
+		else	{	alert("An error occurred!");	}
+	}
+	function SetResult_4th(result_xml)
+	{
+		var SetResult_4th = result_xml.Get("RebootResponse/RebootResult");
+		if (SetResult_4th == "OK" || SetResult_4th == "REBOOT")
+		{
+			document.getElementById("dialog_msg_black2").innerHTML = I18N("j", "Rebooting");
+			Start_reciprocal_Number_Reboot();
+		}
+		if (SetResult_4th == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_8th");	}	setTimeout("waitSettingFinished()", 1000);	}
+	}
+	function waitSettingFinished()	{	window.location.reload();	}
+	function Start_reciprocal_Number_Reboot()
+	{
+		if (_ReciprocalRebootNumber >= 0)
+		{
+			document.getElementById("reciprocal_Number").innerHTML = _ReciprocalRebootNumber + " " + I18N("j", "Sec");
+			_ReciprocalRebootNumber --;
+			setTimeout("Start_reciprocal_Number_Reboot()", 1000);
+		}
+		else
+		{
+			redirectPage(null);
+		}
+	}
+	
+	function addRowData()
+	{
+		var data = new Data(null);
+		datalist.push(data);
+	}
+	
+	function deleteData(id)
+	{
+		datalist.deleteData(id);
+		check_TotalRule(Limit_TotalFilterRules, datalist.length());
+		save_button_changed();
+	}
+	
+	function createButton()
+	{
+		addRowData();
+		check_TotalRule(Limit_TotalFilterRules, datalist.length());
+	}
+
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+
+	function save_button_changed()
+	{
+		document.getElementById("Save_Disable_btn").style.display = "none";
+		document.getElementById("Save_btn").style.display = "block";
+		changeFlag = true;
+		checkFlag = true;
+		changeTimeoutAction();
+	}
+	
+	function check_TotalRule(maxRule, totalRule)
+	{
+		var IsFull = maxRule - totalRule;
+		document.getElementById("RemainingRules").innerHTML = IsFull;
+		
+		if (IsFull == 0)
+		{
+			$("#createButton").attr("class", "styled_button_dis").prop("disabled", true);
+		}
+		else
+		{
+			$("#createButton").attr("class", "styled_button_s").prop("disabled", false);
+		}
+	}
+	
+	//OnLoad
+	$(document).ready( function() {	
+		Load_HTML();
+		Initial();
+		setMenu("menu_Advanced");
+		GetXML();
+		startTimeout();
+	});
+</script>
+</head>
+
+<body>
+
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info --------------------->
+	  		<div id="info"> 
+				<div id="FunctionName"><script>I18N("h", "Website Filter");</script></div>
+				<div id="wall"><img id="page_WebsiteFilter" src="image/page_websiteFilter.png" alt="" width="195" height="119"/></div>
+		    	<div id="directions">
+					<script>I18N("h", "The website filters feature allows rules to be set that restrict access to a specified web address (URL) or blocks specified keywords in the URL. You can use Website Filter to restrict access to potentially harmful and inappropriate websites.");</script>
+					<label id="Get_Help" onClick="showOnlineHelp('Website Filter');" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+				</div>
+			</div>
+			<!-------------------- funcBar ------------------->
+			<div id="funcBar">
+				<div id="pagePath"><script>I18N("h", "Features");</script> >> <script>I18N("h", "Website Filter");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="CheckConnectionStatus();changeTimeoutAction();" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li> 
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+				</ul>
+			</div>
+			<!-------------------- main ---------------------->
+			<div id="main" style="display:none">
+				<!-------------------- table ----------------->
+				<table class="myTable" cellspacing="0" >
+					<tr>
+				        <td>
+    						<div class="styled-select">
+							<select name="filter_Website" id="filter_Website">
+							 	<option value="1">DENY clients access to ONLY these sites</option>
+							 	<option value="2">ALLOW clients access to ONLY these sites</option>
+							</select>
+							</div>
+				        </td>
+				     </tr>
+				</table>
+				<table class="mainTable" border="0" cellspacing="0" id="tblWebsiteFilter">
+					<thead>
+				     <tr>
+				     	<th style="width:800px"><script>I18N("h", "Website URL/Domain");</script></th>
+						<th><script>I18N("h", "Delete");</script></th>
+				     </tr>
+					</thead>
+				   <tbody></tbody>
+				</table> 
+				<br />
+				<br />
+					<button type="button" name="createButton" id="createButton" class="styled_button_s" onclick="createButton();save_button_changed();"><script>I18N("h", "Add Rule");</script></button>
+					&nbsp;&nbsp;<script>I18N("h", "Remaining");</script>:&nbsp;<label id="RemainingRules">15</label>
+				<br />
+			</div>
+			<div id="CreatePopAlertMessage" style="display:none">
+				<div id="AlertPopRect">
+				<div id="AlertPopBody">
+					<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+					   <tbody>
+							 <tr>
+							 	<td>
+									<center><div id="Loading_pop_image2"></div></center>
+								</td>
+							 </tr>
+							 <tr>
+							 	<td label id="reciprocal_Number"></label></td>
+							 </tr>
+							 <tr>
+							 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+							 </tr>
+					   </tbody>
+					</table>
+				</div>
+				</div>
+			</div>
+			<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+</body>
+</html>

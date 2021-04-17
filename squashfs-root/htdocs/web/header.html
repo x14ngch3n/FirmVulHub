@@ -1,0 +1,45 @@
+<div>
+	<div style="position:relative; top:37px;">
+		<a href="http://www.dlink.com" target="_blank">
+			<img id="image_Logo" src="/image/logo_2.png" alt="D-Link" width="102" height="20" border="0"></img>
+		</a>
+	</div>
+	<table id="device_ver" style="position:relative; top:33px; font-size:13px; color:#969696;" border="0">
+		<tbody>
+			<tr>
+				<td style="padding: 0 10px 0 0;"><label id="h_ModelName"></label></td>
+				<td style="padding: 0 10px 0 0;">HW:<label id="h_HWVersion"></label></td>
+				<td style="padding: 0 10px 0 0;">FW:<label id="h_FWVersion"></label></td>
+			</tr>
+		</tbody>
+	</table>
+<script type="text/javascript">
+	if (sessionStorage.getItem('modelInfomation') === null)	{	HNAP.GetXMLAsync("GetDeviceSettings", null, "GetValue", function(xml)	{	GetTitle(xml)	});	}
+	else
+	{
+		var modelInfo = JSON.parse(sessionStorage.getItem('modelInfomation'));
+		document.getElementById("h_ModelName").innerHTML = modelInfo.modelName;
+		document.getElementById("h_HWVersion").innerHTML = modelInfo.hwVer;
+		document.getElementById("h_FWVersion").innerHTML = modelInfo.fwVer;
+	}
+	function GetTitle(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var getModelName = result_xml.Get("GetDeviceSettingsResponse/ModelName");
+			var getHardwareVersion = result_xml.Get("GetDeviceSettingsResponse/HardwareVersion");
+			var getFirmwareVersion = result_xml.Get("GetDeviceSettingsResponse/FirmwareVersion");
+			document.getElementById("h_ModelName").innerHTML = getModelName;
+			document.getElementById("h_HWVersion").innerHTML = getHardwareVersion;
+			document.getElementById("h_FWVersion").innerHTML = getFirmwareVersion;
+			sessionStorage.setItem('modelInfomation', getModelName + "," + getHardwareVersion + "," + getFirmwareVersion);
+		}
+		else
+		{
+			document.getElementById("h_ModelName").innerHTML = "--";
+			document.getElementById("h_HWVersion").innerHTML = "--";
+			document.getElementById("h_FWVersion").innerHTML = "--";
+		}
+	}
+</script>
+</div>

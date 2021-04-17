@@ -1,0 +1,205 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<meta name="viewport" content="width=device-width">
+<link rel="stylesheet" type="text/css" href="/css/style_mobile.css" media="all" />
+<link href="/css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="/js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/jquery.stringify.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/jquery.cookie.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/comm.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/hmac_md5.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/i18n.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/Login.js"></script> <!--    /* for loging */  -->
+<script type="text/javascript" charset="utf-8" src="../config/features.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPAction.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPDeviceSettings.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initEnv.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPLogin.js"></script>
+<script type="text/javascript">
+	var HasCAPTCHA = false;
+
+	//OnLoad
+	var init = initEnv();
+	$(document).ready( function() {	
+		init.done(function()
+		{
+			Initial();
+		});
+	});
+	
+	function GenerateCaptcha()
+	{
+		var cookie = COMM_RandomStr(10);
+		$.cookie('uid', cookie, { expires: 1, path: '/' });
+		sessionStorage.setItem("Cookie", cookie);
+			
+		var getCAPTCHAsettingResponse = new SOAPGetCAPTCHAsettingResponse();
+		var soapAction = new SOAPAction();
+		soapAction.sendSOAPAction("GetCAPTCHAsetting", null, getCAPTCHAsettingResponse).done(function(obj){
+			var url = obj.CaptchaUrl;
+			$("#mobile_captcha_image").attr("src", url);
+		})
+		.fail(function(obj){
+			//alpha didn't follow spec
+			$.ajax({
+				url:"/captcha.cgi",
+				type:"GET",
+				contentType:'application/x-www-form-urlencoded',
+				data:"DUMMY=YES",
+				success: function(xml){
+					var url = $(xml).find("message").text();
+					$("#mobile_captcha_image").attr("src", url);
+				}
+			});
+		});
+
+	}
+
+	function Initial()
+	{
+		if (getDeviceSettings.CAPTCHA =="true")
+		{
+			document.getElementById("mobile_captcha_info").style.display = "block";
+			GenerateCaptcha();
+			HasCAPTCHA = true;
+		}
+		else
+		{
+			document.getElementById("mobile_captcha_info").style.display = "none";
+			HasCAPTCHA = false;
+		}
+	}
+	
+	function OnClickLogin()
+	{
+		var Login_Captcha = "";
+		
+		var Login_Password = document.getElementById("mobile_login_pwd").value;
+		
+		if(HasCAPTCHA)
+			Login_Captcha = document.getElementById("mobile_login_captcha").value.toUpperCase();
+		
+		document.getElementById("mobile_login_pwd").disabled = true;
+		$("#btn_save").attr("class", "styled_button_dis").prop("disabled", true);
+
+		/* Login request */
+		doLogin(Login_Password,Login_Captcha)
+		.done(function(){
+			var redirect_url = sessionStorage.getItem("RedirectUrl");
+			if((redirect_url == null) || (redirect_url.indexOf("Login.html") > 0) || (redirect_url.indexOf("html") < 0))
+			{
+				window.location.href = "/MobileHome.html";	
+			}
+			else								
+			{	
+				window.location.href = redirect_url;		
+			}
+		})
+		.fail(function(){
+			document.getElementById("mobile_login_pwd").disabled = false;
+			$("#btn_save").attr("class", "styled_button_s").prop("disabled", false);
+
+			if (HasCAPTCHA)
+			{
+				alert(I18N("j", "Invalid password or captcha, please try again."));
+				document.getElementById("mobile_login_pwd").value = "";
+				document.getElementById("mobile_login_captcha").value = "";
+				document.getElementById("mobile_login_pwd").focus();
+				GenerateCaptcha();
+			}
+			else
+			{
+				alert(I18N("j", "Invalid password, please try again."));
+				document.getElementById("mobile_login_pwd").value = "";
+				document.getElementById("mobile_login_pwd").focus();
+			}
+		});
+	}
+</script>
+<style>
+body
+{
+	margin: 0;
+	padding: 0;
+	font-size: 75%;
+	font-family: Arial, Helvetica, sens-serif;
+	line-height:1.4;
+	color: #333333;
+	background-color: #d1d1d1;
+}
+</style>
+</head>
+
+<body>
+	<table class="mobile_div_stu" cellspacing="0" cellpadding="0" width="95%" align="center" border="0">
+		<tr height="200px" align="center" valign="bottom">
+			<td colspan="3" align="center">
+				<img src="/image/mobile_dlinklogo_login.png" width="200" height="77">
+			</td>
+		</tr>
+		<tr class="emptyline"></tr>
+		<tr height="50px" align="left">
+			<td colspan="3" style="padding-left:30px">
+				<b><span class="textnormal"><script>I18N("h", "Admin Password");</script>:</span></b>
+			</td>
+		</tr>
+		<tr>
+			<td align="center">
+				<input id="mobile_login_pwd" name="mobile_login_pwd" type="password" size="16" maxlength="32">
+			</td>
+		</tr>
+		<tr class="emptyline"></tr>
+		<tr>
+			<td id="mobile_captcha_info" style="display:none">
+				<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+					<tr height="50px" align="left">
+						<td colspan="3" style="padding-left:30px">
+							<b><span class="textnormal"><script>I18N("h", "Type the characters you see in the picture below.");</script>:</span></b>
+						</td>
+					</tr>
+					<tr>
+						<td align="center">
+							<input id="mobile_login_captcha" name="mobile_login_captcha" type="text" size="16" maxlength="15">
+						</td>
+					</tr>
+					<tr class="emptysmall"></tr>
+					<tr>
+						<td align="center" height="30px">
+							<img id="mobile_captcha_image" height="37px"/>
+							<img id="mobile_refresh_btn" src="/image/refresh.png" onclick="GenerateCaptcha()" width="37px" height="37px"/>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr class="emptyline"></tr>
+		<tr>
+			<td align="center">
+				<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+					<tr>
+						<td class="btn_save" onclick="OnClickLogin()">
+							<b><span class="textnormal"><script>I18N("h", "Log In");</script></span></b>
+						</td>
+					</tr>
+					<tr class="emptyline"></tr>
+					<tr class="emptyline"></tr>
+					<tr>
+						<td align="center">
+							<span class="textcr"><span id="copyright"><script>I18N("h", "COPYRIGHT");</script></span></span>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+		<tr class="emptyline"></tr>
+	</table>
+</body>
+</html>

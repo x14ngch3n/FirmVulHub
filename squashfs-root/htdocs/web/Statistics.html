@@ -1,0 +1,1089 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/RGraph.common.core.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/RGraph.line.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/excanvas.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/DetectBrowserVersion.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPStatistic.js"></script>
+<script type="text/javascript">
+	// Detect Browser
+	var DetectBrowserMessage = 1;
+	var GetDBV = DetectBrowserVersion();
+	if (GetDBV[0] == "Microsoft Internet Explorer" && parseInt(GetDBV[1]) < 9)	{	DetectBrowserMessage = 0;	}
+</script>
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+	var HNAP_getXMLback = 1;
+	var HNAP_getWaitTime = 0;
+	var xml_GetMultipleHNAPs = HNAP.GetXML("GetMultipleHNAPs");
+	xml_GetMultipleHNAPs.Set("GetMultipleHNAPs/GetInterfaceStatistics:1/Interface", "WAN");
+	xml_GetMultipleHNAPs.Set("GetMultipleHNAPs/GetInterfaceStatistics:2/Interface", "LAN");
+	xml_GetMultipleHNAPs.Set("GetMultipleHNAPs/GetInterfaceStatistics:3/Interface", "WLAN2.4G");
+	xml_GetMultipleHNAPs.Set("GetMultipleHNAPs/GetInterfaceStatistics:4/Interface", "WLAN5G");
+	var max_Count = 17;
+	var data_Internet_Tx_Rate = RGraph.array_pad([], max_Count);
+	var data_Internet_Rx_Rate = RGraph.array_pad([], max_Count);
+	var data_Lan_Tx_Rate = RGraph.array_pad([], max_Count);
+	var data_Lan_Rx_Rate = RGraph.array_pad([], max_Count);
+	var data_WF24G_Tx_Rate = RGraph.array_pad([], max_Count);
+	var data_WF24G_Rx_Rate = RGraph.array_pad([], max_Count);
+	var data_WF5G_Tx_Rate = RGraph.array_pad([], max_Count);
+	var data_WF5G_Rx_Rate = RGraph.array_pad([], max_Count);
+	var rate_Tx_Internet, rate_Rx_Internet;
+	var rate_Tx_Lan, rate_Rx_Lan;
+	var rate_Tx_WiFi24, rate_Rx_WiFi24;
+	var rate_Tx_WiFi5, rate_Rx_WiFi5;
+	var internet_Tx_Last = 0, internet_Rx_Last = 0;
+	var lan_Tx_Last = 0, lan_Rx_Last = 0;
+	var wifi24_Tx_Last = 0, wifi24_Rx_Last = 0;
+	var wifi5_Tx_Last = 0, wifi5_Rx_Last = 0;
+	var firstRecord = 1;
+	var chart_MAX_Internet;
+	var chart_MAX_Lan;
+	var chart_MAX_WiFi24;
+	var chart_MAX_WiFi5;
+	var re_Adj_Counter = 0;
+	var re_Adj_Counter_MAX = 17;
+	
+	function Load_HTML()	{	$("#header").load("header.html");	}
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+	function parseUINT(val)
+	{
+		var intValue = parseInt(val,10);
+		if((intValue < 0)||(isNaN(intValue)))
+		{
+			intValue = 0;
+		}
+		return intValue;
+	}
+	function get_MAX(arr)
+	{
+		var tmp_MAX = 0;
+		for(var i = arr.length - 1; i >= 0; i --)	{	if(arr[i]>tmp_MAX)	{	tmp_MAX = arr[i];	}}
+		return tmp_MAX;
+	}
+	function reverse(arr)
+	{
+		var newArr = [];
+		for(var i = arr.length - 1; i >= 0; i--)	{	newArr.push(arr[i]);	}
+		return newArr;
+	}
+	function clear(arr)
+	{
+		var newArr = [];
+		for(var i= arr.length - 1; i >= 0; i--)	{	[100].concat(newArr);	}
+		return newArr;
+	}
+	function DrawGraph_Internet(obj_Tmp)
+	{
+		RGraph.Clear(document.getElementById(obj_Tmp));
+		RGraph.ObjectRegistry.Clear();
+		// Rx
+		if(rate_Rx_Internet < 0)	{	rate_Rx_Internet = 0;	}
+		data_Internet_Rx_Rate = [rate_Rx_Internet].concat(data_Internet_Rx_Rate);
+		data_Internet_Rx_Rate.pop();
+		if(rate_Rx_Internet > chart_MAX_Internet)	{	gen_New_Tab("internet", rate_Rx_Internet);	}
+		// Tx
+		if(rate_Tx_Internet < 0)	{	rate_Tx_Internet = 0;	}
+		data_Internet_Tx_Rate = [rate_Tx_Internet].concat(data_Internet_Tx_Rate);
+		data_Internet_Tx_Rate.pop();
+		if(rate_Tx_Internet > chart_MAX_Internet)	{	gen_New_Tab("internet", rate_Tx_Internet);	}
+		data_Internet_Tx_Rate = reverse(data_Internet_Tx_Rate);
+		data_Internet_Rx_Rate = reverse(data_Internet_Rx_Rate);
+		var Internet_Tx_Line = new RGraph.Line(obj_Tmp, data_Internet_Tx_Rate);
+		Internet_Tx_Line.Set('chart.colors', ['blue']);
+		Internet_Tx_Line.Set('chart.linewidth', 2);
+		Internet_Tx_Line.Set('chart.filled', false);
+		Internet_Tx_Line.Set('chart.fillstyle', 'rgba(0,0,128,0)');
+		Internet_Tx_Line.Set('chart.ymax', chart_MAX_Internet);
+		Internet_Tx_Line.Set('chart.numxticks', 5);
+		var Internet_Rx_Line = new RGraph.Line(obj_Tmp, data_Internet_Rx_Rate);
+		Internet_Rx_Line.Set('chart.colors', ['red']);
+		Internet_Rx_Line.Set('chart.linewidth', 2);
+		Internet_Rx_Line.Set('chart.filled', false);
+		Internet_Rx_Line.Set('chart.fillstyle', 'rgba(255,0,0,0)');
+		Internet_Rx_Line.Set('chart.ymax', chart_MAX_Internet);
+		Internet_Rx_Line.Set('chart.numxticks', 5);
+		Internet_Tx_Line.Draw();
+		Internet_Rx_Line.Draw();
+		data_Internet_Tx_Rate = reverse(data_Internet_Tx_Rate);
+		data_Internet_Rx_Rate = reverse(data_Internet_Rx_Rate);
+	}
+	
+	function DrawGraph_Lan(obj_Tmp)
+	{
+		RGraph.Clear(document.getElementById(obj_Tmp));
+		RGraph.ObjectRegistry.Clear();
+		// Rx
+		if(rate_Rx_Lan < 0)	{	rate_Rx_Lan = 0;	}
+		data_Lan_Rx_Rate = [rate_Rx_Lan].concat(data_Lan_Rx_Rate);
+		data_Lan_Rx_Rate.pop();
+		if(rate_Rx_Lan > chart_MAX_Lan)	{	gen_New_Tab("LAN", rate_Rx_Lan);	}
+		// Tx
+		if(rate_Tx_Lan < 0)	{	rate_Tx_Lan = 0;	}
+		data_Lan_Tx_Rate = [rate_Tx_Lan].concat(data_Lan_Tx_Rate);
+		data_Lan_Tx_Rate.pop();
+		if(rate_Tx_Lan > chart_MAX_Lan)	{	gen_New_Tab("LAN", rate_Tx_Lan);	}
+		data_Lan_Tx_Rate = reverse(data_Lan_Tx_Rate);
+		data_Lan_Rx_Rate = reverse(data_Lan_Rx_Rate);
+		var Lan_Tx_Line = new RGraph.Line(obj_Tmp, data_Lan_Tx_Rate);
+		Lan_Tx_Line.Set('chart.colors', ['blue']);
+		Lan_Tx_Line.Set('chart.linewidth', 2);
+		Lan_Tx_Line.Set('chart.filled', false);
+		Lan_Tx_Line.Set('chart.fillstyle', 'rgba(0,0,128,0)');
+		Lan_Tx_Line.Set('chart.ymax', chart_MAX_Lan);
+		Lan_Tx_Line.Set('chart.numxticks', 5);
+		var Lan_Rx_Line = new RGraph.Line(obj_Tmp, data_Lan_Rx_Rate);
+		Lan_Rx_Line.Set('chart.colors', ['red']);
+		Lan_Rx_Line.Set('chart.linewidth', 2);
+		Lan_Rx_Line.Set('chart.filled', false);
+		Lan_Rx_Line.Set('chart.fillstyle', 'rgba(255,0,0,0)');
+		Lan_Rx_Line.Set('chart.ymax', chart_MAX_Lan);
+		Lan_Rx_Line.Set('chart.numxticks', 5);
+		Lan_Tx_Line.Draw();
+		Lan_Rx_Line.Draw();
+		data_Lan_Tx_Rate = reverse(data_Lan_Tx_Rate);
+		data_Lan_Rx_Rate = reverse(data_Lan_Rx_Rate);
+	}
+	
+	function DrawGraph_WiFi24(obj_Tmp)
+	{
+		RGraph.Clear(document.getElementById(obj_Tmp));
+		RGraph.ObjectRegistry.Clear();
+		// Rx
+		if(rate_Rx_WiFi24 < 0)	{	rate_Rx_WiFi24 = 0;	}
+		data_WF24G_Rx_Rate = [rate_Rx_WiFi24].concat(data_WF24G_Rx_Rate);
+		data_WF24G_Rx_Rate.pop();
+		if(rate_Rx_WiFi24 > chart_MAX_WiFi24)	{	gen_New_Tab("wf24", rate_Rx_WiFi24);	}
+		// Tx
+		if(rate_Tx_WiFi24 < 0)	{	rate_Tx_WiFi24 = 0;	}
+		data_WF24G_Tx_Rate = [rate_Tx_WiFi24].concat(data_WF24G_Tx_Rate);
+		data_WF24G_Tx_Rate.pop();
+		if(rate_Tx_WiFi24 > chart_MAX_WiFi24)	{	gen_New_Tab("wf24", rate_Tx_WiFi24);	}
+		data_WF24G_Tx_Rate = reverse(data_WF24G_Tx_Rate);
+		data_WF24G_Rx_Rate = reverse(data_WF24G_Rx_Rate);
+		var WiFi24_Tx_Line = new RGraph.Line(obj_Tmp, data_WF24G_Tx_Rate);
+		WiFi24_Tx_Line.Set('chart.colors', ['blue']);
+		WiFi24_Tx_Line.Set('chart.linewidth', 2);
+		WiFi24_Tx_Line.Set('chart.filled', false);
+		WiFi24_Tx_Line.Set('chart.fillstyle', 'rgba(0,0,128,0)');
+		WiFi24_Tx_Line.Set('chart.ymax', chart_MAX_WiFi24);
+		WiFi24_Tx_Line.Set('chart.numxticks', 5);
+		var WiFi24_Rx_Line = new RGraph.Line(obj_Tmp, data_WF24G_Rx_Rate);
+		WiFi24_Rx_Line.Set('chart.colors', ['red']);
+		WiFi24_Rx_Line.Set('chart.linewidth', 2);
+		WiFi24_Rx_Line.Set('chart.filled', false);
+		WiFi24_Rx_Line.Set('chart.fillstyle', 'rgba(255,0,0,0)');
+		WiFi24_Rx_Line.Set('chart.ymax', chart_MAX_WiFi24);
+		WiFi24_Rx_Line.Set('chart.numxticks', 5);
+		WiFi24_Tx_Line.Draw();
+		WiFi24_Rx_Line.Draw();
+		data_WF24G_Tx_Rate = reverse(data_WF24G_Tx_Rate);
+		data_WF24G_Rx_Rate = reverse(data_WF24G_Rx_Rate);
+	}
+	function DrawGraph_WiFi5(obj_Tmp)
+	{
+		RGraph.Clear(document.getElementById(obj_Tmp));
+		RGraph.ObjectRegistry.Clear();
+		// Rx
+		if(rate_Rx_WiFi5 < 0)	{	rate_Rx_WiFi5 = 0;	}
+		data_WF5G_Rx_Rate = [rate_Rx_WiFi5].concat(data_WF5G_Rx_Rate);
+		data_WF5G_Rx_Rate.pop();
+		if(rate_Rx_WiFi5 > chart_MAX_WiFi5)	{	gen_New_Tab("wf5", rate_Rx_WiFi5);	}
+		// Tx
+		if(rate_Tx_WiFi5 < 0)	{	rate_Tx_WiFi5 = 0;	}
+		data_WF5G_Tx_Rate = [rate_Tx_WiFi5].concat(data_WF5G_Tx_Rate);
+		data_WF5G_Tx_Rate.pop();
+		if(rate_Tx_WiFi5 > chart_MAX_WiFi5)	{	gen_New_Tab("wf5", rate_Tx_WiFi5);	}
+		data_WF5G_Tx_Rate = reverse(data_WF5G_Tx_Rate);
+		data_WF5G_Rx_Rate = reverse(data_WF5G_Rx_Rate);
+		var WiFi5_Tx_Line = new RGraph.Line(obj_Tmp, data_WF5G_Tx_Rate);
+		WiFi5_Tx_Line.Set('chart.colors', ['blue']);
+		WiFi5_Tx_Line.Set('chart.linewidth', 2);
+		WiFi5_Tx_Line.Set('chart.filled', false);
+		WiFi5_Tx_Line.Set('chart.fillstyle', 'rgba(0,0,128,0)');
+		WiFi5_Tx_Line.Set('chart.ymax', chart_MAX_WiFi5);
+		WiFi5_Tx_Line.Set('chart.numxticks', 5);
+		var WiFi5_Rx_Line = new RGraph.Line(obj_Tmp, data_WF5G_Rx_Rate);
+		WiFi5_Rx_Line.Set('chart.colors', ['red']);
+		WiFi5_Rx_Line.Set('chart.linewidth', 2);
+		WiFi5_Rx_Line.Set('chart.filled', false);
+		WiFi5_Rx_Line.Set('chart.fillstyle', 'rgba(255,0,0,0)');
+		WiFi5_Rx_Line.Set('chart.ymax', chart_MAX_WiFi5);
+		WiFi5_Rx_Line.Set('chart.numxticks', 5);
+		WiFi5_Tx_Line.Draw();
+		WiFi5_Rx_Line.Draw();
+		data_WF5G_Tx_Rate = reverse(data_WF5G_Tx_Rate);
+		data_WF5G_Rx_Rate = reverse(data_WF5G_Rx_Rate);
+	}
+	function init()
+	{
+		chart_MAX_Internet = 100;
+		chart_MAX_Lan = 100;
+		chart_MAX_WiFi24 = 100;
+		chart_MAX_WiFi5 = 100;
+	}
+	function do_Draw_Graph()
+	{
+		if(HNAP_getXMLback==1 || HNAP_getWaitTime > 10) // If any HNAP.SetXMLAsync is fail, HNAP_getXMLback would be 0 forever. So HNAP_getWaitTime is neccesary. However, if all HNAP.SetXMLAsync response time are larger 10 seconds, the program would not plot anything.
+		{
+			if(re_Adj_Counter < re_Adj_Counter_MAX)	{	re_Adj_Counter ++;	}
+			else									{	re_Adj_Counter = 0;	}
+			re_Adj();
+			DrawGraph_Internet("cvs_Internet");
+			DrawGraph_Lan("cvs_LAN");
+			DrawGraph_WiFi24("cvs_WiFi24");
+			DrawGraph_WiFi5("cvs_WiFi5");
+			HNAP.SetXMLAsync("GetMultipleHNAPs", xml_GetMultipleHNAPs, function(xml) {get_XmlFile(xml);});
+			HNAP_getXMLback=0;
+			HNAP_getWaitTime=0;
+		}
+		else
+		{
+			HNAP_getWaitTime++;
+		}
+		setTimeout("do_Draw_Graph()", 1000);
+	}
+	function get_XmlFile(xml)
+	{
+		HNAP_getXMLback=1;
+		var internet_Tx_KB = 0, internet_Rx_KB = 0;
+		var lan_Tx_KB = 0, lan_Rx_KB = 0;
+		var wf24_Tx_KB = 0, wf24_Rx_KB = 0;
+		var wf5_Tx_KB = 0, wf5_Rx_KB = 0;
+		var Wan_idx=1, Lan_idx=1, Wlan24g_idx=1, Wlan5g_idx=1;
+		for(var i=1; i<=4; i++)
+		{
+			var Interface = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+i+"/Interface");
+			if(Interface=="WAN")			Wan_idx=i;
+			else if(Interface=="LAN")		Lan_idx=i;
+			else if(Interface=="WLAN2.4G")	Wlan24g_idx=i;
+			else if(Interface=="WLAN5G")	Wlan5g_idx=i;
+		}
+		// Internet
+		var statisticsInfo_Wan_Sent = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/Sent");
+		var statisticsInfo_Wan_Received = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/Received");
+		var statisticsInfo_Wan_TxPkt = parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/TXPackets"));
+		var statisticsInfo_Wan_RxPkt = parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/RXPackets"));
+		var statisticsInfo_Wan_Session = parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/Session"));
+		// Lan
+		var statisticsInfo_Lan_Sent = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Lan_idx+"/InterfaceStatistics/StatisticInfo/Sent");
+		var statisticsInfo_Lan_Received = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Lan_idx+"/InterfaceStatistics/StatisticInfo/Received");
+		var statisticsInfo_Lan_TxPkt = parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Lan_idx+"/InterfaceStatistics/StatisticInfo/TXPackets"));
+		var statisticsInfo_Lan_RxPkt =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Lan_idx+"/InterfaceStatistics/StatisticInfo/RXPackets"));
+		var statisticsInfo_Lan_Session =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/Session"));
+		// WiFi 2.4G
+		var statisticsInfo_WiFi24_Sent = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan24g_idx+"/InterfaceStatistics/StatisticInfo/Sent");
+		var statisticsInfo_WiFi24_Received = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan24g_idx+"/InterfaceStatistics/StatisticInfo/Received");
+		var statisticsInfo_WiFi24_TxPkt =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan24g_idx+"/InterfaceStatistics/StatisticInfo/TXPackets"));
+		var statisticsInfo_WiFi24_RxPkt =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan24g_idx+"/InterfaceStatistics/StatisticInfo/RXPackets"));
+		var statisticsInfo_WiFi24_Session =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/Session"));
+		// WiFi 5G
+		var statisticsInfo_WiFi5_Sent = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan5g_idx+"/InterfaceStatistics/StatisticInfo/Sent");
+		var statisticsInfo_WiFi5_Received = xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan5g_idx+"/InterfaceStatistics/StatisticInfo/Received");
+		var statisticsInfo_WiFi5_TxPkt =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan5g_idx+"/InterfaceStatistics/StatisticInfo/TXPackets"));
+		var statisticsInfo_WiFi5_RxPkt =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wlan5g_idx+"/InterfaceStatistics/StatisticInfo/RXPackets"));
+		var statisticsInfo_WiFi5_Session =  parseUINT(xml.Get("GetMultipleHNAPsResponse/GetInterfaceStatisticsResponse:"+Wan_idx+"/InterfaceStatistics/StatisticInfo/Session"));
+		internet_Tx_KB = parseUINT(Math.ceil(statisticsInfo_Wan_Sent / 1024));
+		internet_Rx_KB = parseUINT(Math.ceil(statisticsInfo_Wan_Received / 1024));
+		lan_Tx_KB = parseUINT(Math.ceil(statisticsInfo_Lan_Sent / 1024));
+		lan_Rx_KB = parseUINT(Math.ceil(statisticsInfo_Lan_Received / 1024));
+		wf24_Tx_KB = parseUINT(Math.ceil(statisticsInfo_WiFi24_Sent / 1024));
+		wf24_Rx_KB = parseUINT(Math.ceil(statisticsInfo_WiFi24_Received / 1024));
+		wf5_Tx_KB = parseUINT(Math.ceil(statisticsInfo_WiFi5_Sent / 1024));
+		wf5_Rx_KB = parseUINT(Math.ceil(statisticsInfo_WiFi5_Received / 1024));
+
+		if (firstRecord == 1)
+		{
+			rate_Tx_Internet = 0;
+			rate_Rx_Internet = 0;
+			rate_Tx_Lan = 0;
+			rate_Rx_Lan = 0;
+			rate_Tx_WiFi24 = 0;
+			rate_Rx_WiFi24 = 0;
+			rate_Tx_WiFi5 = 0;
+			rate_Rx_WiFi5 = 0;
+			internet_Tx_Last = internet_Tx_KB;
+			internet_Rx_Last = internet_Rx_KB;
+			lan_Tx_Last = lan_Tx_KB;
+			lan_Rx_Last = lan_Rx_KB;
+			wifi24_Tx_Last = wf24_Tx_KB;
+			wifi24_Rx_Last = wf24_Rx_KB;
+			wifi5_Tx_Last = wf5_Tx_KB;
+			wifi5_Rx_Last = wf5_Rx_KB;
+			firstRecord = 0;
+		}
+		else
+		{
+			rate_Tx_Internet = Math.abs(internet_Tx_KB - internet_Tx_Last);
+			rate_Tx_Lan = Math.abs(lan_Tx_KB - lan_Tx_Last);
+			rate_Tx_WiFi24 = Math.abs(wf24_Tx_KB - wifi24_Tx_Last);
+			rate_Tx_WiFi5 = Math.abs(wf5_Tx_KB - wifi5_Tx_Last);
+			rate_Rx_Internet = Math.abs(internet_Rx_KB - internet_Rx_Last);
+			rate_Rx_Lan = Math.abs(lan_Rx_KB - lan_Rx_Last);
+			rate_Rx_WiFi24 = Math.abs(wf24_Rx_KB - wifi24_Rx_Last);
+			rate_Rx_WiFi5 = Math.abs(wf5_Rx_KB - wifi5_Rx_Last);
+			internet_Tx_Last = internet_Tx_KB;
+			internet_Rx_Last = internet_Rx_KB;
+			lan_Tx_Last = lan_Tx_KB;
+			lan_Rx_Last = lan_Rx_KB;
+			wifi24_Tx_Last = wf24_Tx_KB;
+			wifi24_Rx_Last = wf24_Rx_KB;
+			wifi5_Tx_Last = wf5_Tx_KB;
+			wifi5_Rx_Last = wf5_Rx_KB;
+		}
+		
+		document.getElementById("internet_tx_pkt").innerHTML = statisticsInfo_Wan_TxPkt;
+		document.getElementById("internet_rx_pkt").innerHTML = statisticsInfo_Wan_RxPkt;
+		document.getElementById("internet_tx_dropt").innerHTML = internet_Tx_KB;
+		document.getElementById("internet_rx_dropt").innerHTML = internet_Rx_KB;
+		document.getElementById("internet_tx_rate").innerHTML = rate_Tx_Internet;
+		document.getElementById("internet_rx_rate").innerHTML = rate_Rx_Internet;
+		document.getElementById("wan_session").innerHTML = statisticsInfo_Wan_Session;
+		
+		document.getElementById("lan_tx_pkt").innerHTML = statisticsInfo_Lan_TxPkt;
+		document.getElementById("lan_rx_pkt").innerHTML = statisticsInfo_Lan_RxPkt;
+		document.getElementById("lan_tx_dropt").innerHTML = lan_Tx_KB;
+		document.getElementById("lan_rx_dropt").innerHTML = lan_Rx_KB;
+		document.getElementById("lan_tx_rate").innerHTML = rate_Tx_Lan;
+		document.getElementById("lan_rx_rate").innerHTML = rate_Rx_Lan;
+		document.getElementById("lan_session").innerHTML = statisticsInfo_Lan_Session;
+		document.getElementById("wf24_tx_pkt").innerHTML = statisticsInfo_WiFi24_TxPkt;
+		document.getElementById("wf24_rx_pkt").innerHTML = statisticsInfo_WiFi24_RxPkt;
+		document.getElementById("wf24_tx_dropt").innerHTML = wf24_Tx_KB;
+		document.getElementById("wf24_rx_dropt").innerHTML = wf24_Rx_KB;
+		document.getElementById("wf24_tx_rate").innerHTML = rate_Tx_WiFi24;
+		document.getElementById("wf24_rx_rate").innerHTML = rate_Rx_WiFi24;
+		document.getElementById("wifi24_session").innerHTML = statisticsInfo_WiFi24_Session;
+		document.getElementById("wf5_tx_pkt").innerHTML = statisticsInfo_WiFi5_TxPkt;
+		document.getElementById("wf5_rx_pkt").innerHTML = statisticsInfo_WiFi5_RxPkt;
+		document.getElementById("wf5_tx_dropt").innerHTML = wf5_Tx_KB;
+		document.getElementById("wf5_rx_dropt").innerHTML = wf5_Rx_KB;
+		document.getElementById("wf5_tx_rate").innerHTML = rate_Tx_WiFi5;
+		document.getElementById("wf5_rx_rate").innerHTML = rate_Rx_WiFi5;
+		document.getElementById("wifi5_session").innerHTML = statisticsInfo_WiFi5_Session;
+		if (DetectBrowserMessage == 0)	{	setTimeout("HNAP.SetXMLAsync('GetMultipleHNAPs', xml_GetMultipleHNAPs, function(xml) {get_XmlFile(xml);})", 1000);	}
+	}
+	function gen_New_Tab(type, rate)
+	{
+		if (DetectBrowserMessage != 0)
+		{
+			if(type == "internet")
+			{
+				var tmp = rate - chart_MAX_Internet;
+				tmp = parseInt(tmp / 50) + 1;
+				chart_MAX_Internet = chart_MAX_Internet + (tmp * 50);
+		       	document.getElementById("x_internet_tab1").innerHTML = chart_MAX_Internet + " KB/s";
+				document.getElementById("x_internet_tab2").innerHTML = parseInt(chart_MAX_Internet * 3 / 4) + " KB/s";
+				document.getElementById("x_internet_tab3").innerHTML = parseInt(chart_MAX_Internet / 2) + " KB/s";
+				document.getElementById("x_internet_tab4").innerHTML = parseInt(chart_MAX_Internet * 1 / 4) + " KB/s";
+			}
+			if(type == "LAN")
+			{
+				var tmp = rate - chart_MAX_Lan;
+				tmp = parseInt(tmp / 50) + 1;
+				chart_MAX_Lan = chart_MAX_Lan + (tmp * 50);
+		       	document.getElementById("x_lan_tab1").innerHTML = chart_MAX_Lan + " KB/s";
+				document.getElementById("x_lan_tab2").innerHTML = parseInt(chart_MAX_Lan * 3 / 4) + " KB/s";
+				document.getElementById("x_lan_tab3").innerHTML = parseInt(chart_MAX_Lan / 2) + " KB/s";
+				document.getElementById("x_lan_tab4").innerHTML = parseInt(chart_MAX_Lan * 1 / 4) + " KB/s";
+			}
+			if(type == "wf24")
+			{
+				var tmp = rate - chart_MAX_WiFi24;
+				tmp = parseInt(tmp / 50) + 1;
+				chart_MAX_WiFi24 = chart_MAX_WiFi24 + (tmp * 50);
+		       	document.getElementById("x_wf24_tab1").innerHTML = chart_MAX_WiFi24 + " KB/s";
+				document.getElementById("x_wf24_tab2").innerHTML = parseInt(chart_MAX_WiFi24 * 3 / 4) + " KB/s";
+				document.getElementById("x_wf24_tab3").innerHTML = parseInt(chart_MAX_WiFi24 / 2) + " KB/s";
+				document.getElementById("x_wf24_tab4").innerHTML = parseInt(chart_MAX_WiFi24 * 1 / 4) + " KB/s";
+			}
+			if(type == "wf5")
+			{
+				var tmp = rate - chart_MAX_WiFi5;
+				tmp = parseInt(tmp / 50) + 1;
+				chart_MAX_WiFi5 = chart_MAX_WiFi5 + (tmp * 50);
+		       	document.getElementById("x_wf5_tab1").innerHTML = chart_MAX_WiFi5 + " KB/s";
+				document.getElementById("x_wf5_tab2").innerHTML = parseInt(chart_MAX_WiFi5 * 3 / 4) + " KB/s";
+				document.getElementById("x_wf5_tab3").innerHTML = parseInt(chart_MAX_WiFi5 / 2) + " KB/s";
+				document.getElementById("x_wf5_tab4").innerHTML = parseInt(chart_MAX_WiFi5 * 1 / 4) + " KB/s";
+			}
+		}
+	}
+	function re_Adj()
+	{
+		var tmp_Internet_Tx = get_MAX(data_Internet_Tx_Rate);
+		var tmp_Internet_Rx = get_MAX(data_Internet_Rx_Rate);
+		var tmp_Lan_Tx = get_MAX(data_Lan_Tx_Rate);
+		var tmp_Lan_Rx = get_MAX(data_Lan_Rx_Rate);
+		var tmp_WiFi24_Tx = get_MAX(data_WF24G_Tx_Rate);
+		var tmp_WiFi24_Rx = get_MAX(data_WF24G_Rx_Rate);
+		var tmp_WiFi5_Tx = get_MAX(data_WF5G_Tx_Rate);
+		var tmp_WiFi5_Rx = get_MAX(data_WF5G_Rx_Rate);
+		// Internet
+		if(tmp_Internet_Tx > tmp_Internet_Rx)
+		{
+			var tmp_Internet = parseInt(tmp_Internet_Tx / 50) + 1;
+			if (tmp_Internet > 3)	{	chart_MAX_Internet = 50 * tmp_Internet;	}
+			else					{	chart_MAX_Internet = 100;	}
+			document.getElementById("x_internet_tab1").innerHTML = chart_MAX_Internet + " KB/s";
+			document.getElementById("x_internet_tab2").innerHTML = parseInt(chart_MAX_Internet * 3 / 4) + " KB/s";
+			document.getElementById("x_internet_tab3").innerHTML = parseInt(chart_MAX_Internet / 2) + " KB/s";
+			document.getElementById("x_internet_tab4").innerHTML = parseInt(chart_MAX_Internet * 1 / 4) + " KB/s";
+		}
+		else
+		{
+			var tmp_Internet = parseInt(tmp_Internet_Rx / 50) + 1;
+			if (tmp_Internet > 3)	{	chart_MAX_Internet = 50 * tmp_Internet;	}
+			else					{	chart_MAX_Internet = 100;				}
+			document.getElementById("x_internet_tab1").innerHTML = chart_MAX_Internet + " KB/s";
+			document.getElementById("x_internet_tab2").innerHTML = parseInt(chart_MAX_Internet * 3 / 4) + " KB/s";
+			document.getElementById("x_internet_tab3").innerHTML = parseInt(chart_MAX_Internet / 2) + " KB/s";
+			document.getElementById("x_internet_tab4").innerHTML = parseInt(chart_MAX_Internet * 1 / 4) + " KB/s";
+		}
+		// Lan
+		if(tmp_Lan_Tx > tmp_Lan_Rx)
+		{
+			var tmp_Lan = parseInt(tmp_Lan_Tx / 50) + 1;
+			if (tmp_Lan > 3)	{	chart_MAX_Lan = 50 * tmp_Lan;	}
+			else				{	chart_MAX_Lan = 100;	}
+			document.getElementById("x_lan_tab1").innerHTML = chart_MAX_Lan + " KB/s";
+			document.getElementById("x_lan_tab2").innerHTML = parseInt(chart_MAX_Lan * 3 / 4) + " KB/s";
+			document.getElementById("x_lan_tab3").innerHTML = parseInt(chart_MAX_Lan / 2) + " KB/s";
+			document.getElementById("x_lan_tab4").innerHTML = parseInt(chart_MAX_Lan * 1 / 4) + " KB/s";
+		}
+		else
+		{
+			var tmp_Lan = parseInt(tmp_Lan_Tx / 50) + 1;
+			if (tmp_Lan > 3)	{	chart_MAX_Lan = 50 * tmp_Lan;	}
+			else				{	chart_MAX_Lan = 100;	}
+			document.getElementById("x_lan_tab1").innerHTML = chart_MAX_Lan + " KB/s";
+			document.getElementById("x_lan_tab2").innerHTML = parseInt(chart_MAX_Lan * 3 / 4) + " KB/s";
+			document.getElementById("x_lan_tab3").innerHTML = parseInt(chart_MAX_Lan / 2) + " KB/s";
+			document.getElementById("x_lan_tab4").innerHTML = parseInt(chart_MAX_Lan * 1 / 4) + " KB/s";
+		}
+		// WiFi 2.4G
+		if(tmp_WiFi24_Tx > tmp_WiFi24_Rx)
+		{
+			var tmp_WiFi24 = parseInt(tmp_WiFi24_Tx / 50) + 1;
+			if (tmp_WiFi24 > 3)	{	chart_MAX_WiFi24 = 50 * tmp_WiFi24;	}
+			else				{	chart_MAX_WiFi24 = 100;	}
+			document.getElementById("x_wf24_tab1").innerHTML = chart_MAX_WiFi24 + " KB/s";
+			document.getElementById("x_wf24_tab2").innerHTML = parseInt(chart_MAX_WiFi24 * 3 / 4) + " KB/s";
+			document.getElementById("x_wf24_tab3").innerHTML = parseInt(chart_MAX_WiFi24 / 2) + " KB/s";
+			document.getElementById("x_wf24_tab4").innerHTML = parseInt(chart_MAX_WiFi24 * 1 / 4) + " KB/s";
+		}
+		else
+		{
+			var tmp_WiFi24 = parseInt(tmp_WiFi24_Tx / 50) + 1;
+			if (tmp_WiFi24 > 3)	{	chart_MAX_WiFi24 = 50 * tmp_WiFi24;	}
+			else				{	chart_MAX_WiFi24 = 100;	}
+			document.getElementById("x_wf24_tab1").innerHTML = chart_MAX_WiFi24 + " KB/s";
+			document.getElementById("x_wf24_tab2").innerHTML = parseInt(chart_MAX_WiFi24 * 3 / 4) + " KB/s";
+			document.getElementById("x_wf24_tab3").innerHTML = parseInt(chart_MAX_WiFi24 / 2) + " KB/s";
+			document.getElementById("x_wf24_tab4").innerHTML = parseInt(chart_MAX_WiFi24 * 1 / 4) + " KB/s";
+		}
+		// WiFi 5G
+		if(tmp_WiFi5_Tx > tmp_WiFi5_Rx)
+		{
+			var tmp_WiFi5 = parseInt(tmp_WiFi5_Tx / 50) + 1;
+			if (tmp_WiFi5 > 3)	{	chart_MAX_WiFi5 = 50 * tmp_WiFi5;	}
+			else				{	chart_MAX_WiFi5 = 100;	}
+			document.getElementById("x_wf5_tab1").innerHTML = chart_MAX_WiFi5 + " KB/s";
+			document.getElementById("x_wf5_tab2").innerHTML = parseInt(chart_MAX_WiFi5 * 3 / 4) + " KB/s";
+			document.getElementById("x_wf5_tab3").innerHTML = parseInt(chart_MAX_WiFi5 / 2) + " KB/s";
+			document.getElementById("x_wf5_tab4").innerHTML = parseInt(chart_MAX_WiFi5 * 1 / 4) + " KB/s";
+		}
+		else
+		{
+			var tmp_WiFi5 = parseInt(tmp_WiFi5_Tx / 50) + 1;
+			if (tmp_WiFi5 > 3)	{	chart_MAX_WiFi5 = 50 * tmp_WiFi5;	}
+			else				{	chart_MAX_WiFi5 = 100;	}
+			document.getElementById("x_wf5_tab1").innerHTML = chart_MAX_WiFi5 + " KB/s";
+			document.getElementById("x_wf5_tab2").innerHTML = parseInt(chart_MAX_WiFi5 * 3 / 4) + " KB/s";
+			document.getElementById("x_wf5_tab3").innerHTML = parseInt(chart_MAX_WiFi5 / 2) + " KB/s";
+			document.getElementById("x_wf5_tab4").innerHTML = parseInt(chart_MAX_WiFi5 * 1 / 4) + " KB/s";
+		}
+	}
+	function tab_switch(switch_case)
+	{
+		changeTimeoutAction();
+		
+		if (DetectBrowserMessage != 0)
+		{
+			switch (switch_case)
+			{
+				case "internet":
+					document.getElementById("sta_switch_Internet").style.display = "";
+					document.getElementById("sta_switch_wf24").style.display = "none";
+					document.getElementById("sta_switch_wf5").style.display = "none";
+					document.getElementById("sta_switch_LAN").style.display = "none";
+					document.getElementById("sta_Internet_chart").style.display = "";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "";
+					document.getElementById("wf24_info").style.display = "none";
+					document.getElementById("wf5_info").style.display = "none";
+					document.getElementById("lan_info").style.display = "none";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "";
+	        		document.getElementById("x_internet_tab2").style.display = "";
+	        		document.getElementById("x_internet_tab3").style.display = "";
+	        		document.getElementById("x_internet_tab4").style.display = "";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+				case "LAN":
+					document.getElementById("sta_switch_Internet").style.display = "none";
+					document.getElementById("sta_switch_wf24").style.display = "none";
+					document.getElementById("sta_switch_wf5").style.display = "none";
+					document.getElementById("sta_switch_LAN").style.display = "";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "";
+					document.getElementById("internet_info").style.display = "none";
+					document.getElementById("wf24_info").style.display = "none";
+					document.getElementById("wf5_info").style.display = "none";
+					document.getElementById("lan_info").style.display = "";
+					document.getElementById("x_lan_tab1").style.display = "";
+	        		document.getElementById("x_lan_tab2").style.display = "";
+	        		document.getElementById("x_lan_tab3").style.display = "";
+	        		document.getElementById("x_lan_tab4").style.display = "";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+	        	case "wf24":
+					document.getElementById("sta_switch_Internet").style.display = "none";
+					document.getElementById("sta_switch_wf24").style.display = "";
+					document.getElementById("sta_switch_wf5").style.display = "none";
+					document.getElementById("sta_switch_LAN").style.display = "none";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "none";
+					document.getElementById("wf24_info").style.display = "";
+					document.getElementById("wf5_info").style.display = "none";
+					document.getElementById("lan_info").style.display = "none";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "";
+	        		document.getElementById("x_wf24_tab2").style.display = "";
+	        		document.getElementById("x_wf24_tab3").style.display = "";
+	        		document.getElementById("x_wf24_tab4").style.display = "";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+	        	case "wf5":
+					document.getElementById("sta_switch_Internet").style.display = "none";
+					document.getElementById("sta_switch_wf24").style.display = "none";
+					document.getElementById("sta_switch_wf5").style.display = "";
+					document.getElementById("sta_switch_LAN").style.display = "none";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "none";
+					document.getElementById("wf24_info").style.display = "none";
+					document.getElementById("wf5_info").style.display = "";
+					document.getElementById("lan_info").style.display = "none";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "";
+	        		document.getElementById("x_wf5_tab2").style.display = "";
+	        		document.getElementById("x_wf5_tab3").style.display = "";
+	        		document.getElementById("x_wf5_tab4").style.display = "";
+	        		break;
+			}
+		}
+		else
+		{
+			switch (switch_case)
+			{
+				case "internet":
+					document.getElementById("sta_switch_Internet").style.display = "";
+					document.getElementById("sta_switch_wf24").style.display = "none";
+					document.getElementById("sta_switch_wf5").style.display = "none";
+					document.getElementById("sta_switch_LAN").style.display = "none";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "";
+					document.getElementById("wf24_info").style.display = "none";
+					document.getElementById("wf5_info").style.display = "none";
+					document.getElementById("lan_info").style.display = "none";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+				case "LAN":
+					document.getElementById("sta_switch_Internet").style.display = "none";
+					document.getElementById("sta_switch_wf24").style.display = "none";
+					document.getElementById("sta_switch_wf5").style.display = "none";
+					document.getElementById("sta_switch_LAN").style.display = "";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "none";
+					document.getElementById("wf24_info").style.display = "none";
+					document.getElementById("wf5_info").style.display = "none";
+					document.getElementById("lan_info").style.display = "";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+	        	case "wf24":
+					document.getElementById("sta_switch_Internet").style.display = "none";
+					document.getElementById("sta_switch_wf24").style.display = "";
+					document.getElementById("sta_switch_wf5").style.display = "none";
+					document.getElementById("sta_switch_LAN").style.display = "none";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "none";
+					document.getElementById("wf24_info").style.display = "";
+					document.getElementById("wf5_info").style.display = "none";
+					document.getElementById("lan_info").style.display = "none";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+	        	case "wf5":
+					document.getElementById("sta_switch_Internet").style.display = "none";
+					document.getElementById("sta_switch_wf24").style.display = "none";
+					document.getElementById("sta_switch_wf5").style.display = "";
+					document.getElementById("sta_switch_LAN").style.display = "none";
+					document.getElementById("sta_Internet_chart").style.display = "none";
+					document.getElementById("sta_wf24_chart").style.display = "none";
+					document.getElementById("sta_wf5_chart").style.display = "none";
+					document.getElementById("sta_LAN_chart").style.display = "none";
+					document.getElementById("internet_info").style.display = "none";
+					document.getElementById("wf24_info").style.display = "none";
+					document.getElementById("wf5_info").style.display = "";
+					document.getElementById("lan_info").style.display = "none";
+					document.getElementById("x_lan_tab1").style.display = "none";
+	        		document.getElementById("x_lan_tab2").style.display = "none";
+	        		document.getElementById("x_lan_tab3").style.display = "none";
+	        		document.getElementById("x_lan_tab4").style.display = "none";
+	        		document.getElementById("x_internet_tab1").style.display = "none";
+	        		document.getElementById("x_internet_tab2").style.display = "none";
+	        		document.getElementById("x_internet_tab3").style.display = "none";
+	        		document.getElementById("x_internet_tab4").style.display = "none";
+	        		document.getElementById("x_wf24_tab1").style.display = "none";
+	        		document.getElementById("x_wf24_tab2").style.display = "none";
+	        		document.getElementById("x_wf24_tab3").style.display = "none";
+	        		document.getElementById("x_wf24_tab4").style.display = "none";
+	        		document.getElementById("x_wf5_tab1").style.display = "none";
+	        		document.getElementById("x_wf5_tab2").style.display = "none";
+	        		document.getElementById("x_wf5_tab3").style.display = "none";
+	        		document.getElementById("x_wf5_tab4").style.display = "none";
+	        		break;
+			}
+		}
+	}
+	function clearData()
+	{
+		changeTimeoutAction();
+		
+		$("#Save_btn").hide();
+		$("#Save_Disable_btn").show();
+	
+		var soapAction = new SOAPAction();
+		var result = soapAction.sendSOAPAction("ClearStatistics", null);
+		result.done(function(obj)
+		{
+			firstRecord = 1;
+			$("#Save_btn").show();
+			$("#Save_Disable_btn").hide();
+		});
+	}
+</script>
+</head>
+
+<body>
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->	
+	  		<div id="info"> 
+				<div id="FunctionName"><script>I18N("h", "Statistics");</script></div>
+		    	<div id="wall"><img src="image/page_Statistic.png" alt="" width="195" height="119"/></div>
+		    	<div id="directions">
+		    		<script>I18N("h", "This page gives you various statistics about data transmitted and received by your router through the Internet, on your wired network (LAN), and through your wireless networks.");</script>
+		    		<label id="Get_Help" onClick="showOnlineHelp('Statistics');" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+		    	</div>
+			</div>
+			<!-------------------- funcBar ---------------------->
+			<div id="funcBar">		
+				<div id="pagePath"><script>I18N("h", "Management");</script> >> <script>I18N("h", "Statistics");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="clearData()" style="cursor:pointer"><script>I18N("h", "Clear");</script></div></li> 
+					<li style="display:block"><div id="Save_Disable_btn" style="display:none"><script>I18N("h", "Clear");</script></div></li>
+				</ul>
+			</div>
+			<!-------------------- main ---------------------->
+			<div id="main">
+				<div id="sta_switch_Internet" style="font-size:0px;">
+					<table cellspacing="0" cellpadding="0" border="0"><tr>
+						<td><div id="internet_selected" class="statistics_tab_selected"><script>I18N("h", "Internet");</script></div></td>
+						<td><div id="lan_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('LAN')"><script>I18N("h", "LAN");</script></div></td>
+						<td><div id="wf24_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('wf24')"><script>I18N("h", "Wi-Fi 2.4GHz");</script></div></td>
+						<td><div id="wf5_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('wf5')"><script>I18N("h", "Wi-Fi 5GHz");</script></div></td>
+					</tr></table>
+				</div>
+				<div id="sta_switch_LAN" style="display:none">
+					<table cellspacing="0" cellpadding="0" border="0"><tr>
+						<td><div id="internet_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('internet')"><script>I18N("h", "Internet");</script></div></td>
+						<td><div id="lan_selected" class="statistics_tab_selected"><script>I18N("h", "LAN");</script></div></td>
+						<td><div id="wf24_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('wf24')"><script>I18N("h", "Wi-Fi 2.4GHz");</script></div></td>
+						<td><div id="wf5_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('wf5')"><script>I18N("h", "Wi-Fi 5GHz");</script></div></td>
+					</tr></table>
+				</div>
+				<div id="sta_switch_wf24" style="display:none">
+					<table cellspacing="0" cellpadding="0" border="0"><tr>
+						<td><div id="internet_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('internet')"><script>I18N("h", "Internet");</script></div></td>
+						<td><div id="lan_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('LAN')"><script>I18N("h", "LAN");</script></div></td>
+						<td><div id="wf24_selected" class="statistics_tab_selected"><script>I18N("h", "Wi-Fi 2.4GHz");</script></div></td>
+						<td><div id="wf5_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('wf5')"><script>I18N("h", "Wi-Fi 5GHz");</script></div></td>
+					</tr></table>
+				</div>
+				<div id="sta_switch_wf5" style="display:none">
+					<table  cellspacing="0" cellpadding="0" border="0"><tr>
+						<td><div id="internet_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('internet')"><script>I18N("h", "Internet");</script></div></td>
+						<td><div id="lan_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('LAN')"><script>I18N("h", "LAN");</script></div></td>
+						<td><div id="wf24_non_selected" class="statistics_tab_non_selected" onclick="tab_switch('wf24')"><script>I18N("h", "Wi-Fi 2.4GHz");</script></div></td>
+						<td><div id="wf5_selected" class="statistics_tab_selected"><script>I18N("h", "Wi-Fi 5GHz");</script></div></td>
+					</tr></table>
+				</div>
+				<div id="sta_Internet_chart">
+					<table class="" ondragstart="return false" onselectstart="return false">
+						<tbody>
+							<tr>
+								<td><canvas id="cvs_Internet" width="750" height="300">[No canvas support]</canvas></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<center><div id="NotSupport_Message" style="display:none"><label style="color:#FF0000"><script>I18N("h", "Information: Your browser is not support HTML5, please upgrade your browser.");</script></label></div></center>
+				<div id="internet_info">
+				<table id="tb_internet" bordercolor="#4598aa" border="0" width="800" style='table-layout:fixed;border-collapse: collapse;'>
+					<tr>
+						<td></td>
+							<td><script>I18N("h", "Total Packets");</script></td>
+							<td><script>I18N("h", "Total KByte(s)");</script></td>
+							<td><script>I18N("h", "KByte/sec");</script></td>
+						<td></td>
+					</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#0000ff"><strong><script>I18N("h", "Sent (Tx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="internet_tx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="internet_tx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="internet_tx_rate">0</span></td>
+							<td><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td><strong><font color="#4598aa"><script>I18N("h", "Session");</script></font></strong></td></tr></table></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#ff0000"><strong><script>I18N("h", "Received (Rx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="internet_rx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="internet_rx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="internet_rx_rate">0</span></td>
+							<td style="float: center;"	>
+								<div><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td td style="border: 2px solid #4598aa;"><span id="wan_session">0</span></td></tr></table></div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<div id="sta_LAN_chart" style="display:none">
+					<table class="" ondragstart="return false" onselectstart="return false">
+						<tbody>
+							<tr>
+								<td><canvas id="cvs_LAN" width="750" height="300">[No canvas support]</canvas></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div id="lan_info" style="display:none">
+					<table id="tb_lan" bordercolor="#4598aa" border="0" width="800" style='table-layout:fixed;border-collapse: collapse;'>
+						<tr>
+						<td></td>
+							<td><script>I18N("h", "Total Packets");</script></td>
+							<td><script>I18N("h", "Total KByte(s)");</script></td>
+							<td><script>I18N("h", "KByte/sec");</script></td>
+						<td></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#0000ff"><strong><script>I18N("h", "Sent (Tx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="lan_tx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="lan_tx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="lan_tx_rate">0</span></td>
+							<td><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td><strong><font color="#4598aa"><script>I18N("h", "Session");</script></font></strong></td></tr></table></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#ff0000"><strong><script>I18N("h", "Received (Rx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="lan_rx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="lan_rx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="lan_rx_rate">0</span></td>
+							<td style="float: center;"	>
+								<div><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td td style="border: 2px solid #4598aa;"><span id="lan_session">0</span></td></tr></table></div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<div id="sta_wf24_chart" style="display:none">
+					<table class="" ondragstart="return false" onselectstart="return false">
+						<tbody>
+							<tr>
+								<td><canvas id="cvs_WiFi24" width="750" height="300">[No canvas support]</canvas></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div id="wf24_info" style="display:none">
+					<table id="tb_wf24" bordercolor="#4598aa" border="0" width="800" style='table-layout:fixed;border-collapse: collapse;'>
+						<tr>
+						<td></td>
+							<td><script>I18N("h", "Total Packets");</script></td>
+							<td><script>I18N("h", "Total KByte(s)");</script></td>
+							<td><script>I18N("h", "KByte/sec");</script></td>
+						<td></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#0000ff"><strong><script>I18N("h", "Sent (Tx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf24_tx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf24_tx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf24_tx_rate">0</span></td>
+							<td><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td><strong><font color="#4598aa"><script>I18N("h", "Session");</script></font></strong></td></tr></table></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#ff0000"><strong><script>I18N("h", "Received (Rx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf24_rx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf24_rx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf24_rx_rate">0</span></td>
+							<td style="float: center;"	>
+								<div><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td td style="border: 2px solid #4598aa;"><span id="wifi24_session">0</span></td></tr></table></div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<div id="sta_wf5_chart" style="display:none">
+					<table class="" ondragstart="return false" onselectstart="return false">
+						<tbody>
+							<tr>
+								<td><canvas id="cvs_WiFi5" width="750" height="300">[No canvas support]</canvas></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div id="wf5_info" style="display:none">
+					<table id="tb_wf5" bordercolor="#4598aa" border="0" width="800" style='table-layout:fixed;border-collapse: collapse;'>
+						<tr>
+						<td></td>
+							<td><script>I18N("h", "Total Packets");</script></td>
+							<td><script>I18N("h", "Total KByte(s)");</script></td>
+							<td><script>I18N("h", "KByte/sec");</script></td>
+						<td></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#0000ff"><strong><script>I18N("h", "Sent (Tx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf5_tx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf5_tx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf5_tx_rate">0</span></td>
+							<td><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td><strong><font color="#4598aa"><script>I18N("h", "Session");</script></font></strong></td></tr></table></td>
+						</tr>
+						<tr>
+							<td style="text-align: center;"><font color="#ff0000"><strong><script>I18N("h", "Received (Rx)");</script>:</strong></font></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf5_rx_pkt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf5_rx_dropt">0</span></td>
+							<td style="border: 2px solid #4598aa;"><span id="wf5_rx_rate">0</span></td>
+							<td style="float: center;"	>
+								<div><table bordercolor="#4598aa" border="0" width="80" height="35" align="center" style="text-align: center;"><tr><td td style="border: 2px solid #4598aa;"><span id="wifi5_session">0</span></td></tr></table></div>
+							</td>
+						</tr>
+					</table>
+				</div>
+				<div id="x_lan_tab1" style="display:none"><span id="rate_lan_tab1">100</span> KB/s</div>
+				<div id="x_lan_tab2" style="display:none"><span id="rate_lan_tab2">75</span> KB/s</div>
+				<div id="x_lan_tab3" style="display:none"><span id="rate_lan_tab3">50</span> KB/s</div>
+				<div id="x_lan_tab4" style="display:none"><span id="rate_lan_tab4">25</span> KB/s</div>
+				<div id="x_internet_tab1"><span id="rate_internet_tab1">100</span> KB/s</div>
+				<div id="x_internet_tab2"><span id="rate_internet_tab2">75</span> KB/s</div>
+				<div id="x_internet_tab3"><span id="rate_internet_tab3">50</span> KB/s</div>
+				<div id="x_internet_tab4"><span id="rate_internet_tab4">25</span> KB/s</div>
+				<div id="x_wf24_tab1" style="display:none"><span id="rate_wf24_tab1">100</span> KB/s</div>
+				<div id="x_wf24_tab2" style="display:none"><span id="rate_wf24_tab1">75</span> KB/s</div>
+				<div id="x_wf24_tab3" style="display:none"><span id="rate_wf24_tab1">50</span> KB/s</div>
+				<div id="x_wf24_tab4" style="display:none"><span id="rate_wf24_tab1">25</span> KB/s</div>
+				<div id="x_wf5_tab1" style="display:none"><span id="rate_wf5_tab1">100</span> KB/s</div>
+				<div id="x_wf5_tab2" style="display:none"><span id="rate_wf5_tab2">75</span> KB/s</div>
+				<div id="x_wf5_tab3" style="display:none"><span id="rate_wf5_tab3">50</span> KB/s</div>
+				<div id="x_wf5_tab4" style="display:none"><span id="rate_wf5_tab4">25</span> KB/s</div>
+				<div id="x_tab5"><span id="rate_tab5">0</span> KB/s</div>
+				<br>
+			</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+</body>
+<script type="text/javascript">
+	$(document).ready(function(){
+		if (DetectBrowserMessage != 0)	{	init();	}
+		HNAP.SetXMLAsync("GetMultipleHNAPs", xml_GetMultipleHNAPs, function(xml) {get_XmlFile(xml);});
+		if (DetectBrowserMessage != 0)	{	do_Draw_Graph();	}
+		if (DetectBrowserMessage == 0)
+		{
+			document.getElementById("NotSupport_Message").style.display = "";
+			document.getElementById("sta_switch_Internet").style.display = "";
+			document.getElementById("sta_switch_wf24").style.display = "none";
+			document.getElementById("sta_switch_wf5").style.display = "none";
+			document.getElementById("sta_switch_LAN").style.display = "none";
+			document.getElementById("sta_Internet_chart").style.display = "none";
+			document.getElementById("sta_wf24_chart").style.display = "none";
+			document.getElementById("sta_wf5_chart").style.display = "none";
+			document.getElementById("sta_LAN_chart").style.display = "none";
+			document.getElementById("internet_info").style.display = "";
+			document.getElementById("wf24_info").style.display = "none";
+			document.getElementById("wf5_info").style.display = "none";
+			document.getElementById("lan_info").style.display = "none";
+			document.getElementById("x_lan_tab1").style.display = "none";
+			document.getElementById("x_lan_tab2").style.display = "none";
+			document.getElementById("x_lan_tab3").style.display = "none";
+			document.getElementById("x_lan_tab4").style.display = "none";
+			document.getElementById("x_internet_tab1").style.display = "none";
+			document.getElementById("x_internet_tab2").style.display = "none";
+			document.getElementById("x_internet_tab3").style.display = "none";
+			document.getElementById("x_internet_tab4").style.display = "none";
+			document.getElementById("x_wf24_tab1").style.display = "none";
+			document.getElementById("x_wf24_tab2").style.display = "none";
+			document.getElementById("x_wf24_tab3").style.display = "none";
+			document.getElementById("x_wf24_tab4").style.display = "none";
+			document.getElementById("x_wf5_tab1").style.display = "none";
+			document.getElementById("x_wf5_tab2").style.display = "none";
+			document.getElementById("x_wf5_tab3").style.display = "none";
+			document.getElementById("x_wf5_tab4").style.display = "none";
+			document.getElementById("x_tab5").style.display = "none";
+		}	
+
+		Load_HTML();
+		Initial();
+		setMenu("menu_Management");
+		CheckNetworkStatus();
+		startTimeout();
+	});
+</script>
+</html>

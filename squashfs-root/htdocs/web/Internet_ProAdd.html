@@ -1,0 +1,1521 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="css/style_pages.css" media="all" />
+<link href="css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="./js/comm.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hmac_md5.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/libajax.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hnap.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/i18n.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/pagetool.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery.selectbox-0.2_new.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery.validate.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/includeLang.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/messageDescription.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/checkTimeout.js"></script>
+
+<script type="text/javascript">
+
+	/* set select box style */
+	$(function ()
+	{
+		$("#address_mode_pppoe").selectbox();
+		$("#reconnect_mode_pppoe").selectbox();
+		$("#reconnect_mode_wifi_usb").selectbox();
+		$("#authp_wifi_usb").selectbox();
+		$("#country_wifi_usb").selectbox();
+		$("#security_hotspot_client").selectbox();
+		$("#clone_mac_ip").selectbox();
+		$("#pwl_hotspot_client").selectbox();
+	});
+	
+	function Load_HTML()
+	{ 
+		$("#header").load("header.html");
+	}
+	
+	/* init menu */
+	function Initial() 
+	{ 
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	
+	/* init header */
+	function Load_HTML() { $("#header").load("header.html"); }
+	
+	/* get url parameter */
+	var url = window.location.toString();
+	var proname = "";
+	var method = "";
+	var type = "";
+	if(url.indexOf("?") != -1)
+	{
+		var para = url.split("?");
+		for(var i=0; i<para.length; i++)
+		{
+			if(para[i].indexOf("=") != -1)
+			{
+				if(para[i].indexOf("&") != -1)
+				{
+					var subpara = para[i].split("&");
+					var arg_m = subpara[0].split("=");
+					if(arg_m[0]=="method") method = decodeURIComponent(arg_m[1]);
+					var arg_p = subpara[1].split("=");
+					if(arg_p[0]=="profile") proname = decodeURIComponent(arg_p[1]);
+				}
+				else
+				{
+					var arg = para[i].split("=");
+					if(arg[0]=="method") method = decodeURIComponent(arg[1]);
+				}
+			}
+		}
+	}
+	
+	//---------- start of tools for page
+	//get element by id
+	function OBJ(id)
+	{
+		if		(document.getElementById) return document.getElementById(id);
+		else if	(document.all) return document.all[id].style;
+		else if	(document.layers) return document.layers[id];
+		else return false;
+	}
+	//set select value
+	function set_select_value(obj, value)
+	{
+		for (var i=0; i < obj.length; i+=1)
+			if (obj[i].value == value)
+			{
+				obj.selectedIndex = i;
+				break;
+			}
+		return obj.selectedIndex;
+	}
+	//add select option
+	function add_select_option(obj, value, text)
+	{
+		var Option_Exist = false;
+		for(var i=0; i < obj.length; i++)
+		{ 
+			if(obj.options[i].value == value)
+			{
+				Option_Exist = true;
+				break;
+			}
+		}
+		if(!Option_Exist)
+		{
+			var new_option = new Option(text, value); 
+			obj.options.add(new_option);				
+		}
+	}
+	//remove options
+	function remove_opt(obj)
+	{
+		if (obj == null) return;
+		if (obj.options == null) return;
+		obj.options.length = 0;
+	}
+	
+	var selected_ssid = null;
+	var def_security = null;
+	function InjectTable(tblID, uid, data, type)
+	{
+		var rows = OBJ(tblID).getElementsByTagName("tr");
+		var tagTR = null;
+		var tagTD = null;
+		var i;
+		var str;
+		var found = false;
+		selected_ssid = null;
+		def_security = null;
+		
+		/* Search the rule by UID. */
+		for (i=0; !found && i<rows.length; i++) if (rows[i].id == uid) found = true;
+		if (found)
+		{
+			for (i=0; i<data.length; i++)
+			{
+				tagTD = OBJ(uid+"_"+i);
+				switch (type[i])
+				{
+					case "text":
+						str = data[i];
+						if(typeof(tagTD.innerText) !== "undefined")	tagTD.innerText = str;
+						else if(typeof(tagTD.textContent) !== "undefined")	tagTD.textContent = str;
+						else	tagTD.innerHTML = str;
+						break;	
+					default:
+						str = data[i];
+						tagTD.innerHTML = str;
+						break;
+				}
+			}
+			return;
+		}
+	
+		/* Add a new row for this entry */
+		tagTR = OBJ(tblID).insertRow(rows.length);
+		tagTR.id = uid;
+		
+		tagTR.onclick = function (evt)
+		{
+			selected_ssid = data[0]; //ssid
+			if(data[3]=="NONE") def_security = "NONE";
+			else if(data[3].indexOf("WEP") == 0) def_security = "WEP";
+			else def_security = "WPA+2PSK";
+			ChangeBgcolor(tblID, uid);
+		};
+		
+		/* save the rule in the table */
+		for (i=0; i<data.length-1; i++)
+		{
+			tagTD = tagTR.insertCell(i);
+			tagTD.id = uid+"_"+i;
+			tagTD.className = "content";
+
+			switch (type[i])
+			{
+				case "text":
+					str = data[i];
+					if(typeof(tagTD.innerText) !== "undefined")	tagTD.innerText = str;
+					else if(typeof(tagTD.textContent) !== "undefined")	tagTD.textContent = str;
+					else	tagTD.innerHTML = str;
+					break;
+				default:
+					str = data[i];
+					tagTD.innerHTML = str; 
+					break;
+			}
+		}
+	}
+	
+	function CleanTable(tblID)
+	{
+		table = OBJ(tblID);
+		var rows = table.getElementsByTagName("tr");
+		while (rows.length > 1) table.deleteRow(rows.length - 1);
+	}
+	//---------- end of tools for page
+	
+	function pro_show_general(opt)
+	{
+		switch(opt)
+		{
+			case "DHCP":
+				OBJ("general_dhcp").style.display = "block";
+				OBJ("general_pppoe").style.display = "none";
+				OBJ("general_wifi_usb").style.display = "none";
+				OBJ("general_hotspot_client").style.display = "none";
+				OBJ("general_static").style.display = "none";
+				OBJ("advanced_str").style.display = "none";
+				break;
+			case "PPPoE":
+				OBJ("general_dhcp").style.display = "none";
+				OBJ("general_pppoe").style.display = "block";
+				OBJ("general_wifi_usb").style.display = "none";
+				OBJ("general_hotspot_client").style.display = "none";
+				OBJ("general_static").style.display = "none";
+				OBJ("advanced_str").style.display = "block";
+				break;
+			case "USB3G":
+				OBJ("general_dhcp").style.display = "none";
+				OBJ("general_pppoe").style.display = "none";
+				OBJ("general_wifi_usb").style.display = "block";
+				OBJ("general_hotspot_client").style.display = "none";
+				OBJ("general_static").style.display = "none";
+				OBJ("advanced_str").style.display = "block";
+				break;
+			case "WISP":
+				OBJ("general_dhcp").style.display = "none";
+				OBJ("general_pppoe").style.display = "none";
+				OBJ("general_wifi_usb").style.display = "none";
+				OBJ("general_hotspot_client").style.display = "block";
+				OBJ("general_static").style.display = "none";
+				OBJ("advanced_str").style.display = "none";
+				break;
+			case "STATIC":
+				OBJ("general_dhcp").style.display = "none";
+				OBJ("general_pppoe").style.display = "none";
+				OBJ("general_wifi_usb").style.display = "none";
+				OBJ("general_hotspot_client").style.display = "none";
+				OBJ("general_static").style.display = "block";
+				OBJ("advanced_str").style.display = "block";
+				break;
+		}
+		OBJ("advanced_pppoe").style.display = "none";
+		OBJ("advanced_wifi_usb").style.display = "none";
+		OBJ("advanced_static").style.display = "none";
+	}
+	
+	function pro_show_advanced()
+	{
+		var mode = null;
+		if (method == "add") mode = OBJ("pro_type").value;
+		else if (method == "edit") mode = type;
+		switch(mode)
+		{
+			case "PPPoE":
+				showAdv("advanced_pppoe");
+				break;
+			case "USB3G":
+				showAdv("advanced_wifi_usb");
+				break;
+			case "WISP":
+				break;
+			case "STATIC":
+				showAdv("advanced_static");
+				break;
+		}
+	}
+	
+	function pppoe_mode_type(mode)
+	{
+		switch(mode)
+		{
+			case "DYNAMICIP":
+				OBJ("ipaddr_tr").style.display = "none";
+				break;
+			case "STATICIP":
+				OBJ("ipaddr_tr").style.display = "table-row";
+				break;
+		}
+	}
+
+	function recmode_type(id, mode)
+	{
+		switch (mode)
+		{
+			case "alwayson":
+			case "manual":
+				OBJ(id).style.display = "none";
+				break;
+			case "ondemand":
+				OBJ(id).style.display = "table-row";
+				break;
+		}
+	}
+	
+	function security_mode(mode)
+	{
+		switch (mode)
+		{
+			case "NONE":
+				OBJ("pwl_tr").style.display = "none";
+				OBJ("passwd_tr").style.display = "none";
+				break;
+			case "WEP":
+				OBJ("pwl_tr").style.display = "table-row";
+				OBJ("passwd_tr").style.display = "table-row";
+				break;
+			case "WPAPSK":
+			case "WPA2PSK":
+			case "WPA+2PSK":
+				OBJ("pwl_tr").style.display = "none";
+				OBJ("passwd_tr").style.display = "table-row";
+				break;
+		}
+	}
+	
+	var dhcp_mac = null;
+	function select_mac_addr(element, status)
+	{
+		if (status == 0)
+			OBJ("mac_ipaddr").value = dhcp_mac;
+		else
+			OBJ("mac_ipaddr").value = element.options[status].text;
+	}
+	
+	function ChangeBgcolor(tblID, uid)
+	{
+		var elts = OBJ(tblID).getElementsByTagName("tr");
+		for(var i=0;i<elts.length;i++)
+		{
+			var hotspot_id = elts[i].getAttribute("id");
+			if(hotspot_id==uid)
+			  OBJ(uid).style.backgroundColor = "#CCC";
+			else
+				OBJ(hotspot_id).style.backgroundColor = "#FFF";
+	  }
+	}
+	
+	function OnClickSelect()
+	{
+		$("#security_hotspot_client").selectbox("detach");
+		OBJ("ssid_hotspot_client").value = selected_ssid;
+		set_select_value(OBJ("security_hotspot_client"), def_security);
+		security_mode(def_security);
+		$("#security_hotspot_client").selectbox();
+		OBJ("CreatePopAlertMessage").style.display = "none";
+		OBJ("scan_waiting").style.display = "none";
+		OBJ("scan_list").style.display = "none";
+	}
+	
+	function OnClickScan()
+	{
+		$("#security_hotspot_client").selectbox("detach");
+		OBJ("CreatePopAlertMessage").style.display = "block";
+		OBJ("scan_waiting").style.display = "block";
+		OBJ("ssid_hotspot_client").value = null;
+		set_select_value(OBJ("security_hotspot_client"), "NONE");
+		security_mode("NONE");
+		$("#security_hotspot_client").selectbox();
+		
+		var xml_SetTriggerWirelessSiteSurvey = HNAP.GetXML("SetTriggerWirelessSiteSurvey");
+		xml_SetTriggerWirelessSiteSurvey.Set("SetTriggerWirelessSiteSurvey/RadioID", "RADIO_2.4GHz");
+		var xml_SetTriggerWirelessSiteSurveyResult = HNAP.SetXML("SetTriggerWirelessSiteSurvey", xml_SetTriggerWirelessSiteSurvey);
+		var wait_time = xml_SetTriggerWirelessSiteSurveyResult.Get("SetTriggerWirelessSiteSurveyResponse/WaitTime");
+		var sitesurvey_result = xml_SetTriggerWirelessSiteSurveyResult.Get("SetTriggerWirelessSiteSurveyResponse/SetTriggerWirelessSiteSurveyResult");
+		
+		setTimeout("ShowSiteSurveyLists(\""+sitesurvey_result+"\")", wait_time*1000);
+	}
+	
+	function close_hotspot_list()
+	{
+		OBJ("CreatePopAlertMessage").style.display = "none";
+		OBJ("scan_waiting").style.display = "none";
+		OBJ("scan_list").style.display = "none";
+	}
+	
+	function reload_hotspot_list()
+	{
+		OBJ("CreatePopAlertMessage").style.display = "block";
+		OBJ("scan_list").style.display = "none";
+		OBJ("scan_waiting").style.display = "block";
+		OBJ("ssid_hotspot_client").value = null;
+		
+		var xml_SetTriggerWirelessSiteSurvey = HNAP.GetXML("SetTriggerWirelessSiteSurvey");
+		xml_SetTriggerWirelessSiteSurvey.Set("SetTriggerWirelessSiteSurvey/RadioID", "RADIO_2.4GHz");
+		var xml_SetTriggerWirelessSiteSurveyResult = HNAP.SetXML("SetTriggerWirelessSiteSurvey", xml_SetTriggerWirelessSiteSurvey);
+		var wait_time = xml_SetTriggerWirelessSiteSurveyResult.Get("SetTriggerWirelessSiteSurveyResponse/WaitTime");
+		var sitesurvey_result = xml_SetTriggerWirelessSiteSurveyResult.Get("SetTriggerWirelessSiteSurveyResponse/SetTriggerWirelessSiteSurveyResult");
+		
+		setTimeout("ShowSiteSurveyLists(\""+sitesurvey_result+"\")", wait_time*1000);
+		
+		//setTimeout("ShowSiteSurveyLists()", 2000);
+	}
+	
+	var HNAP = new HNAP_XML();
+	var xml_GetISPList = HNAP.GetXML("GetISPListAlpha");
+	var total_isp = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList#");
+	
+	function Array2DVar(x, y)
+	{
+		this.length = x;
+		this.x = x;
+		this.y = y;
+		for(var i = 0; i < this.length; i++)
+		{
+			this[i] = new Array(y);
+		}
+	}
+	
+	function InitClientInfo()
+	{
+		var xml_GetClientinfo = HNAP.GetXML("GetClientInfo");
+		var count = 0;
+		var Total_EthernetClients = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo#");
+		array2Dv = new Array2DVar(Total_EthernetClients, 1);
+		
+		for (var i = 1; i <= Total_EthernetClients; i ++)
+		{
+			array2Dv[count][0] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/MacAddress");
+			clone_mac_ip.options.add(new Option(array2Dv[count][0], i));
+			count ++;
+		}
+	}
+	
+	function InitCountryList()
+	{
+		var countryArr = new Array();
+		for(var i=0; i<total_isp; i++)
+		{
+			var country = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+i+"/Country");
+			countryArr.push(country);
+		}
+		
+		countryArr.sort();
+		countryArr.push("Others");
+		for(var i=0; i<countryArr.length; i++)
+			add_select_option(OBJ("country_wifi_usb"), countryArr[i], countryArr[i]);
+	}
+
+	function OnChangeCountryList(opt)
+	{
+		var entry, isp_cnt;
+		var ispArr = new Array();
+
+		remove_opt(OBJ("isp_wifi_usb"));
+		$("#isp_wifi_usb").selectbox("detach");
+
+		for(var i=0; i<total_isp; i++)
+		{
+			var country = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+i+"/Country");
+			if(opt==country)
+			{
+				isp_cnt = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+i+"/ISPList#");
+				entry = i;
+				break;
+			}
+		}
+		for(var j=1; j<=isp_cnt; j++)
+		{
+			var isp = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+entry+"/ISPList:"+j+"/ProfileName");
+			ispArr.push(isp);
+		}
+		
+		ispArr.sort();
+		for(var i=0; i<ispArr.length; i++)
+			add_select_option(OBJ("isp_wifi_usb"), ispArr[i], ispArr[i]);
+			
+		if(opt!="Others")
+		{
+			OBJ("isp_wifi_usb_tr").style.display = "table-row";
+			$("#isp_wifi_usb").selectbox();
+		}
+		else
+			OBJ("isp_wifi_usb_tr").style.display = "none";
+	}
+	
+	function EventSiteSurveyList()
+	{
+		var xml_SetTriggerWirelessSiteSurvey = HNAP.GetXML("SetTriggerWirelessSiteSurvey");
+		xml_SetTriggerWirelessSiteSurvey.Set("SetTriggerWirelessSiteSurvey/RadioID", "RADIO_2.4GHz");
+		var xml_SetTriggerWirelessSiteSurveyResult = HNAP.SetXMLAsync("SetTriggerWirelessSiteSurvey", xml_SetTriggerWirelessSiteSurvey);
+		alert(xml_SetTriggerWirelessSiteSurveyResult.Get("SetTriggerWirelessSiteSurveyResponse/SetTriggerWirelessSiteSurveyResult"));
+		
+		return res;
+	}
+	
+	var total_lists_24g = 0;
+	var total_lists_5g = 0;
+	var total_sslists = 0;
+	var list_arr = new Array();
+	var h=0;
+	
+	function ShowSiteSurveyLists(sitesurvey_result)
+	{
+		CleanTable("content_tb");
+		
+		if(sitesurvey_result=="OK")
+		{
+			setTimeout('AddSiteSurveyLists("RADIO_5GHz")', 1000);
+			setTimeout('AddSiteSurveyLists("RADIO_2.4GHz")', 1000);
+			setTimeout('DrawSiteSurveyList()', 3000);
+		}
+		else
+			setTimeout('EventSiteSurveyList()', 2000);
+	}
+	
+	function AddSiteSurveyLists(radioid)
+	{
+		var xml_GetSiteSurveyList = HNAP.GetXML("GetSiteSurvey", new Array("RadioID", radioid));
+		var total_lists = xml_GetSiteSurveyList.Get("GetSiteSurveyResponse/APStatInfoLists/APStatInfo#");
+
+		for (var i=1; i<=total_lists; i++)
+		{
+			var hotspot_rssi = xml_GetSiteSurveyList.Get("GetSiteSurveyResponse/APStatInfoLists/APStatInfo:"+i+"/SignalStrength")
+			var hotspot_security = xml_GetSiteSurveyList.Get("GetSiteSurveyResponse/APStatInfoLists/APStatInfo:"+i+"/SupportedSecurity/SecurityInfo/SecurityType");
+			
+			var security = null;
+			var rssi = null;
+			
+			if(hotspot_security!="NONE")
+				security = '<img src="image/wisp_security.png" width="12" height="21"/>';
+			else
+				security = null;
+			
+			if(parseInt(hotspot_rssi)<=35)
+				rssi = '<img src="image/wisp_strength_low.png" width="25" height="20"/>';
+			else if(parseInt(hotspot_rssi)<=70 && parseInt(hotspot_rssi)>35)
+				rssi = '<img src="image/wisp_strength_medium.png" width="25" height="20"/>';
+			else if(parseInt(hotspot_rssi)<=100 && parseInt(hotspot_rssi)>70)
+				rssi = '<img src="image/wisp_strength_high.png" width="25" height="20"/>';
+			
+			list_arr[h] = {
+					ssid: xml_GetSiteSurveyList.Get("GetSiteSurveyResponse/APStatInfoLists/APStatInfo:"+i+"/SSID"),
+					rssi_img: rssi,
+					sec_img: security,
+					sec_type:	hotspot_security
+			};
+			h++;
+		}
+	}
+	
+	function DrawSiteSurveyList()
+	{
+		var random_num = Math.floor((Math.random()*10)+1);
+		for (var i=0; i<list_arr.length; i++)
+		{
+			var ssid = list_arr[i].ssid;
+			var rssi_img = list_arr[i].rssi_img;
+			var sec_img = list_arr[i].sec_img;
+			var security = list_arr[i].sec_type;
+			
+			var data = [ssid, rssi_img, sec_img, security];
+			var type = ["text", "img", "img", "text"];
+			InjectTable("content_tb", "hotspot"+random_num+"-"+i, data, type);
+		}
+		OBJ("CreatePopAlertMessage").style.display = "block";
+		OBJ("scan_waiting").style.display = "none";
+		OBJ("scan_list").style.display = "block";
+		h=0;
+	}
+	
+	function OnChangeISPList(opt)
+	{
+		var entry, isp_cnt, entry_isp;
+		var s_country = OBJ("country_wifi_usb").value;
+		for(var i=0; i<total_isp; i++)
+		{
+			var country = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+i+"/Country");
+			if(s_country==country)
+			{
+				isp_cnt = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+i+"/ISPList#");
+				entry = i;
+				break;
+			}
+		}
+		for(var j=1; j<=isp_cnt; j++)
+		{
+			var isp = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+entry+"/ISPList:"+j+"/ProfileName");
+			if(opt==isp)
+			{
+				entry_isp = j;
+				break;
+			}
+		}
+		
+		OBJ("dialno_wifi_usb").value = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+entry+"/ISPList:"+entry_isp+"/DialNumber");
+		OBJ("apn_wifi_usb").value = xml_GetISPList.Get("GetISPListAlphaResponse/CountryList:"+entry+"/ISPList:"+entry_isp+"/APN");
+	}
+	
+	var pro_name = null;
+	var connect_text = null;
+	var init_type = null;
+	var xml_GetSIMCardInfo = HNAP.GetXML("GetSIMCardInfoAlpha");
+	var pinsts = xml_GetSIMCardInfo.Get("GetSIMCardInfoAlphaResponse/PINsts");
+	function InitProInfo()
+	{
+		var xml_GetProInfo = HNAP.GetXML("GetInternetProfileAlpha");
+		var total_pro = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile#");
+		
+		switch(method)
+		{
+			case "add":
+				init_type = "USB3G";
+				OBJ("pro_type").style.display = "table-row";
+				set_select_value(OBJ("pro_type"),init_type);
+				$("#pro_type").selectbox();
+				
+				var defaultCountry = "Others";
+				set_select_value(OBJ("country_wifi_usb"), defaultCountry);
+				OnChangeCountryList(defaultCountry);
+				
+				var pin_status = null;
+				if(pinsts=="UNLOCKED") { pin_status = "Unlocked"; }
+				else if(pinsts=="READY") { pin_status = "Ready"; }
+				else if(pinsts=="ERROR") { pin_status = "PIN code error"; }
+				else if(pinsts=="NOSUPPORT") { pin_status = "No support"; }
+				else if(pinsts=="LOCKED") { pin_status = "Locked"; }
+				else if(pinsts=="PUK") { pin_status = "Locked by PUK"; }
+				else if(pinsts=="CHECKING") { pin_status = "Checking"; }
+				else { pin_status = "Unknown"; }
+				OBJ("sim_card_status").innerHTML = pin_status;
+				
+				break;
+			case "edit":
+				var entry = null;
+				for (var i=1; i<=total_pro; i++)
+				{
+					pro_name = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+i+"/ProfileName");
+					var pro_type = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+i+"/ProfileType");
+					if(proname == pro_name)
+					{
+						init_type = pro_type;
+						entry = i;
+						break;
+					}
+				}
+				if(init_type=="DHCP") OBJ("connect_tr").style.display = "none";
+				else if(init_type=="STATIC") connect_text = "Static IP";
+				else if(init_type=="PPPoE") connect_text = "xDSL Broadband (PPPoE)";
+				else if(init_type=="WISP") connect_text = "Wi-Fi Hotspot Client";
+				else if(init_type=="USB3G") connect_text = "3G/4G Wireless USB";
+					
+				OBJ("pro_type_div").innerHTML = "<b>"+connect_text+"</b>";
+				switch(init_type)
+				{
+					case "DHCP":
+						OBJ("host_name_dhcp").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/HostName");
+						dhcp_mac = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/MAC");
+						break;
+					case "STATIC":
+						OBJ("ipaddr_static").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/IPAddress");
+						OBJ("mask_static").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/SubnetMask");
+						OBJ("gw_static").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/Gateway");
+						OBJ("primary_dns_static").value =  xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/DNS/Primary");
+						OBJ("secondary_dns_static").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/DNS/Secondary");
+						OBJ("mtu_static").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/MTU");
+						break;
+					case "PPPoE":
+						OBJ("pro_name_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ProfileName");
+						OBJ("usr_name_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/UserName");
+						OBJ("passwd_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/Password");
+						
+						var addrmode = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/AddressMode");
+						var mode_type = null;
+						if(addrmode == "StaticPPPoE") { mode_type = "STATICIP"; }
+						else { mode_type = "DYNAMICIP"; }
+						set_select_value(OBJ("address_mode_pppoe"), mode_type);
+						pppoe_mode_type(mode_type);
+						
+						OBJ("ipaddr_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/IPAddress");
+						OBJ("service_name_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ServiceName");
+						OBJ("primary_dns_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/DNS/Primary");
+						OBJ("secondary_dns_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/DNS/Secondary");
+						
+						var dialmode = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ReconnectMode");
+						set_select_value(OBJ("reconnect_mode_pppoe"), dialmode);
+						recmode_type("reconnect_mode_pppoe", dialmode);
+						
+						OBJ("max_idle_time_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/MaxIdleTime");
+						OBJ("mtu_pppoe").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/MTU");
+						break;
+					case "WISP":
+						OBJ("ssid_hotspot_client").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ProfileName");
+						
+						var security = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/SecurityType");;
+						
+						if(security=="WEP")
+						{
+							var pwdtype = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/PasswordLength");;
+						}
+						$("#security_hotspot_client").selectbox("detach");
+						set_select_value(OBJ("pwl_hotspot_client"), pwdtype);
+						set_select_value(OBJ("security_hotspot_client"), security);
+						security_mode(security);
+						$("#security_hotspot_client").selectbox();
+						OBJ("passwd_hotspot_client").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/Password");
+						break;
+					case "USB3G":
+						OBJ("pro_name_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ProfileName");
+						var country = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/Country");
+						set_select_value(OBJ("country_wifi_usb"), country);
+						OnChangeCountryList(country);
+						
+						$("#isp_wifi_usb").selectbox("detach");
+						var isp = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ISP");
+						set_select_value(OBJ("isp_wifi_usb"), isp);
+						OnChangeISPList(isp);
+						$("#isp_wifi_usb").selectbox();
+						
+						OBJ("dialno_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/DialupNumber");
+						OBJ("apn_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/APN");
+
+						OBJ("usr_name_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/UserName");
+						OBJ("passwd_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/Password");
+						
+						var authp = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/AuthProtocol");
+						set_select_value(OBJ("authp_wifi_usb"), authp);
+						
+						var pin_status = null;
+						if(pinsts=="UNLOCKED") { pin_status = "Unlocked"; }
+						else if(pinsts=="READY") { pin_status = "Ready"; }
+						else if(pinsts=="ERROR") { pin_status = "PIN code error"; }
+						else if(pinsts=="NOSUPPORT") { pin_status = "No support"; }
+						else if(pinsts=="LOCKED") { pin_status = "Locked"; }
+						else if(pinsts=="PUK") { pin_status = "Locked by PUK"; }
+						else if(pinsts=="CHECKING") { pin_status = "Checking"; }
+						else { pin_status = "Unknown"; }
+						OBJ("sim_card_status").innerHTML = pin_status;
+						
+						var dialmode = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/ReconnectMode");
+						set_select_value(OBJ("reconnect_mode_wifi_usb"), dialmode);
+						recmode_type("wifi_usb_idle_time_tr", dialmode);
+						
+						OBJ("max_idle_time_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/MaxIdleTime");
+						OBJ("mtu_wifi_usb").value = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+entry+"/MTU");
+						break;
+				}
+				break;
+		}
+		pro_show_general(init_type);
+		type = init_type;
+	}
+	
+	function IsDigit(no)
+	{
+		if (no==""||no==null)
+			return false;
+		if (no.toString()!=parseInt(no, 10).toString())
+			return false;
+
+	    return true;
+	}
+	
+	function check_ip_validity(ipstr)
+	{
+		var vals = ipstr.split(".");
+		if (vals.length!=4) 
+			return false;
+		
+		for (var i=0; i<4; i++)
+		{
+			if (!IsDigit(vals[i]) || vals[i]>255)
+				return false;
+		}
+		return true;
+	}
+	
+	function SaveProInfo()
+	{
+		var xml_SetInternetProfile = HNAP.GetXML("SetInternetProfileAlpha");
+		var save_type = null;
+		if (method == "add") save_type = OBJ("pro_type").value;
+		else if(method == "edit") save_type = type;
+		
+		switch(save_type)
+		{
+			case "DHCP":
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileName", "DHCP Network");
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileType", save_type);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/HostName", OBJ("host_name_dhcp").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/MAC", OBJ("mac_ipaddr").value);
+				break;
+			case "STATIC":
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileName", "Static Network");
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileType", save_type);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/IPAddress", OBJ("ipaddr_static").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/SubnetMask", OBJ("mask_static").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/Gateway", OBJ("gw_static").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/DNS/Primary", OBJ("primary_dns_static").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/DNS/Secondary", OBJ("secondary_dns_static").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/MTU", OBJ("mtu_static").value);
+				break;
+			case "PPPoE":
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileName", OBJ("pro_name_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileType", save_type);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/UserName", OBJ("usr_name_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/Password", OBJ("passwd_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/AddressMode", OBJ("address_mode_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/IPAddress", OBJ("ipaddr_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ServiceName", OBJ("service_name_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ReconnectMode", OBJ("reconnect_mode_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/MaxIdleTime", OBJ("max_idle_time_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/DNS/Primary", OBJ("primary_dns_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/DNS/Secondary", OBJ("secondary_dns_pppoe").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/MTU", OBJ("mtu_pppoe").value);
+				
+				/* pppoe is a special case that it has only one profile, but it could modify profile name.
+					 we need to redirect the web to new url if user modify the profile name. */
+				if(method == "edit" && (pro_name!=OBJ("pro_name_pppoe").value)) window.location.href = "./Internet_ProAdd.html?method=edit&profile="+OBJ("pro_name_pppoe").value;
+				break;
+			case "WISP":
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileName", OBJ("ssid_hotspot_client").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileType", save_type);
+				
+				var security_type = OBJ("security_hotspot_client").value;
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/SecurityType", security_type);
+				
+				if(security_type=="WEP")
+				{
+					xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/PasswordLength", OBJ("pwl_hotspot_client").value);
+				}
+				
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/Password", OBJ("passwd_hotspot_client").value);
+				break;
+			case "USB3G":
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileName", OBJ("pro_name_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ProfileType", save_type);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/DialupNumber", OBJ("dialno_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/APN", OBJ("apn_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/Country", OBJ("country_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ISP", OBJ("isp_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/UserName", OBJ("usr_name_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/Password", OBJ("passwd_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/AuthProtocol", OBJ("authp_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/SIMCardStatus", pinsts);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ReconnectMode", OBJ("reconnect_mode_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/MaxIdleTime", OBJ("max_idle_time_wifi_usb").value);
+				xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/MTU", OBJ("mtu_wifi_usb").value);
+				break;
+		}
+		var xml_SetInternetProfileResult = HNAP.SetXML("SetInternetProfileAlpha", xml_SetInternetProfile);
+		document.getElementById("CreatePopAlertMessage2").style.display = "inline";
+		setTimeout('window.location.replace("./Internet_Pro.html")', 1000);
+	}
+	
+	// 2013/08/15 Timmy Add
+	$(function() {
+		$("input, textarea, select").change(function () {
+			changeFlag = true;
+			save_button_changed();
+		});
+	});
+	
+	function save_button_changed() {
+		document.getElementById("Save_Disable_btn").style.display = "none";
+		document.getElementById("Save_btn").style.display = "block";
+	}
+</script>
+<style>
+/* The CSS is only for this page. */
+.button_radius
+{
+	border-radius: 5px;
+	border: solid 1px #4394A7;
+	COLOR: #FFFFFF;
+	background-color:#4394A7;
+	width:80px;
+	height:30px;
+	text-align:center; 
+}
+.button_radius2
+{
+	border-radius: 5px;
+	background-color:#007086;
+	border: solid 1px #FFF;
+	color: #FFFFFF;
+	width:80px;
+	height:30px;
+	text-align:center; 
+}
+.scanPopBox
+{
+	position: relative;
+	top: 100px;
+	width: 331px;
+	height: auto;
+	margin: 0 auto;
+}
+.wait_scan_box
+{
+	position: relative;
+	text-align: center;
+	top: 100px;
+	left: 80px;
+  width: 222px;
+  height: 206px;
+  background: url("../image/wisp_loading.png") left top repeat-y;
+}
+.scan_lists_box
+{
+	border-radius: 10px;
+	position: relative;
+	top: 100px;
+	background-color:#007086;
+	border: solid 1px #FFF;
+	color: #FFF;
+	padding: 10px;
+	width: 331px;
+	height: auto;
+	text-align: left;
+}
+.content_div
+{
+	color: #333333;
+  background-color: #FFF;
+	width: 100%;
+  height: 250px;
+  overflow: auto;
+}
+div.emptyline
+{
+	height: 12px;
+}
+label.error
+{
+	background: url("./image/disconnected.png") no-repeat 0px 0px;
+	background-size: 16px 16px;
+	padding-left: 20px;
+	color: #FF0000;
+	margin: 0 0 0 5px;
+}
+</style>
+</head>
+
+<body>
+	<form id="internet_pro_form" method="POST" action="">
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<div id="menu"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->
+			<div id="info">
+				<div id="FunctionName"><script>I18N("h", "Internet Profiles");</script></div>
+				<div id="wallimage"><img src="image/internet_page.png" alt="" width="195" height="119"/></div>
+				<div id="directions">
+					<script>I18N("h", "Use this section to configure your Internet Connection profiles. If you are not sure what settings to use, please contact your Internet Service Provider.");</script>
+					<br />
+					<script>I18N("h","<b>Note</b>: If you are using a PPPoE connection, you will need to remove or disable any PPPoE client software running on your computers.")</script>
+				</div>
+			</div>
+			<!-------------------- funcBar ---------------------->   
+			<div id="funcBar">		
+				<div id="pagePath">&nbsp;<script>I18N("h", "Settings");</script> >> <script>I18N("h", "Internet Profiles");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="document.getElementById('sumbit_CheckData').click()" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li>
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+					<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+				</ul>
+			</div>
+			<!-------------------- main ---------------------->
+			<div id="main">
+				<table class="block" border="0"  style="margin: 0px;">
+				  <tbody>
+				  	 <tr id="connect_tr" style="display:block;">
+				      <th><script>I18N("h", "My Internet Connection is");</script>:</th>
+				      <td>
+								<div id="pro_type_div" class="styled-select">					       	
+									<select id="pro_type" onChange="pro_show_general(this.value);" style="display:none;">
+									 	<!--<option value="PPPoE">xDSL Broadband (PPPoE)</option>-->
+									 	<option value="USB3G">3G/4G Wireless USB</option>
+									 	<option value="WISP">Wi-Fi Hotspot Client</option>
+										<!--<option value="STATIC">Static IP</option>-->
+									</select>
+								</div>
+				      </td>
+				    </tr>
+				  </tbody>
+				</table>
+				<!--- start of general settings block --->
+				<!--- DHCP --->
+				<div id="general_dhcp" style="display:none;">
+					<table  class="block" border="0" >
+						<tbody>
+							<tr>
+								<th><script>I18N("h", "Host Name");</script>:</th>
+								<td><input class="styled-text" type="text" id="host_name_dhcp" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Mac Address Clone");</script>:</th>
+								<td><input class="styled-text" type="text" id="mac_ipaddr" size="27" ></td>
+								<td>
+									<div class="styled-select">
+									<select id="clone_mac_ip" onChange="select_mac_addr(this, this.value)">
+										<option value="0">&lt;&lt; Computer Name...</option>
+									</select>
+									</div>
+								</td>
+					    </tr>
+						</tbody>
+					</table>
+				</div>
+				<!--- PPPoE --->
+				<div id="general_pppoe" style="display:none;">
+					<table class="block">
+						<tbody>
+							<tr>
+								<th><script>I18N("h", "Profile Name");</script>:</th>
+								<td><input class="styled-text" type="text" id="pro_name_pppoe" name="pro_name_pppoe" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Username");</script>:</th>
+								<td><input class="styled-text" type="text" id="usr_name_pppoe" name="usr_name_pppoe" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Password");</script>:</th>
+								<td><input class="styled-text" type="password" id="passwd_pppoe" name="passwd_pppoe" size="27"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<!--- 3G/4G wireless USB --->
+				<div id="general_wifi_usb" style="display:none;">
+					<table class="block">
+						<tbody>
+							<tr>
+								<th><script>I18N("h", "Profile Name");</script>:</th>
+								<td><input class="styled-text" type="text" id="pro_name_wifi_usb" name="pro_name_wifi_usb" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Dial-up Number");</script>:</th>
+								<td><input class="styled-text" type="text" id="dialno_wifi_usb" name="dialno_wifi_usb" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "APN");</script>:</th>
+								<td><input class="styled-text" type="text" id="apn_wifi_usb" name="apn_wifi_usb" size="27"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<!--- Wi-Fi Hotspot Client --->
+				<div id="general_hotspot_client" style="display:none;">
+					<table  class="block">
+						<tbody>
+							<tr>
+								<th><script>I18N("h", "Hotspot Network Name(SSID)");</script>:</th>
+								<td width="220px">
+									<input class="styled-text" type="text" id="ssid_hotspot_client" name="ssid_hotspot_client" size="27" />
+								</td>
+								<td>
+									<input type="button" class="button_radius" value="Scan" onClick="OnClickScan()" style="cursor:pointer"/>
+								</td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Security");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="security_hotspot_client" onChange="security_mode(this.value)">
+											<option value="NONE">None</option>
+											<option value="WEP">WEP</option>
+											<!--<option value="WPAPSK">WPA-Personal</option>-->
+											<!--<option value="WPA2PSK">WPA2-Personal</option>-->
+											<option value="WPA+2PSK">WPA/WPA2-Personal</option>
+										</select>
+									</div>
+								</td>
+								<td></td>
+							</tr>
+							<tr id="pwl_tr" style="display:none;">
+								<th><script>I18N("h", "Password Length");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="pwl_hotspot_client">
+											<option value="64Hex">64 bit(10 hex digits)</option>
+											<option value="64ASCII">64 bit(5 ascii characters)</option>
+											<option value="128Hex">128 bit(26 hex digits)</option>
+											<option value="128ASCII">128 bit(13 ascii characters)</option>
+										</select>
+									</div>
+								</td>
+								<td></td>
+							</tr>
+							<tr id="passwd_tr" style="display:none;">
+								<th><script>I18N("h", "Password");</script>:</th>
+								<td><input id="passwd_hotspot_client" name="passwd_hotspot_client" class="styled-text" type="password" size="27"></td>
+								<td></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<!--- Static IP --->
+				<div id="general_static" style="display:none;">
+					<table  class="block" border="0" >
+						<tbody>
+							<tr>
+								<th><script>I18N("h", "IP Address");</script>:</th>
+								<td><input class="styled-text" type="text" id="ipaddr_static" name="ipaddr_static_req" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Subnet Mask");</script>:</th>
+								<td><input class="styled-text" type="text" id="mask_static" name="mask_static_req" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Default Gateway");</script>:</th>
+								<td><input class="styled-text" type="text" id="gw_static" name="gw_static_req" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Primary DNS Server");</script>:</th>
+								<td><input class="styled-text" type="text" id="primary_dns_static" name="primary_dns_req" size="27"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<!--- end of general settings block --->
+				<!--- start of advanced settings block --->
+				<div id="advanced_str" class="advButton" onclick="pro_show_advanced()" style="display:none;">
+					<script>I18N("h", "Advanced Settings");</script>...
+					<hr />
+				</div>
+				<div id="advanced_block">
+					<!--- DHCP (NONE)--->
+					<!--- PPPoE --->
+					<div id="advanced_pppoe" style="display:none;">
+						<table class="block" border="0"><tbody>
+							<tr>
+								<th><script>I18N("h", "Address Mode");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="address_mode_pppoe" onChange="pppoe_mode_type(this.value)">
+											<option value="DYNAMICIP">Dynamic IP</option>
+											<option value="STATICIP">Static IP</option>
+										</select>
+									</div> 
+								</td>
+							</tr>
+							<tr id="ipaddr_tr" style="display:none;">
+								<th><script>I18N("h", "IP Address");</script>:</th>
+								<td><input class="styled-text" type="text" id="ipaddr_pppoe" name="ipaddr_pppoe_req" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Service Name");</script>:</th>
+								<td><input class="styled-text" type="text" id="service_name_pppoe" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Reconnect Mode");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="reconnect_mode_pppoe" onChange="recmode_type('idle_time_tr', this.value);">
+											<option value="alwayson">Always on</option>
+											<option value="ondemand">On demand</option>
+											<option value="manual">Manual</option>
+										</select>
+									</div>
+								</td>
+							</tr>
+							<tr id="idle_time_tr" style="display:none;">
+								<th><script>I18N("h", "Maximum Idle Time");</script>:</th>
+								<td><input id="max_idle_time_pppoe" class="styled-text" type="text" size="15">&nbsp;&nbsp;minutes</td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Primary DNS Server");</script>:</th>
+								<td><input class="styled-text" type="text" id="primary_dns_pppoe" size="27"></td>
+							</tr> 
+							<tr>
+								<th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+								<td><input class="styled-text" type="text" id="secondary_dns_pppoe" size="27"></td>
+							</tr> 
+							<tr>
+								<th><script>I18N("h", "MTU");</script>:</th>
+								<td><input class="styled-text" type="text" id="mtu_pppoe" value="1500" size="8"></td>
+							</tr>
+						</tbody></table> 			
+					</div>
+					<!--- 3G/4G wireless USB --->
+					<div id="advanced_wifi_usb" style="display:none;">
+						<table class="block" border="0"><tbody>
+							<tr>
+								<th><script>I18N("h", "Country");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="country_wifi_usb" onChange="OnChangeCountryList(this.value)">
+										</select>
+									</div>
+								</td>
+							</tr>
+							<tr id="isp_wifi_usb_tr">
+								<th><script>I18N("h", "ISP");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="isp_wifi_usb" onChange="OnChangeISPList(this.value)">
+										</select>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Username");</script>:</th>
+								<td><input class="styled-text" type="text" id="usr_name_wifi_usb" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Password");</script>:</th>
+								<td><input class="styled-text" type="password" id="passwd_wifi_usb" size="27"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Authentication Protocol");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="authp_wifi_usb">
+											<option value="auto">Auto(PAP+CHAP)</option>
+											<option value="PAP">PAP</option>
+											<option value="CHAP">CHAP</option>
+										</select>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "SIM Card Status");</script>:</th>
+								<td id="sim_card_status"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Reconnect Mode");</script>:</th>
+								<td>
+									<div class="styled-select">
+										<select id="reconnect_mode_wifi_usb" onChange="recmode_type('wifi_usb_idle_time_tr', this.value)">
+											<option value="alwayson">Always on</option>
+											<option value="ondemand">On demand</option>
+											<option value="manual">Manual</option>
+										</select>
+									</div>
+								</td>
+							</tr>
+							<tr id="wifi_usb_idle_time_tr" style="display:none;">
+								<th><script>I18N("h", "Maximum Idle Time");</script>:</th>
+								<td><input id="max_idle_time_wifi_usb" class="styled-text" type="text" size="15">&nbsp;&nbsp;minutes</td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "MTU");</script>:</th>
+								<td><input class="styled-text" type="text" id="mtu_wifi_usb" value="1500" size="8" ></td>
+							</tr>
+						</tbody></table> 			
+					</div>
+					<!--- Wi-Fi Hotspot Client (NONE)--->
+					<!--- Static IP --->
+					<div id="advanced_static" style="display:none;">
+						<table class="block" border="0"><tbody>
+							<tr>
+								<th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+								<td><input class="styled-text" type="text" id="secondary_dns_static" size="27" maxlength="15"></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "MTU");</script>:</th>
+								<td><input class="styled-text" type="text" id="mtu_static" value="1500" size="8" ></td>
+							</tr>
+						</tbody></table> 			
+					</div>
+					<!--- end of advanced settings block --->
+				</div>
+			</div>
+		</div>
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+	<!--- start of scan wifi list block --->
+	<div id="CreatePopAlertMessage" style="display:none">
+		<div class="scanPopBox">
+			<div id="scan_waiting" class="wait_scan_box" style="display:none">
+				<br/>
+				<br/>
+				<br/>
+				<center><img src="image/loading.gif" border="0"></center>
+				<div><span><script>I18N("h", "Scanning...");</script></span></div>
+				<br/>
+			</div>
+			<div id="scan_list" class="scan_lists_box" style="display:none">
+				<div id="scan_list_title">
+					<table width="100%" cellspacing="0" cellpadding="0" border="0">
+						<tbody>
+							<tr>
+								<td><b><script>I18N("h", "Available hotspot networks");</script></b></td>
+								<td style="text-align: right;">
+									<a href="javascript:reload_hotspot_list()"><img src="image/wisp_reload.gif" border="0"></a>
+									<a href="javascript:close_hotspot_list()"><img src="image/wisp_close.gif" width="24" height="25" border="0"></a>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="emptyline"></div>
+				<div id="scan_list_content">
+					<div class="content_div">
+						<table id="content_tb" width="100%" cellspacing="0" cellpadding="5" border="0" style="cursor:pointer">
+						</table>
+					</div>
+				</div>
+				<div class="emptyline"></div>
+				<div id="scan_list_slb">
+					<center><input type="button" class="button_radius2" value="Select" onClick="OnClickSelect()" style="cursor:pointer"/></center>
+				</div>
+				<div class="emptyline"></div>
+			</div>
+		</div>
+	</div>
+	<!--- start of scan wait saving block --->
+	<div id="CreatePopAlertMessage2" style="display:none">
+		<div id="AlertPopRect">
+			<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+					<tbody>
+						<tr>
+							<td><center><div id="Loading_pop_image2"></div></center></td>
+						</tr>
+						<tr>
+							<td label id="reciprocal_Number"></label></td>
+						</tr>
+						<tr>
+							<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	</form>
+	<script type="text/javascript" charset="utf-8">
+		$(document).ready( function() {
+			$.validator.setDefaults( { submitHandler: function(form) { form.submit(); } } );
+			
+			// Check Connection Type Slot - Static IP
+			$.validator.addMethod("checkStaticIPForm", function( value, element ) {
+				var GetConnetionType = null;
+				if(method=="add") GetConnetionType = document.getElementById("pro_type").value;
+				else if(method=="edit") GetConnetionType = init_type;
+				var returnVal = true;
+				if (GetConnetionType!="STATIC")
+				{
+					returnVal = true;
+				}
+				else
+				{
+					var ValidIpAddressRegex = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+					if (ValidIpAddressRegex.test(value))
+					{
+						returnVal = true;
+					}
+					else
+					{
+						returnVal = false;
+					}
+				}
+				return returnVal;
+			}, jQuery.validator.messages.address_Check);
+			
+			// Check Connection Type Slot - PPPoE (ipaddr_pppoe)
+			$.validator.addMethod("checkPPPoEInfo", function( value, element ) {
+				var GetConnetionType = null;
+				if(method=="add") GetConnetionType = document.getElementById("pro_type").value;
+				else if(method=="edit") GetConnetionType = init_type;
+				var GetPPPoEStatus = document.getElementById("address_mode_pppoe").value;
+				var returnVal = true;
+				if (GetConnetionType!="PPPoE")
+				{
+					returnVal = true;
+				}
+				else
+				{
+					if (GetPPPoEStatus=="DYNAMICIP")
+					{
+						returnVal = true;
+					}
+					else
+					{
+						var ValidIpAddressRegex = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+						if (ValidIpAddressRegex.test(value))
+						{
+							returnVal = true;
+						}
+						else
+						{
+							returnVal = false;
+						}
+					}
+				}
+				return returnVal;
+			}, jQuery.validator.messages.address_Check);
+			
+			// Check Connection Type Slot - WEPPassword
+			$.validator.addMethod("checkWEPPassword", function( value, element ) {
+				var GetConnetionType = null;
+				if(method=="add") GetConnetionType = document.getElementById("pro_type").value;
+				else if(method=="edit") GetConnetionType = init_type;
+				var returnVal = true;
+				if (GetConnetionType!="WISP")
+				{
+					returnVal = true;
+				}
+				else
+				{
+					var GetSecurityType = document.getElementById("security_hotspot_client").value;
+					if (GetSecurityType != "WEP")
+					{
+						returnVal = true;
+					}
+					else
+					{
+						var GetPasswdType = document.getElementById("pwl_hotspot_client").value;
+						if (GetPasswdType=="64Hex" && value.length != 10)
+						{
+							returnVal = false;
+						}
+						else if (GetPasswdType=="64ASCII" && value.length != 5)
+						{
+							returnVal = false;
+						}
+						else if (GetPasswdType=="128Hex" && value.length != 26)
+						{
+							returnVal = false;
+						}
+						else if (GetPasswdType=="128ASCII" && value.length != 13)
+						{
+							returnVal = false;
+						}
+					}
+				}
+				return returnVal;
+			}, jQuery.validator.messages.password_WEPCheck);
+			
+			// Check Connection Type Slot - WPAPassword
+			$.validator.addMethod("checkWPAPassword", function( value, element ) {
+				var GetConnetionType = null;
+				if(method=="add") GetConnetionType = document.getElementById("pro_type").value;
+				else if(method=="edit") GetConnetionType = init_type;
+				var returnVal = true;
+				if (GetConnetionType!="WISP")
+				{
+					returnVal = true;
+				}
+				else
+				{
+					var GetSecurityType = document.getElementById("security_hotspot_client").value;
+					if (GetSecurityType=="WPAPSK" || GetSecurityType=="WPA2PSK" || GetSecurityType=="WPA+2PSK")
+					{
+						if (value.length > 63 || value.length < 8)
+						{
+							returnVal = false;
+						}
+					}
+					else
+					{
+						returnVal = true;
+					}
+				}
+				return returnVal;
+			}, jQuery.validator.messages.password_WPACheck);
+			
+			$('#internet_pro_form').validate({
+				rules: {
+					ipaddr_static_req: {
+						required: true,
+						checkStaticIPForm: true
+					},
+					mask_static_req: {
+						required: true,
+						checkStaticIPForm: true
+					},
+					gw_static_req: {
+						required: true,
+						checkStaticIPForm: true
+					},
+					primary_dns_req: {
+						required: true,
+						checkStaticIPForm: true
+					},
+					pro_name_pppoe: "required",
+					usr_name_pppoe: "required",
+					passwd_pppoe: "required",
+					ipaddr_pppoe_req: {
+						required: true,
+						checkPPPoEInfo: true
+					},
+					ssid_hotspot_client: "required",
+					passwd_hotspot_client: {
+						required: true,
+						checkWEPPassword: true,
+						checkWPAPassword: true
+					},
+					pro_name_wifi_usb: "required",
+					dialno_wifi_usb: "required",
+					apn_wifi_usb: "required"
+				},
+				submitHandler: function(form) {
+					SaveProInfo();
+				}
+			});
+		});
+	</script>
+</body>
+<script type="text/javascript">
+	Load_HTML();
+	Initial();
+	InitCountryList();
+	InitProInfo();
+	InitClientInfo();
+	checkTimeout();
+	setMenu("menu_Settings");
+</script>
+</html>

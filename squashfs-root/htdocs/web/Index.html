@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<meta name="viewport" content="width=device-width">
+</head>
+<body>
+	<iframe class="login_frame" id="defaultframe" src="" frameborder="0" width="100%" height="100%" style="overflow: auto;-webkit-overflow-scrolling:touch;"></iframe>
+</body>
+<script type="text/javascript">
+	try
+	{
+		//var url = window.location.pathname;
+		//sessionStorage.setItem("RedirectUrl", url);
+	}
+	catch (error)
+	{
+		//localStorage.setItem is useless when the private browsing is used in Safari.
+		//It would show the alert message in the next page of Login.html or MobileLogin.html.
+	}
+	var isMobile = false;
+	if(navigator.userAgent.match(/Android|webOS|iPhone|iPod|BlackBerry/i)) {
+		isMobile = true;
+	}
+	
+	if(isMobile)
+		location.replace('/info/MobileLogin.html');
+	else
+		location.replace('/info/Login.html');
+</script>
+</html>
