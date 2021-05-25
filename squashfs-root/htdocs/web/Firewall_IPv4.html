@@ -1,0 +1,595 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="/css/jquery.selectbox.css" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/Firewall.js"></script>
+
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+
+	// Detect how many Schedule.
+	var Total_ScheduleRules = 0;
+	// Set up the limit total Firewall IPv4
+	var Limit_FirewallRules = 24;
+	// Detect how many Client.
+	var Total_Client = 0;
+	// Set up the limit total Client
+	var Limit_Client = 256;
+	//data list
+	var datalist;
+	
+	function Load_HTML()	{	$("#header").load("header.html");	}
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+		
+		datalist = new Datalist();
+	}
+	function GetScheduleList()	{	HNAP.GetXMLAsync("GetScheduleSettings", null, "GetValue", function(xml)	{	GetResult_1st(xml)	});	}
+	function GetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var GetSC_ListNumber = result_xml.Get("GetScheduleSettingsResponse/ScheduleInfoLists#");
+			Total_ScheduleRules = GetSC_ListNumber;
+			var select_FWv4_Schedule = document.getElementById("select_FWv4_Schedule");
+			for (var i = 1; i <= Total_ScheduleRules; i ++)
+			{
+				var Schedule_Name = decode_char_text(result_xml.Get("GetScheduleSettingsResponse/ScheduleInfoLists:" + i + "/ScheduleName"));
+				select_FWv4_Schedule.options.add(new Option(Schedule_Name, Schedule_Name));
+			}
+			HNAP.GetXMLAsync("GetIPv4FirewallSettings", null, "GetValue", function(xml)	{	GetResult_2nd(xml)	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_1st");	}	}
+	}
+	
+	function GetResult_2nd(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var GetIPv4FR_ListNumber = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule#");
+			for (var i = 1; i <= GetIPv4FR_ListNumber; i ++)
+			{
+				var IPv4FR_Name = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/Name");
+				var IPv4FR_Schedule = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/Schedule");
+				var IPv4FR_Source = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/SrcInterface");
+				var IPv4FR_SourceAddressRangeStart = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/SrcIPv4AddressRangeStart");
+				var IPv4FR_SourceAddressRangeEnd = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/SrcIPv4AddressRangeEnd");
+				var IPv4FR_Destination = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/DestInterface");
+				var IPv4FR_DestinationAddressRangeStart = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/DestIPv4AddressRangeStart");
+				var IPv4FR_DestinationAddressRangeEnd = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/DestIPv4AddressRangeEnd");
+				var IPv4FR_Protocol = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/Protocol");
+				var IPv4FR_PortRangeStart = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/PortRangeStart");
+				var IPv4FR_PortRangeEnd = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4FirewallRuleLists/IPv4FirewallRule:" + i + "/PortRangeEnd");
+				
+				var srcIP = IPv4FR_SourceAddressRangeStart+"-"+IPv4FR_SourceAddressRangeEnd;
+				var dstIP = IPv4FR_DestinationAddressRangeStart+"-"+IPv4FR_DestinationAddressRangeEnd;
+				var port = IPv4FR_PortRangeStart+"-"+IPv4FR_PortRangeEnd;
+				
+				var data = new Data(decode_char_text(IPv4FR_Name), IPv4FR_Source, srcIP, IPv4FR_Destination,  dstIP, IPv4FR_Protocol, port, decode_char_text(IPv4FR_Schedule));
+				datalist.push(data);
+			}
+			var GetIPv4_FirewallStatus = result_xml.Get("GetIPv4FirewallSettingsResponse/IPv4_FirewallStatus");
+			switch(GetIPv4_FirewallStatus)
+			{
+				case "Disable":				document.getElementById("filter_FW_IPv4").options[0].selected = true;	break;
+				case "Enable_WhiteList":	document.getElementById("filter_FW_IPv4").options[1].selected = true;	break;
+				case "Enable_BlackList":	document.getElementById("filter_FW_IPv4").options[2].selected = true;	break;
+			}
+
+			check_TotalRule(Limit_FirewallRules, datalist.length());
+			$("#filter_FW_IPv4").selectbox({width:450});
+			$("#select_FWv4_SourceInterface").selectbox({width:170});
+			$("#select_FWv4_DestinationInterface").selectbox({width:170});
+			$("#select_FWv4_Protocol").selectbox({width:170});
+			$("#select_FWv4_Schedule").selectbox({width:170});
+			CheckNetworkStatus();
+			document.getElementById("main").style.display = "inline";
+			
+			//set trigger for save button
+			$("select").change(function () {	save_button_changed();	});
+			$("input").keydown(function () {	save_button_changed();	});
+			$("input").change(function () {	save_button_changed();	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_2nd");	}	}
+	}
+	function CheckConnectionStatus()
+	{
+		$.ajax({
+			cache : false,
+			url : "./js/CheckConnection",
+			timeout : 5000,
+			type : "GET",
+			success : function(data) { SetXML(); },
+			error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+		});
+	}
+	function SetXML()
+	{
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		HNAP.GetXMLAsync("SetIPv4FirewallSettings", null, "GetXML", function(xml)	{	SetResult_1st(xml)	});
+	}
+	function SetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var GetIPv4_FirewallStatus = document.getElementById("filter_FW_IPv4").value;
+			if (datalist.length() != 0)
+			{
+				switch(GetIPv4_FirewallStatus)
+				{
+					case "0":	result_xml.Set("SetIPv4FirewallSettings/IPv4_FirewallStatus", "Disable");			break;
+					case "1":	result_xml.Set("SetIPv4FirewallSettings/IPv4_FirewallStatus", "Enable_WhiteList");	break;
+					case "2":	result_xml.Set("SetIPv4FirewallSettings/IPv4_FirewallStatus", "Enable_BlackList");	break;
+				}
+
+				for (var i = 0; i < datalist.length(); i ++)
+				{
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/Name", encode_char_text(datalist.list[i].name));
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/Status", "Enable");
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/Schedule", encode_char_text(datalist.list[i].schedule));
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/SrcInterface", datalist.list[i].srcInterface);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/SrcIPv4AddressRangeStart", datalist.list[i].srcIPstart);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/SrcIPv4AddressRangeEnd", datalist.list[i].srcIPend);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/DestInterface", datalist.list[i].dstInterface);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/DestIPv4AddressRangeStart", datalist.list[i].dstIPstart);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/DestIPv4AddressRangeEnd", datalist.list[i].dstIPend);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/Protocol", datalist.list[i].protocol);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/PortRangeStart", datalist.list[i].portStart);
+					result_xml.Set("SetIPv4FirewallSettings/IPv4FirewallRuleLists/IPv4FirewallRule:" + (i+1) + "/PortRangeEnd", datalist.list[i].portEnd);
+				}
+			}
+			else	{	result_xml.Set("SetIPv4FirewallSettings/IPv4_FirewallStatus", "Disable");	}
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetIPv4FirewallSettings", result_xml, function(xml)	{	SetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_1st");	}	}
+	}
+	function SetResult_2nd(result_xml)
+	{
+		var SetResult_2nd = result_xml.Get("SetIPv4FirewallSettingsResponse/SetIPv4FirewallSettingsResult");
+		if (SetResult_2nd == "OK")		{	setTimeout("waitSettingFinished()", 1000);	}
+		if (SetResult_2nd == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_2nd");	}	window.location.reload();	}
+	}
+	function waitSettingFinished()	{	window.location.reload();	}
+
+	function createUserButton()
+	{
+		changeTimeoutAction();
+		
+		$("#popTitle").html(I18N("j", "Create New Rule"));
+	
+		document.getElementById("createPop").style.display = "inline";
+		$("#createButton").prop("disabled", true);
+		$("#firewall_form").val(-1);
+	}
+	function closeCreateRulePOP(id)
+	{
+		changeTimeoutAction();
+		
+		var result = false;
+		var name = $("#FWv4_Name").val();
+		var srcInterface = $("#select_FWv4_SourceInterface").val();
+		var srcIP = $("#FWv4_SourceIPRange").val();
+		var dstInterface = $("#select_FWv4_DestinationInterface").val();
+		var dstIP = $("#FWv4_DestinationIPRange").val();
+		var protocol = $("#select_FWv4_Protocol").val();
+		var port = $("#FWv4_PortRange").val();
+		var schedule = $("#select_FWv4_Schedule").val();
+	
+		var data = new Data(name, srcInterface, srcIP, dstInterface, dstIP, protocol, port, schedule);
+		if(id < 0)
+		{
+			result = datalist.push(data);
+		}
+		else
+		{
+			result = datalist.editData(id,data);
+		}
+
+		if (result)
+		{
+			resetRulePOP();
+			check_TotalRule(Limit_FirewallRules, datalist.length());
+		}
+	}
+	function clearCreateRulePOP()
+	{
+		changeTimeoutAction();
+		
+		resetRulePOP();
+		
+		$("#firewall_form").validate().resetForm();
+		$(':text').attr('class', 'styled-text');
+		check_TotalRule(Limit_FirewallRules, datalist.length());
+	}
+	
+	function resetRulePOP()
+	{
+		$("select").selectbox('detach');
+		$("input").val('');
+		document.getElementById("createPop").style.display = "none";
+		$("#select_FWv4_SourceInterface").val('WAN');
+		$("#select_FWv4_SourceInterface").selectbox({width:170});
+		$("#select_FWv4_DestinationInterface").val('WAN');
+		$("#select_FWv4_DestinationInterface").selectbox({width:170});
+		$("#select_FWv4_Protocol").val('TCP');
+		$("#select_FWv4_Protocol").selectbox({width:170});
+		$("#select_FWv4_Schedule").val('Always');
+		$("#select_FWv4_Schedule").selectbox({width:170});
+		$("select").selectbox('attach');
+	}
+	
+	function editData(id)
+	{
+		changeTimeoutAction();
+		
+		$("#popTitle").html(I18N("j", "Edit Rule"));
+	
+		document.getElementById("createPop").style.display = "inline";
+		$("#createButton").prop("disabled", true);
+		$("#firewall_form").val(id);
+		
+		//insert data to pop form
+		var data = datalist.getData(id);
+	
+		$("#FWv4_Name").val(data.name);
+		$("#FWv4_SourceIPRange").val(data.createRange(data.srcIPstart, data.srcIPend));
+		$("#FWv4_DestinationIPRange").val(data.createRange(data.dstIPstart, data.dstIPend));
+		$("#FWv4_PortRange").val(data.createRange(data.portStart, data.portEnd));
+
+		$("select").selectbox('detach');
+				
+		$("#select_FWv4_SourceInterface").val(data.srcInterface);
+		$("#select_FWv4_DestinationInterface").val(data.dstInterface);
+		$("#select_FWv4_Schedule").val(data.schedule);
+		$("#select_FWv4_Protocol").val(data.protocol);
+		
+		$("select").selectbox('attach');
+	}
+	
+	function deleteData(id)
+	{
+		changeTimeoutAction();
+		
+		datalist.deleteData(id);
+		check_TotalRule(Limit_FirewallRules, datalist.length());
+		save_button_changed();
+	}
+
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+
+	// 2013/07/30 Timmy Add
+	function focusToFirstIndex(str)
+	{
+		if (str.id == "save_buttonFocus")	{	if(window.event.keyCode == 9)		{	document.getElementById("FWv4_Name").focus();	}	}
+	}
+
+	function save_button_changed()
+	{
+		document.getElementById("Save_Disable_btn").style.display = "none";
+		document.getElementById("Save_btn").style.display = "block";
+		changeFlag = true;
+		checkFlag = true;
+		changeTimeoutAction();
+	}
+	
+	function check_TotalRule(maxRule, totalRule)
+	{
+		var IsFull = maxRule - totalRule;
+		document.getElementById("RemainingRules").innerHTML = IsFull;
+		
+		if (IsFull == 0)
+		{
+			$("#createButton").attr("class", "styled_button_dis").prop("disabled", true);
+		}
+		else
+		{
+			$("#createButton").attr("class", "styled_button_s").prop("disabled", false);
+		}
+	}
+	
+	//OnLoad
+	$(document).ready( function() {	
+		Load_HTML();
+		Initial();
+		setMenu("menu_Advanced");
+		GetScheduleList();
+		startTimeout();
+	});
+</script>
+
+</head>
+
+<body>
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info --------------------->
+	  		<div id="info">
+				<div id="FunctionName"><script>I18N("h", "Firewall Settings");</script></div>
+				<div id="wall"><img src="image/wall.png" alt="" width="195" height="119"/></div>
+		    	<div id="directions">
+					<script>I18N("h", "The IPv4 rule section is an advance feature used to deny or allow traffic from passing through the device.");</script>
+					<label id="Get_Help" onClick="showOnlineHelp('IPv4/IPv6 Rules');" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+				</div>
+			</div>
+			<!-------------------- funcBar ------------------->
+			<div id="funcBar">
+				<div id="pagePath"><script>I18N("h", "Features");</script> >> <script>I18N("h", "Firewall Settings");</script> >> <script>I18N("h", "IPv4 Rules");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="CheckConnectionStatus();changeTimeoutAction();" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li> 
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+					<li style="display:block"><a href="javascript:CheckHTMLStatus('Firewall_IPv6');" style="text-decoration:none;" onclick="return confirmExit()"><div id="page_btn" class="linkstyle_1"><script>I18N("h", "IPv6 Rules");</script></div></a></li>
+					<li style="display:block"><a href="javascript:CheckHTMLStatus('Firewall');" style="text-decoration:none;" onclick="return confirmExit()"><div id="page_btn" class="linkstyle_1"><script>I18N("h", "Advanced");</script></div></a></li>
+				</ul>
+			</div>
+			<!-------------------- main ---------------------->
+			<div id="main" style="display:none">
+				<!-------------------- table ----------------->
+				<table class="myTable" border="0" cellspacing="0">
+					<tr>
+				        <td>
+    						<div class="styled-select">
+							<select name="filter_FW_IPv4" id="filter_FW_IPv4">
+							 	<option value="0">Turn IPv4 Filtering OFF</option>
+							 	<option value="1">Turn IPv4 Filtering ON and ALLOW rules listed</option>
+							 	<option value="2">Turn IPv4 Filtering ON and DENY rules listed</option>
+							</select>
+							</div>
+				        </td>
+				     </tr>
+				</table>
+				<table class="mainTable" border="0" cellspacing="0" id="tblFirewall" >
+					<thead>
+				     <tr>
+				     	<th><script>I18N("h", "Name");</script></th>
+				     	<th><script>I18N("h", "Schedule");</script></th>
+						<th><script>I18N("h", "Edit");</script></th>
+						<th><script>I18N("h", "Delete");</script></th>
+				     </tr>
+					</thead>
+				   <tbody></tbody>
+				</table>
+				<br />
+				<br />
+					<button type="button" name="createButton" id="createButton" class="styled_button_s" onclick="createUserButton()"><script>I18N("h", "Add Rule");</script></button>
+					&nbsp;&nbsp;<script>I18N("h", "Remaining");</script>:&nbsp;<label id="RemainingRules">10</label>
+				<br />
+				<!----------------------PopUp Create ----------------------->
+				<form name="firewall_form" id="firewall_form" action="">
+				<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+				<div id="createPop" style="display:none">
+					<div class="dialogBox"  style="width:616px">
+					<div id="closeCreatePopBtn" onclick="clearCreateRulePOP()" style="cursor:pointer"></div>
+							<table class="myCreatePop_table" id="tblIPv4Firewall2" border="0" cellspacing="0" ondragstart="return false" onselectstart="return false">
+								<tbody>
+									<tr>
+										<td colspan="3"><div class ="popTitle" id="popTitle"></div></td>
+									</tr>
+									<tr>
+										<th style="width:238px"><script>I18N("h", "Name");</script>:</th>
+										<td colspan="2"><input class="styled-text" type="text" size="22" name="FWv4_Name" id="FWv4_Name" Maxlength="20" tabindex="1" style="width:160px;"></td>
+									</tr>
+									<tr>
+										<th><script>I18N("h", "Source IP Address Range");</script>:</th>
+										<td valign="top">
+											<select style="width: 80px" name="select_FWv4_SourceInterface" id="select_FWv4_SourceInterface">
+												<option value="WAN">WAN</option>
+												<option value="LAN">LAN</option>
+											</select>
+										</td>
+										<td valign="top">
+											<input class="styled-text" type="text" size="30" name="FWv4_SourceIPRange" id="FWv4_SourceIPRange" tabindex="2" >
+										</td>
+									</tr>
+									<tr>
+										<th><script>I18N("h", "Destination IP Address Range");</script>:</th>
+										<td valign="top">
+											<select style="width: 80px" name="select_FWv4_DestinationInterface" id="select_FWv4_DestinationInterface">
+												<option value="WAN">WAN</option>
+												<option value="LAN">LAN</option>
+											</select>
+										</td>
+										<td valign="top">
+											<input class="styled-text" type="text" size="30" name="FWv4_DestinationIPRange" id="FWv4_DestinationIPRange" tabindex="3" >
+										</td>
+									</tr>
+									<tr>
+										<th><script>I18N("h", "Port Range");</script>:</th>
+										<td valign="top">
+											<select style="width: 80px" name="select_FWv4_Protocol" id="select_FWv4_Protocol">
+												<option value="TCP">TCP</option>
+												<option value="UDP">UDP</option>
+												<option value="Any">Any</option>
+											</select>
+										</td>
+										<td valign="top">
+											<input class="styled-text" type="text" size="22" name="FWv4_PortRange" id="FWv4_PortRange" tabindex="4" >
+										</td>
+									</tr>
+									<tr>
+										<th class="linkstyle_1"><a href="Schedule.html"><script>I18N("h", "Schedule");</script></a>:</th>
+										<td>
+											<select style="width: 80px" name="select_FWv4_Schedule" id="select_FWv4_Schedule" tabindex="5">
+												<option value="Always" selected>Always</option>
+											</select>
+										</td>
+										<td></td>
+									</tr>
+									<tr>
+										<td id="save_td"  colspan="3">
+											<center><button type="button" class="styled_button_s" id="save_buttonFocus" tabindex="6" onkeyup="focusToFirstIndex(this)" onclick="document.getElementById('sumbit_CheckData').click()"><script>I18N("h", "Apply");</script></button></center>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+					</div>
+				</div>
+				</form>
+			</div>
+		</div>
+		<div id="CreatePopAlertMessage" style="display:none">
+			<div id="AlertPopRect">
+			<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+				   <tbody>
+						 <tr>
+						 	<td>
+								<center><div id="Loading_pop_image2"></div></center>
+							</td>
+						 </tr>
+						 <tr>
+						 	<td label id="reciprocal_Number"></label></td>
+						 </tr>
+						 <tr>
+						 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						 </tr>
+				   </tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+<script type="text/javascript" charset="utf-8">
+	$(document).ready( function() {
+		// Check Port Range
+		$.validator.addMethod("checkPortRange", function( value, element ) {
+			var rangeValue = value.split("-");
+			var start;
+			var end = null;
+			
+			if(rangeValue.length > 2)
+				return false;
+			
+			start = rangeValue[0];
+			var startNum = parseInt(start, 10);
+			if(isNaN(start) || (start == ""))
+			{
+				return false;
+			}	
+			if((startNum <= 0) || (startNum > 65535))
+			{
+				return false;
+			}
+			
+			if(rangeValue.length > 1)
+			{
+				end = rangeValue[1];
+				var endNum = parseInt(end, 10);
+				if(isNaN(end) || (end == ""))
+				{
+					return false;
+				}	
+				if((endNum <= 0) || (endNum > 65535))
+				{
+					return false;
+				}
+				if(startNum > endNum)
+				{
+					return false;
+				}
+			}
+
+			return true;
+		}, jQuery.validator.messages.port_CheckRange);
+
+		// Check IPv4 Format
+		$.validator.addMethod("checkIPFormat", function( value, element ) {
+			var ValidIpAddressRegex = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\-(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+			var ValidIpAddressRegex2 = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+			var returnVal = true;
+			if (ValidIpAddressRegex2.test(value))
+			{
+				returnVal = true;
+			}
+			else if (ValidIpAddressRegex.test(value))
+			{
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.address_CheckRange);
+
+		$("#firewall_form").each(function(index, el)  {
+		    $(el).validate({
+		    	rules: {
+			    	FWv4_Name: {
+			    		required: true
+			    	},
+					FWv4_SourceIPRange: {
+						required: true,
+						checkIPFormat: true
+					},
+					FWv4_DestinationIPRange: {
+						required: true,
+						checkIPFormat: true
+					},
+					FWv4_PortRange: {
+						required: true,
+						checkPortRange: true
+					}
+				},
+				messages: {
+					FWv4_Name: {
+						required: jQuery.validator.messages.rule_Name
+					},
+					FWv4_SourceIPRange: {
+						required: jQuery.validator.messages.sourceIP
+					},
+					FWv4_DestinationIPRange: {
+						required: jQuery.validator.messages.destinationIP
+					},
+					FWv4_PortRange: {
+						required: jQuery.validator.messages.port_Range
+					}
+				},
+		        submitHandler: function(form) {
+					var id = form.value;
+
+		            closeCreateRulePOP(id);
+		        },
+		        debug: true
+		    });
+		});
+
+	});
+</script>
+</body>
+</html>

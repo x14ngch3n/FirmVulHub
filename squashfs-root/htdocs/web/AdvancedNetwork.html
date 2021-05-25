@@ -1,0 +1,322 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml" xml:lang="zh_TW" lang="zh_TW">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="css/style_pages.css" media="all" />
+<link href="css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="./js/comm.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hmac_md5.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/libajax.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hnap.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/i18n.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/pagetool.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/checkTimeout.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery.selectbox-0.2_new.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/includeLang.js"></script>
+
+<script>
+$(document).ready(function(){
+	
+	presetCheckBox("upnp", true);
+	presetCheckBox("multicastStreams_v4", true);
+	presetCheckBox("multicastStreams_v6", true);
+	
+	//jquery
+	$("div.checkbox_on" || "div.checkbox_off").click(function(e) {
+	 var checkboxId =  e.target.id +'_ck';	 
+		if(e.target.getAttribute("class") == "checkbox_on") {
+			var disable = I18N("j","Disabled");
+			e.target.setAttribute("class", "checkbox_off");
+			e.target.setAttribute("className", "checkbox_off");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked>'+disable;
+			document.getElementById(checkboxId).checked=false;
+			
+			changeFlag = true;
+			save_button_changed();
+		}
+		else {
+			var enable = I18N("j","Enabled");
+			e.target.setAttribute("class", "checkbox_on");
+			e.target.setAttribute("className", "checkbox_on");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked="">'+enable;
+			document.getElementById(checkboxId).checked=true;
+			
+			changeFlag = true;
+			save_button_changed();
+		}
+	});
+	
+	GetXML();
+});
+
+</script>
+
+<script type="text/javascript">
+	
+	var HNAP = new HNAP_XML();
+	
+	function Load_HTML()
+	{ 
+		$("#header").load("header.html");
+	}
+	
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	
+	function GetXML()
+	{
+		var xml_GetAdvNetworkSettings = HNAP.GetXML("GetAdvNetworkSettings");
+		
+		// Enable UPNP
+		var enable_UPNP = xml_GetAdvNetworkSettings.Get("GetAdvNetworkSettingsResponse/UPNP");
+		if(enable_UPNP == "true")
+		{
+			presetCheckBox("upnp", true);
+		}
+		else
+		{
+			presetCheckBox("upnp", false);
+		}
+		
+		// Enable MulticastIPv4
+		var enable_MulticastIPv4 = xml_GetAdvNetworkSettings.Get("GetAdvNetworkSettingsResponse/MulticastIPv4");
+		if(enable_MulticastIPv4 == "true")
+		{
+			presetCheckBox("multicastStreams_v4", true);
+		}
+		else
+		{
+			presetCheckBox("multicastStreams_v4", false);
+		}
+		
+		// Enable MulticastIPv6
+		var enable_MulticastIPv6 = xml_GetAdvNetworkSettings.Get("GetAdvNetworkSettingsResponse/MulticastIPv6");
+		if(enable_MulticastIPv6 == "true")
+		{
+			presetCheckBox("multicastStreams_v6", true);
+		}
+		else
+		{
+			presetCheckBox("multicastStreams_v6", false);
+		}
+		
+		// WAN Port Speed
+		var check_WanPortSpeed = xml_GetAdvNetworkSettings.Get("GetAdvNetworkSettingsResponse/WANPortSpeed");
+		switch(check_WanPortSpeed)
+		{
+			case "Auto":
+				document.getElementById("WANPortSpeed").options[0].selected = true;
+				break;
+			case "1000Mbps":
+				document.getElementById("WANPortSpeed").options[1].selected = true;
+				break;
+			case "100Mbps":
+				document.getElementById("WANPortSpeed").options[2].selected = true;
+				break;
+			case "10Mbps":
+				document.getElementById("WANPortSpeed").options[3].selected = true;
+				break;
+			default:
+				alert("Bad request");
+				break;
+		}
+		
+		$("#WANPortSpeed").selectbox();
+	}
+	
+	function CheckConnectionStatus()
+	{
+		$.ajax({
+			cache : false,
+			url : "./js/CheckConnection",
+			timeout : 2000,
+			type : "GET",
+			success : function(data) { SetXML(); },
+			error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+		});
+	}
+	function SetXML()
+	{
+		var xml_SetAdvNetworkSettings = HNAP.GetXML("SetAdvNetworkSettings");
+	
+		// Enable UPNP
+		if (document.getElementById("upnp_ck").checked == "1")
+		{
+			xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/UPNP", "true");
+		}
+		else
+		{
+			xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/UPNP", "false");
+		}
+		
+		// Enable MulticastIPv4
+		if (document.getElementById("multicastStreams_v4_ck").checked == "1")
+		{
+			xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/MulticastIPv4", "true");
+		}
+		else
+		{
+			xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/MulticastIPv4", "false");
+		}
+		
+		// Enable MulticastIPv6
+		if (document.getElementById("multicastStreams_v6_ck").checked == "1")
+		{
+			xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/MulticastIPv6", "true");
+		}
+		else
+		{
+			xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/MulticastIPv6", "false");
+		}
+		
+		// WAN Port Speed
+		var get_WanPortSpeed = document.getElementById("WANPortSpeed").value;
+		switch(get_WanPortSpeed)
+		{
+			case "0":
+				xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/WANPortSpeed", "Auto");
+				break;
+			case "1":
+				xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/WANPortSpeed", "1000Mbps");
+				break;
+			case "2":
+				xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/WANPortSpeed", "100Mbps");
+				break;
+			case "3":
+				xml_SetAdvNetworkSettings.Set("SetAdvNetworkSettings/WANPortSpeed", "10Mbps");
+				break;
+			default:
+				alert("Bad request");
+				break;
+		}
+		
+		var xml_SetAdvNetworkSettingsResult = HNAP.SetXMLAsync("SetAdvNetworkSettings", xml_SetAdvNetworkSettings);
+		// alert(xml_SetAdvNetworkSettingsResult.Get("SetAdvNetworkSettingsResponse/SetAdvNetworkSettingsResult"));
+		
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		setTimeout("waitSettingFinished()", 1000);
+	}
+	
+	function waitSettingFinished()
+	{
+		window.location.reload();
+	}
+</script>
+<script language="JavaScript">
+        // 2013/08/15 Timmy Add
+        $(function() {
+			$("input, textarea, select").change(function () {
+				changeFlag = true;
+				save_button_changed();
+			});
+        });
+        
+        function save_button_changed()
+		{
+			document.getElementById("Save_Disable_btn").style.display = "none";
+			document.getElementById("Save_btn").style.display = "block";
+		}
+</script>
+
+</head>
+
+<body>
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->	
+	  		<div id="info"> 
+			  <div id="FunctionName"><script>I18N("h", "Advanced Network");</script></div>
+				  <div id="wall"><img src="image/page_network2.png" alt="" width="195" height="119"/></div>
+			      <div id="directions">
+			      		<script>I18N("h", "Advanced Network settings allow you to configure some of the more advanced features of your router. It is recommended that you only change these settings if you are  familiar with them, or if you are specifically instructed to do so.");</script>
+				  </div>
+			</div>
+	     <!-------------------- funcBar ---------------------->   
+	     <div id="funcBar">		
+			<div id="pagePath"><script>I18N("h", "Settings");</script> >> <script>I18N("h", "Network");</script> >> <script>I18N("h", "Advanced Network");</script></div>		
+			<ul id="rightFunc">
+				<li style="display:block"><div id="Save_btn" onclick="CheckConnectionStatus();" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li>
+				<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+				<li style="display:block"><a href="javascript:CheckHTMLStatus('Network');" style="text-decoration:none;" onclick="return confirmExit()"><div id="page_btn"><script>I18N("h", "Network");</script></div></a></li> 
+			</ul>
+		 </div>
+	     	<!-------------------- main ---------------------->
+	   			 <!-------------------- table ---------------------->
+	   			 <br />
+				 <table class="block">
+					   <tbody>
+					   	 <tr>
+					       	<th><script>I18N("h", "UPnP");</script>:</th>
+							<td><div id="upnp" class="checkbox_on"><input type="checkbox" name="upnp" id="upnp_ck"></div></td>
+					     </tr>
+					     <tr>
+					       <th><script>I18N("h", "WAN Port Speed");</script>:</th>
+					       <td>
+      							<div class="styled-select">
+								<select name="WANPortSpeed" id="WANPortSpeed">
+									<option value="0">Auto (10/100/1000 Mbps)</option>
+									<option value="1">1000 Mbps</option>
+									<option value="2">100 Mbps</option>
+									<option value="3">10 Mbps</option>
+								</select>
+								</div>  
+					       </td>
+					     </tr>
+					     <tr>
+					       	<th><script>I18N("h", "IPv4 Multicast Streams");</script>:</th>
+							<td><div id="multicastStreams_v4" class="checkbox_on"><input type="checkbox" name="multicastStreams_v4" id="multicastStreams_v4_ck"></div></td>
+					     </tr>
+					     <tr>
+					       	<th><script>I18N("h", "IPv6 Multicast Streams");</script>:</th>
+							<td><div id="multicastStreams_v6" class="checkbox_on"><input type="checkbox" name="multicastStreams_v6" id="multicastStreams_v6_ck"></div></td>
+					     </tr>
+					   </tbody>
+			    </table>
+			<div id="CreatePopAlertMessage" style="display:none">
+				<div id="AlertPopRect">
+				<div id="AlertPopBody">
+					<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+					   <tbody>
+							 <tr>
+							 	<td>
+									<center><div id="Loading_pop_image2"></div></center>
+								</td>
+							 </tr>
+							 <tr>
+							 	<td label id="reciprocal_Number"></label></td>
+							 </tr>
+							 <tr>
+							 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+							 </tr>
+					   </tbody>
+					</table>
+				</div>
+				</div>
+			</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+	<div id="footer">COPYRIGHT &copy; 2013 D-Link</div>
+	</div>
+</body>
+<script type="text/javascript">
+	Load_HTML();
+	Initial();
+	startTimeout();
+</script>
+</html>

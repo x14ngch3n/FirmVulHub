@@ -1,0 +1,2294 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="/css/jquery.selectbox.css" />
+<link rel=stylesheet type="text/css" href="/css/style_h.css" media="all" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/comm.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/hmac_md5.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/libajax.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/hnap.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/i18n.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/pagetool.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/checkTimeout.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/AES.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/configuration/DeviceConfig.js"></script>
+<!--<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>-->
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPAction.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPWanSettings.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPWLanRadio.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPDeviceSettings.js"></script>
+<!--<script type="text/javascript" charset="utf-8" src="/js/wizard/wizard_data.js"></script>-->
+<script type="text/javascript" charset="utf-8" src="/config/features.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initEnv.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/Login.js"></script> <!--    /* for loging */  -->
+<script type="text/javascript" charset="utf-8" src="/js/SOAP/SOAPLogin.js"></script>
+<script type="text/javascript">
+	// Auto Detecting Language, Timmy 2013/05/03, 2013/05/31(Modify)
+	var SetLang = 0;
+	var IsPrivateBrowseing = 0;
+	var GetSmartConnect = "0"; // for 880 only. 880 have smart connect but it's default is disable
+
+	//OnLoad
+	var init = initEnv();
+	$(document).ready( function() {	
+		init.done(function()
+	{
+			currentDevice = JSON.parse(sessionStorage.getItem('currentDevice'));
+			$.getScript("/js/jquery.validate.js", function(){
+				setValidate();
+			});
+			showDeviceInfo();
+		});
+	});
+		
+	function showDeviceInfo()
+		{
+		$("#modelName, #modelName2").html(getDeviceSettings.ModelName);
+		$("#HWversion").html(getDeviceSettings.HardwareVersion);
+		$("#FWversion").html(getDeviceSettings.FirmwareVersion);
+
+		var lang = localStorage.getItem('language');
+		$("#Language").selectbox('detach');
+		$("#Language").val(lang);
+		$("#Language").selectbox({width:170});
+				}
+
+	function switch_Language(value)
+		{
+		sessionStorage.removeItem('langPack');
+		localStorage.setItem('language', value);
+		location.reload();
+	}
+</script>
+
+<style>
+	#detection {	display: none;	}
+	#plug_page {	display: none;	}
+	#createPop	{	display: none;	}
+	#confirm_setup	{	display: none;	}
+	#mydlink_step1	{	display: none;	}
+	#mydlink_step2	{	display: none;	}
+	#mydlink_step3	{	display: none;	}
+	#pppoe_setupTable	{	display: none;	}
+	#wifi_setupTable	{	display: none;	}
+	#selectConnectionType	{	display: none;	}
+	#pppoe_setupTable th	{	width: 250px;	}
+	#staticIP_setupTable	{	display: none;	}
+	#checking_connection	{	display: none;	}
+	#congratulationsTable	{	display: none;	}
+	#devicePassword_setupTable	{	display: none;	}
+</style>
+</head>
+
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+	var Challenge = null;
+	var Cookie = null;
+	var PublicKey = null;
+	var PrivateKey = null;
+	var wizard_Step = 0;
+	var DetectTimerNumber = 0;
+	var GetTriggerResult = "0";
+	var GetStatusResult = "0";
+	var GetStatusCount = 0;
+	var GetStatusRestart = 0;
+	var IsAlreadyGetWireless = "0";
+	var Time_GetWanConnectionType;
+	var Time_GetInternetConnectionStatus;
+	var IsRegisted = "0";
+	var sendXML;
+	var getResponse;
+	var Post_SetMyDLinkSettingsXML;
+	var _ReciprocalRebootNumber = 25;
+	var Wan_Type = "DHCP";
+	var Current_Wan_Type = getWanSettingsResponse.Type == "DHCP" ? "DHCP":"DHCPPPPoE"; // for CN, avoid wantype cannot change successfully
+	var RebootAfterFinish = 0; //For dir880 only
+	var getWanSettingsResponse = new SOAPGetWanSettingsResponse();
+
+	function SetXML()
+	{
+		doLogin("","")
+		.done(function(){
+			$.getScript("/js/wizard/wizard_data.js", null);
+		})
+		.fail(function(){
+			//login fail?  redirect to login.html
+			window.location.href = "/Index.html";
+		});		
+		return;
+	}
+	
+	function GetWirelessParameter()
+	{
+		if (IsAlreadyGetWireless == "0")
+		{
+			//HNAP.GetXMLAsync("GetMultipleHNAPs", null, "GetXML", function(xml)	{	GetResult_GWP(xml)	});
+			var result_5g = null;
+			var result_5g_security = null;
+
+			var getWLanRadioSettings = new SOAPGetWLanRadioSettings();
+			var getWLanRadioSecurity = new SOAPGetWLanRadioSecurity();
+			var getWLanRadioSettingsResponse_24g = new SOAPGetWLanRadioSettingsResponse();
+			var getWLanRadioSecurityResponse_24g = new SOAPGetWLanRadioSecurityResponse();
+			getWLanRadioSettings.RadioID = "RADIO_2.4GHz";
+			
+			var soapAction = new SOAPAction();
+			var result_24g = soapAction.sendSOAPAction("GetWLanRadioSettings", getWLanRadioSettings, getWLanRadioSettingsResponse_24g);
+			getWLanRadioSecurity.RadioID = "RADIO_2.4GHz";
+			
+			var soapAction2 = new SOAPAction();
+			var result_24g_security = soapAction2.sendSOAPAction("GetWLanRadioSecurity", getWLanRadioSecurity, getWLanRadioSecurityResponse_24g);
+
+			//#ifdef featureSmartConnect
+			//if(currentDevice.featureSmartConnect == false)
+			if((currentDevice.featureSmartConnect == false) || ((currentDevice.featureSmartConnect) && (GetSmartConnect == "0"))) // for 880 only. 880 have smart connect but it's default is disable
+			{
+				var getWLanRadioSettingsResponse_5g = new SOAPGetWLanRadioSettingsResponse();
+				var getWLanRadioSecurityResponse_5g = new SOAPGetWLanRadioSecurityResponse();
+				getWLanRadioSettings.RadioID = "RADIO_5GHz";
+				var soapAction3 = new SOAPAction();
+				result_5g = soapAction3.sendSOAPAction("GetWLanRadioSettings", getWLanRadioSettings, getWLanRadioSettingsResponse_5g);
+				getWLanRadioSecurity.RadioID = "RADIO_5GHz";
+				var soapAction4 = new SOAPAction();
+				result_5g_security = soapAction4.sendSOAPAction("GetWLanRadioSecurity", getWLanRadioSecurity, getWLanRadioSecurityResponse_5g);
+			}
+	
+			$.when(result_24g, result_24g_security, result_5g, result_5g_security).done(function(obj)
+	{
+				document.getElementById("wifi_networkName24G").value = getWLanRadioSettingsResponse_24g.SSID;	
+				document.getElementById("wifi_password24G").value = getWLanRadioSecurityResponse_24g.Key;
+				
+				//#ifdef featureSmartConnect
+				//if(currentDevice.featureSmartConnect == false)
+				if((currentDevice.featureSmartConnect == false) || ((currentDevice.featureSmartConnect) && (GetSmartConnect == "0"))) // for 880 only. 880 have smart connect but it's default is disable
+				{
+					document.getElementById("wifi_networkName5G").value = getWLanRadioSettingsResponse_5g.SSID;
+					document.getElementById("wifi_password5G").value = getWLanRadioSecurityResponse_5g.Key;
+				}
+			IsAlreadyGetWireless = 1;
+			})
+			.fail(function(){
+				//console.log("get wifi fail");
+			});
+		}
+
+	}
+	
+	function GetInternetConnectionStatus()
+	{
+		if(GetStatusResult == "0")
+		{
+			var xml_GetCurrentInternetStatus = HNAP.GetXML("GetCurrentInternetStatus", new Array("InternetStatus", "true"));
+			var GetConnStatus = xml_GetCurrentInternetStatus.Get("GetCurrentInternetStatusResponse/GetCurrentInternetStatusResult");
+			GetStatusResult = "1";
+		}
+		else
+		{
+			var xml_GetCurrentInternetStatus = HNAP.GetXML("GetCurrentInternetStatus", new Array("InternetStatus", "false"));
+			var GetConnStatus = xml_GetCurrentInternetStatus.Get("GetCurrentInternetStatusResponse/GetCurrentInternetStatusResult");
+			GetStatusCount ++;
+		}
+		
+		switch (GetConnStatus)
+		{
+			case "OK_DETECTING_2":
+				if (GetStatusCount == 5 & GetStatusRestart == 0)
+				{
+					GetStatusCount = 0;
+					GetStatusResult = "0";
+					GetStatusRestart = 1;
+				}
+				
+				if (GetStatusCount != 6)
+				{
+					Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+					Time_GetInternetConnectionStatus = self.setInterval("GetInternetConnectionStatus()", 2000);
+				}
+				break;
+			case "OK_CONNECTED":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("checking_connection").style.display = "none";
+				var xml_GetMyDLinkSettings = HNAP.GetXML("GetMyDLinkSettings");
+				var GetRegisterAccountStatus = xml_GetMyDLinkSettings.Get("GetMyDLinkSettingsResponse/AccountStatus");
+				if (GetRegisterAccountStatus == "true")
+				{
+					document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Registered");
+					document.getElementById("wz_mydlink_status").src = "./image/connected.png";
+					wizard_Step = 13;
+				}
+				else	{	wizard_Step = 10;	}
+				wizard_update();
+				break;
+			case "OK_NOTCONNECTED":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("checking_connection").style.display = "none";
+				var xml_GetMyDLinkSettings = HNAP.GetXML("GetMyDLinkSettings");
+				var GetRegisterAccountStatus = xml_GetMyDLinkSettings.Get("GetMyDLinkSettingsResponse/AccountStatus");
+				if (GetRegisterAccountStatus == "true")
+				{
+					document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Registered");
+					document.getElementById("wz_MydlinkStatus").style.color = "#4598aa";
+					document.getElementById("wz_mydlink_status").src = "./image/connected.png";
+				}
+				else
+				{
+					document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Unregistered");
+					document.getElementById("wz_MydlinkStatus").style.color = "#ff0000";
+					document.getElementById("wz_mydlink_status").src = "./image/disconnected.png";
+				}
+				wizard_Step = 13;
+				wizard_update();
+				break;
+			case "ERROR":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("checking_connection").style.display = "none";
+				var xml_GetMyDLinkSettings = HNAP.GetXML("GetMyDLinkSettings");
+				var GetRegisterAccountStatus = xml_GetMyDLinkSettings.Get("GetMyDLinkSettingsResponse/AccountStatus");
+				if (GetRegisterAccountStatus == "true")
+				{
+					document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Registered");
+					document.getElementById("wz_MydlinkStatus").style.color = "#4598aa";
+					document.getElementById("wz_mydlink_status").src = "./image/connected.png";
+				}
+				else
+				{
+					document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Unregistered");
+					document.getElementById("wz_MydlinkStatus").style.color = "#ff0000";
+					document.getElementById("wz_mydlink_status").src = "./image/disconnected.png";
+				}
+				wizard_Step = 13;
+				wizard_update();
+				break;
+		}
+	}
+	
+	function GetWanConnectionType()
+	{
+		var xml_SetTriggerADIC = HNAP.GetXML("SetTriggerADIC");
+		if(GetTriggerResult == "0")
+		{
+			var TriggerADIC = "true";
+			xml_SetTriggerADIC.Set("SetTriggerADIC/TriggerADIC", TriggerADIC);
+			var xml_SetTriggerADICResult = HNAP.SetXML("SetTriggerADIC", xml_SetTriggerADIC);
+			var GetWANConnType = xml_SetTriggerADICResult.Get("SetTriggerADICResponse/SetTriggerADICResult");
+			GetTriggerResult = "1";
+		}
+		else
+		{
+			var TriggerADIC = "false";
+			xml_SetTriggerADIC.Set("SetTriggerADIC/TriggerADIC", TriggerADIC);
+			var xml_SetTriggerADICResult = HNAP.SetXML("SetTriggerADIC", xml_SetTriggerADIC);
+			var GetWANConnType = xml_SetTriggerADICResult.Get("SetTriggerADICResponse/SetTriggerADICResult");
+		}
+		
+		switch (GetWANConnType)
+		{
+			case "OK_DETECTING_2":
+				// wait few seconds to get value
+				Time_GetWanConnectionType = window.clearInterval(Time_GetWanConnectionType);
+				Time_GetWanConnectionType = self.setInterval("GetWanConnectionType()", 3000);
+				break;
+			case "OK_PPPoE":
+				Time_GetWanConnectionType = window.clearInterval(Time_GetWanConnectionType);
+				document.getElementById("detection").style.display = "none";
+				document.getElementById('wz_ConnectionType').innerHTML = I18N("j", "DHCPPPPoE");
+				wizard_Step = 4;
+				wizard_update();
+				GetTriggerResult = "0";
+				break;
+			case "OK_DHCP":
+				Time_GetWanConnectionType = window.clearInterval(Time_GetWanConnectionType);
+				document.getElementById("detection").style.display = "none";
+				document.getElementById('wz_ConnectionType').innerHTML = I18N("j", "DHCP");
+				if (Current_Wan_Type != "DHCP")		{	SetDHCPSettings();	Current_Wan_Type = "DHCP";	GetTriggerResult = "0";	}
+				else	{	wizard_Step = 6;	wizard_update();	GetTriggerResult = "0";	}
+				if (Current_Wan_Type != Wan_Type)	{	typeChanged = 1;	}
+				break;
+			case "ERROR_WANLinkDown":
+				Time_GetWanConnectionType = window.clearInterval(Time_GetWanConnectionType);
+				document.getElementById("detection").style.display = "none";
+				wizard_Step = 2;
+				wizard_update();
+				GetTriggerResult = "0";
+				break;
+			case "ERROR_UnableToDetect":
+				Time_GetWanConnectionType = window.clearInterval(Time_GetWanConnectionType);
+				document.getElementById("detection").style.display = "none";
+				wizard_Step = 3;
+				wizard_update();
+				GetTriggerResult = "0";
+				break;
+			case "ERROR":
+				GetTriggerResult = "0";
+				break;
+		}
+	}
+	
+	function SetMyDlinkRegister()
+	{
+		if (document.getElementById("accountName").value == "" || document.getElementById("password_mydlink").value == "")
+		{
+			document.getElementById("MyDLink_description").innerHTML = I18N("j", "Email or password field is required.");
+		}
+		else
+		{
+			document.getElementById("btn_next").setAttribute("class", "styled-button_disable");
+			document.getElementById("btn_back").setAttribute("class", "styled-button_disable");
+			document.getElementById("btn_next").disabled = true;
+			document.getElementById("btn_back").disabled = true;
+			document.getElementById("MyDLink_description").innerHTML = "";
+			document.getElementById("show_loadingImageDefault").style.display = "table-row";
+			HNAP.GetXMLAsync("SetMyDLinkSettings", null, "GetXML", function(xml)	{	SetResult_1st(xml)	});
+		}
+	}
+	function SetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetMyDLinkSettings/Enabled", "");
+			result_xml.Set("SetMyDLinkSettings/Email", document.getElementById("accountName").value);
+			result_xml.Set("SetMyDLinkSettings/Password", document.getElementById("password_mydlink").value);
+			result_xml.Set("SetMyDLinkSettings/LastName", document.getElementById("lastName").value);
+			result_xml.Set("SetMyDLinkSettings/FirstName", document.getElementById("firstName").value);
+			result_xml.Set("SetMyDLinkSettings/DeviceUserName", "");
+			result_xml.Set("SetMyDLinkSettings/DevicePassword", "");
+			result_xml.Set("SetMyDLinkSettings/AccountStatus", "false");
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetMyDLinkSettings", result_xml, function(xml)	{	SetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_1st");	}	}
+	}
+	function SetResult_2nd(result_xml)
+	{
+		var SetResult_2nd = result_xml.Get("SetMyDLinkSettingsResponse/SetMyDLinkSettingsResult");
+		if (SetResult_2nd == "OK")	{	IsRegisted = "1";	HNAP.GetXMLAsync("SetMyDLinkSettings", null, "GetXML", function(xml)	{	SetResult_3rd(xml)	});	}
+		else
+		{
+			document.getElementById("MyDLink_description").innerHTML = SetResult_2nd;
+			document.getElementById("show_loadingImageDefault").style.display = "none";
+			document.getElementById("btn_next").setAttribute("class", "styled-button_enable");
+			document.getElementById("btn_back").setAttribute("class", "styled-button_enable");
+			document.getElementById("btn_next").disabled = false;
+			document.getElementById("btn_back").disabled = false;
+		}
+	}
+	function SetResult_3rd(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetMyDLinkSettings/Enabled", "");
+			result_xml.Set("SetMyDLinkSettings/Email", document.getElementById("accountName").value);
+			result_xml.Set("SetMyDLinkSettings/Password", document.getElementById("password_mydlink").value);
+			result_xml.Set("SetMyDLinkSettings/LastName", "");
+			result_xml.Set("SetMyDLinkSettings/FirstName", "");
+			result_xml.Set("SetMyDLinkSettings/DeviceUserName", "");
+			result_xml.Set("SetMyDLinkSettings/DevicePassword", "");
+			result_xml.Set("SetMyDLinkSettings/AccountStatus", "true");
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetMyDLinkSettings", result_xml, function(xml)	{	SetResult_4th(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_3rd");	}	}
+	}
+	function SetResult_4th(result_xml)
+	{
+		var SetResult_4th = result_xml.Get("SetMyDLinkSettingsResponse/SetMyDLinkSettingsResult");
+		if (SetResult_4th == "OK")
+		{
+			// Register Complete
+			document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Registered");
+			document.getElementById("wz_mydlink_status").src = "./image/connected.png";
+			document.getElementById("show_loadingImageDefault").style.display = "none";
+			wizard_Step = 13;
+			wizard_update();
+		}
+		else
+		{
+			// Error Message
+			var split_ErrorMessage = SetResult_4th.split("]");
+			var split_FinalErrorMessage = split_ErrorMessage[split_ErrorMessage.length - 1];
+			document.getElementById("MyDLink_description").innerHTML = split_FinalErrorMessage;
+			document.getElementById("show_loadingImageDefault").style.display = "none";
+		}
+	}
+	
+	function SetDeviceRegister_a()
+	{
+		if (document.getElementById("accountName_a").value == "" || document.getElementById("password_mydlink_a").value == "")
+		{
+			document.getElementById("MyDLink_description_a").innerHTML = I18N("j", "Email or password field is required.");
+		}
+		else
+		{
+			document.getElementById("btn_next").setAttribute("class", "styled-button_disable");
+			document.getElementById("btn_back").setAttribute("class", "styled-button_disable");
+			document.getElementById("btn_next").disabled = true;
+			document.getElementById("btn_back").disabled = true;
+			document.getElementById("MyDLink_description_a").innerHTML = "";
+			document.getElementById("show_loadingImage").style.display = "table-row";
+			HNAP.GetXMLAsync("SetMyDLinkSettings", null, "GetXML", function(xml)	{	SetResult_5th(xml)	});
+		}
+	}
+	function SetResult_5th(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetMyDLinkSettings/Enabled", "");
+			result_xml.Set("SetMyDLinkSettings/Email", document.getElementById("accountName_a").value);
+			result_xml.Set("SetMyDLinkSettings/Password", document.getElementById("password_mydlink_a").value);
+			result_xml.Set("SetMyDLinkSettings/LastName", "");
+			result_xml.Set("SetMyDLinkSettings/FirstName", "");
+			result_xml.Set("SetMyDLinkSettings/DeviceUserName", "");
+			result_xml.Set("SetMyDLinkSettings/DevicePassword", "");
+			result_xml.Set("SetMyDLinkSettings/AccountStatus", "true");
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetMyDLinkSettings", result_xml, function(xml)	{	SetResult_6th(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_5th");	}	}
+	}
+	function SetResult_6th(result_xml)
+	{
+		var SetResult_6th = result_xml.Get("SetMyDLinkSettingsResponse/SetMyDLinkSettingsResult");
+		if (SetResult_6th == "OK")
+		{
+			// Register Complete
+			document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Registered");
+			document.getElementById("wz_mydlink_status").src = "./image/connected.png";
+			document.getElementById("show_loadingImage").style.display = "none";
+			wizard_Step = 13;
+			wizard_update();
+		}
+		else
+		{
+			var split_ErrorMessage = SetResult_6th.split("]");
+			var split_FinalErrorMessage = split_ErrorMessage[split_ErrorMessage.length - 1];
+			document.getElementById("MyDLink_description_a").innerHTML = split_FinalErrorMessage;
+			document.getElementById("show_loadingImage").style.display = "none";
+			document.getElementById("btn_next").setAttribute("class", "styled-button_enable");
+			document.getElementById("btn_back").setAttribute("class", "styled-button_enable");
+			document.getElementById("btn_next").disabled = false;
+			document.getElementById("btn_back").disabled = false;
+		}
+	}
+	
+	function SetDHCPSettings()	{	HNAP.GetXMLAsync("SetWanSettings", null, "GetXML", function(xml)	{	SetResult_SDHCPS(xml)	});	}
+	function SetResult_SDHCPS(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetWanSettings/Type", "DHCP");
+			result_xml.Set("SetWanSettings/MTU", "1500");
+			result_xml.Set("SetWanSettings/Wizard", "1");//For dir880 only
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetWanSettings", result_xml, function(xml)	{	SetResult_7th(xml);	});
+		//	wizard_Step = 6;
+		//	wizard_update();
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_SDHCPS");	}	}
+	}
+	
+	function SetPPPoESettings()	{	HNAP.GetXMLAsync("SetWanSettings", null, "GetXML", function(xml)	{	SetResult_SPPPoES(xml)	});	}
+	function SetResult_SPPPoES(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetWanSettings/Type", "DHCPPPPoE");
+			result_xml.Set("SetWanSettings/Username", document.getElementById("pppoe_username").value);
+			result_xml.Set("SetWanSettings/Password", document.getElementById("pppoe_password").value);
+			result_xml.Set("SetWanSettings/IPAddress", "");
+			result_xml.Set("SetWanSettings/AutoReconnect", "true");
+			result_xml.Set("SetWanSettings/MaxIdleTime", "0");
+			result_xml.Set("SetWanSettings/MTU", "1492");
+			result_xml.Set("SetWanSettings/ConfigDNS/Primary", "");
+			result_xml.Set("SetWanSettings/ConfigDNS/Secondary", "");
+			result_xml.Set("SetWanSettings/Wizard", "1");//For dir880 only
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetWanSettings", result_xml, function(xml)	{	SetResult_7th(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_SPPPoES");	}	}
+	}
+	
+	function SetStaticSettings()	{	HNAP.GetXMLAsync("SetWanSettings", null, "GetXML", function(xml)	{	SetResult_SSS(xml)	});	}
+	function SetResult_SSS(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetWanSettings/Type", "Static");
+			result_xml.Set("SetWanSettings/IPAddress", document.getElementById("static_ipAddress").value);
+			result_xml.Set("SetWanSettings/SubnetMask", document.getElementById("static_subnetMask").value);
+			result_xml.Set("SetWanSettings/Gateway", document.getElementById("static_gateway").value);
+			result_xml.Set("SetWanSettings/MTU", "1500");
+			result_xml.Set("SetWanSettings/ConfigDNS/Primary", document.getElementById("static_primaryDNS").value);
+			result_xml.Set("SetWanSettings/ConfigDNS/Secondary", document.getElementById("static_secondaryDNS").value);
+			result_xml.Set("SetWanSettings/Wizard", "1");//For dir880 only
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetWanSettings", result_xml, function(xml)	{	SetResult_7th(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_SSS");	}	}
+	}
+	function GetXML_SetDeviceSettings()	{	HNAP.GetXMLAsync("SetDeviceSettings", null, "GetXML", function(xml)	{	SetResult_SDS(xml)	});	}
+	function SetResult_SDS(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetDeviceSettings/DeviceName", "dlinkrouter");
+			result_xml.Set("SetDeviceSettings/AdminPassword", document.getElementById("device_password").value);
+			result_xml.Set("SetDeviceSettings/ChangePassword", "true");
+			result_xml.Set("SetDeviceSettings/CAPTCHA", "false");
+			result_xml.Set("SetDeviceSettings/PresentationURL", "http://dlinkrouter.local/");
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetDeviceSettings", result_xml, function(xml)	{	SetResult2_SDS(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_SDS");	}	}
+	}
+	function SetResult2_SDS(result_xml)
+	{
+		var SetResult2_SDS = result_xml.Get("SetDeviceSettingsResponse/SetDeviceSettingsResult");
+		if (SetResult2_SDS == "OK")
+		{
+			//relogin
+			//var newPwd = document.getElementById("device_password").value;
+			//doLogin(newPwd,"")
+			//.done(function(){
+				//#ifdef featureMyDLink
+				if(currentDevice.featureMyDLink)
+				{
+					HNAP.GetXMLAsync("GetMyDLinkSettings", null, "GetValue", function(xml)	{	GetResult_GMDLS(xml)	});
+				}
+				else
+				{
+					$("#wz_mydlink_summary").hide();
+					wizard_Step = 13;
+					wizard_update();
+				}
+			//})
+			//.fail(function(){
+				//login fail?  redirect to login.html
+			//	window.location.href = "/Index.html";
+			//});
+
+		}
+		if (SetResult2_SDS == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult2_SDS");	}	}
+	}
+	function GetResult_GMDLS(result_xml)
+	{
+		var GetResult_GMDLS = result_xml.Get("GetMyDLinkSettingsResponse/GetMyDLinkSettingsResult");
+		if (GetResult_GMDLS == "OK")
+		{
+			var GetRegisterAccountStatus = result_xml.Get("GetMyDLinkSettingsResponse/AccountStatus");
+			if (GetRegisterAccountStatus == "true")
+			{
+				document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Registered");
+				document.getElementById("wz_mydlink_status").src = "./image/connected.png";
+				wizard_Step = 13;
+				wizard_update();
+			}
+			else
+			{
+				wizard_Step = 9;
+				wizard_update();
+				GetInternetConnectionStatus();
+			}
+		}
+	}
+	function SetResult_7th(result_xml)
+	{
+		var SetResult_7th = result_xml.Get("SetWanSettingsResponse/SetWanSettingsResult");
+		//----For dir880 only
+		if(SetResult_7th == "REBOOT")
+		{
+			RebootAfterFinish = 1;
+			_ReciprocalRebootNumber = 80;
+			SetResult_7th = "OK";
+		}
+		//For dir880 only----
+		if (SetResult_7th == "OK")
+		{
+			wizard_Step = 6;
+			wizard_update();
+			document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+			document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+			document.getElementById('btn_back').disabled = false;
+			document.getElementById("btn_next").disabled = false;
+		}
+		if (SetResult_7th == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_7th");	}	}
+	}
+	function popupWizard()
+	{
+		document.getElementById("createPop").style.display = "inline";
+		wizard_Step = 0;
+		wizard_update();
+	}
+	
+	function selectConnectionType(type)
+	{
+		// alert(type);
+		if (type == "dhcp" && document.getElementById('cb_dhcp').getAttribute('class') == 'unclick')
+		{
+			//selected DHCP
+			cb_dhcp.setAttribute("class", "clicked");
+			cb_pppoe.setAttribute("class", "unclick");
+			cb_static.setAttribute("class", "unclick");
+		}
+		else if (type == "pppoe" && document.getElementById('cb_pppoe').getAttribute('class') == 'unclick')
+		{
+			//selected PPPoE
+			cb_dhcp.setAttribute("class", "unclick");
+			cb_pppoe.setAttribute("class", "clicked");
+			cb_static.setAttribute("class", "unclick");
+		}
+		else if (type == "static" && document.getElementById('cb_static').getAttribute('class') == 'unclick')
+		{
+		//selected Static IP
+			cb_dhcp.setAttribute("class", "unclick");
+			cb_pppoe.setAttribute("class", "unclick");
+			cb_static.setAttribute("class", "clicked");
+		}
+	}
+	
+	function mydlinkAccount(answer)
+	{
+		// alert(answer);
+		if (answer == "yes" && document.getElementById('cb_yes').getAttribute('class') == 'unclick')
+		{
+			//selected DHCP
+			cb_yes.setAttribute("class", "clicked");
+			cb_no.setAttribute("class", "unclick");
+		}
+		else if (answer == "no" && document.getElementById('cb_no').getAttribute('class') == 'unclick')
+		{
+			//selected PPPoE
+			cb_yes.setAttribute("class", "unclick");
+			cb_no.setAttribute("class", "clicked");
+		}	
+	}
+	
+	function wizard_update()
+	{
+		//var docClientHeight = document.documentElement.clientHeight;
+		//var lheaderClient = document.getElementById("Lheader").clientHeight;
+		//var limit = docClientHeight-lheaderClient;
+		//document.getElementById('dialogBox').style.maxHeight = limit+"px"; 
+		
+		switch(wizard_Step)
+		{
+			case 0:
+				/*/////////////////////////// Page: Welcome Page ////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Welcome");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "This wizard will guide you through a step-by-step process to configure your new D-Link device.");
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_off");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_off");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*/////////////////////////////////////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");					//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+				document.getElementById('wizard_setupTable').style.display = "inline";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "visible";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Cancel");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = true;
+				document.getElementById("btn_next").disabled = false;
+				document.getElementById('btn_back').style.display = "none";
+				
+				document.getElementById('dialogBox').style.top = "50px"; //653=50 num=313
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 1:
+				/*////////////////////// Page: Detecting Internet connection //////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Configure Your Internet Connection");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "Detecting Internet Connection");
+				document.getElementById('wizard_wording').innerHTML += "...";
+				/*///////////////////////////////Topology//////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_on");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_on");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*/////////////////////////////////////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");					//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "inline";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_disable");
+				document.getElementById('btn_back').disabled = true;
+				document.getElementById("btn_next").disabled = true;
+				document.getElementById('btn_back').style.display = "inline";
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 2: 
+				/*///////////////////////////////// Page: Plug //////////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Install");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "Please plug one end of the Ethernet cable included with your device into the port labeled INTERNET on your device. Plug the other end of this cable into the Ethernet port on your DSL or cable broadband modem, and power cycle the modem.");
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "none";
+				/*//////////////////////////////////////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");				//for firefox
+				areaSize.setAttribute("className", "wizard_area2");			//for IE
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "inline";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				document.getElementById('buttonTable').style.display = "block";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 3:
+				/*///////////////////////////////// Page: Connection Type //////////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Configure Your Internet Connection");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "Please select your Internet connection type below");
+				/*///////////////////////////////Topology//////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_on");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_on");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*///////////////////////////////// Settings ////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");				//for firefox
+				areaSize.setAttribute("className", "wizard_area2");				//for IE
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "inline";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 4:
+				/*/////////////////////////// Page: Internet Settings_PPPoE ////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "PPPoE");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "To setup this Internet connection, you will need to have a User Name from your Internet Service Provider. If you do not have this information, please contact your ISP.");
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_on");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_on");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*///////////////////////////////// Settings ////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");				//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "inline";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 5:
+				/*/////////////////////////// Page: Internet Settings_Static IP ////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Static IP");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "To set up this conncetion you will need to have a complete list of IP information by your Internet Service Provider. If you have a Static IP connection and do not have this information, please contact your ISP.");
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_on");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_on");	    //for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*/////////////////////////////////Settings////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");				//for firefox
+				areaSize.setAttribute("className", "wizard_area2");				//for IE
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "inline";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 6:
+				/*////////////////////////// Page: Wi-Fi Settings ////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Wi-Fi Settings");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "To setup a Wi-Fi Network you will need to give your Wi-Fi Network a Name(SSID) and Password.");
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_off");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_off");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_on");			//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_on");		//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*////////////////////////////////// Settings ///////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");				//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+
+				//#ifdef featureSmartConnect
+				//if(currentDevice.featureSmartConnect)
+				if((currentDevice.featureSmartConnect) && (GetSmartConnect == "1")) // for 880 only. 880 have smart connect but it's default is disable
+				{
+					$(".wifi_5g").hide();
+					$("#wifi_networkName24G_show, #confirm_wifi_networkName24G_show, #wz_24GHz_Wireless_show")
+					.html(I18N("j", "Wi-Fi Network Name")+":");
+					$("#wifi_password24G_show, #confirm_wifi_password24G_show, #wz_24GHz_WirelessPassword_show")
+					.html(I18N("j", "Wi-Fi Password")+":");				
+				}
+
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "inline";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+				
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				
+				GetWirelessParameter();
+				break;
+			case 7:
+				/*/////////////////////////// Page: Device Password ////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Device Admin Password");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "By default, your new D-Link device does not have a password configured for administrator access to the Web-based configuration utility. To secure your new device, please create a password below.");
+				/*///////////////////////////////Topology//////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line_icon = document.getElementById('wizard_wan_line');
+				wan_line_icon.setAttribute("class", "wizard_wan_line_off");			//for firefox
+				wan_line_icon.setAttribute("className", "wizard_wan_line_off");		//for IE
+				//Wi-Fi
+				var wifi_line_icon = document.getElementById('wizard_wifi_line');
+				wifi_line_icon.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line_icon.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_on");				//for firefox
+				router_icon.setAttribute("className", "wizard_router_on");			//for IE
+				
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");					//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+				/*///////////////////////////////// Settings ////////////////////////////////////////*/
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "inline";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+				
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				
+				break;
+			case 8: 
+				/*///////////////////////////// Page: Save Settings ///////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Summary");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "Below is a summary of your Wi-Fi security and device password settings. Please make a note of your settings and click \"Next\".");
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line_icon = document.getElementById('wizard_wan_line');
+				wan_line_icon.setAttribute("class", "wizard_wan_line_on");			//for firefox
+				wan_line_icon.setAttribute("className", "wizard_wan_line_on");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_on");			//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_on");		//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");				//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");			//for IE
+				
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");					//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+				/*/////////////////////////////////Settings////////////////////////////////////////*/
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "inline";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				
+				
+				document.getElementById('confirm_connection_type').innerHTML = I18N("j", document.getElementById('wz_ConnectionType').innerHTML);
+				document.getElementById('confirm_wifi_networkName24G').innerHTML = document.getElementById('wifi_networkName24G').value;
+				document.getElementById('confirm_wifi_networkName5G').innerHTML = document.getElementById('wifi_networkName5G').value;
+				
+				document.getElementById('confirm_wifi_password24G').innerHTML = document.getElementById('wifi_password24G').value;
+				document.getElementById('confirm_wifi_password5G').innerHTML = document.getElementById('wifi_password5G').value;
+				
+				if (document.getElementById('device_password').value == "")
+				{
+					document.getElementById('confirm_device_password').innerHTML = I18N("j", "Not Available");
+				}
+				else
+				{
+					document.getElementById('confirm_device_password').innerHTML = document.getElementById('device_password').value;
+				}
+				
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+				
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 9:
+				/*////////////////////// Page: Detecting Internet connection //////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Checking Your Internet Connectivity");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "Checking Internet Connectivity");
+				document.getElementById('wizard_wording').innerHTML += "...";
+				/*///////////////////////////////Topology//////////////////////////////////*/
+				document.getElementById('closeCreatePopBtn').style.display = "none";
+				document.getElementById('wizard_topology').style.display = "inline";
+				//WAN
+				var wan_line = document.getElementById('wizard_wan_line');
+				wan_line.setAttribute("class", "wizard_wan_line_on");			//for firefox
+				wan_line.setAttribute("className", "wizard_wan_line_on");		//for IE
+				//Wi-Fi
+				var wifi_line = document.getElementById('wizard_wifi_line');
+				wifi_line.setAttribute("class", "wizard_wifi_line_off");		//for firefox
+				wifi_line.setAttribute("className", "wizard_wifi_line_off");	//for IE
+				//Router
+				var router_icon = document.getElementById('wizard_router');
+				router_icon.setAttribute("class", "wizard_router_off");			//for firefox
+				router_icon.setAttribute("className", "wizard_router_off");		//for IE
+				/*/////////////////////////////////////////////////////////////////////////*/
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area1");				//for firefox
+				areaSize.setAttribute("className", "wizard_area1");				//for IE
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "inline";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_disable");
+				document.getElementById('btn_back').disabled = true;
+				document.getElementById("btn_next").disabled = true;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 10:
+				/*///////////////////////////// Page:mydlink ///////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "mydlink Registration");
+				document.getElementById('wizard_wording').innerHTML = '';
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('closeCreatePopBtn').style.display = "none";
+				document.getElementById('wizard_topology').style.display = "none";
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");			//for firefox
+				areaSize.setAttribute("className", "wizard_area2");		//for IE
+				/*///////////////////////////////Settings//////////////////////////////////////////*/
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "inline";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Skip");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 11:
+				/*///////////////////////////// Page:mydlink ///////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "mydlink Registration");
+				document.getElementById('wizard_wording').innerHTML = '';
+				/*///////////////////////////////Topology//////////////////////////////////*/
+				document.getElementById('closeCreatePopBtn').style.display = "none";
+				document.getElementById('wizard_topology').style.display = "none";
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");			//for firefox
+				areaSize.setAttribute("className", "wizard_area2");		//for IE
+				/*///////////////////////////////Settings//////////////////////////////////////////*/
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "inline";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				changeButtonStatus();
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 12:
+				/*///////////////////////////// Page:mydlink ///////////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "mydlink Registration");
+				document.getElementById('wizard_wording').innerHTML = '';
+				/*/////////////////////////////// Topology //////////////////////////////////*/
+				document.getElementById('closeCreatePopBtn').style.display = "none";
+				document.getElementById('wizard_topology').style.display = "none";
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");			//for firefox
+				areaSize.setAttribute("className", "wizard_area2");		//for IE
+				/*/////////////////////////////// Settings //////////////////////////////////////////*/
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "inline";
+				document.getElementById('congratulationsTable').style.display = "none";
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Next");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = false;
+				document.getElementById("btn_next").disabled = false;
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+			case 13:
+				/*///////////////////////////// Page: Configurations ////////////////////////*/
+				document.getElementById('wizard_title').innerHTML = I18N("j", "Congratulations");
+				document.getElementById('wizard_wording').innerHTML = I18N("j", "Congratulations, your device has been configured. You can now connect to your Wi-Fi network by using the new Wi-Fi Network Name and Password you created.");
+				/*///////////////////////////////Topology//////////////////////////////////*/
+				document.getElementById('closeCreatePopBtn').style.display = "none";
+				document.getElementById('wizard_topology').style.display = "none";
+				var areaSize = document.getElementById('wizard_settings_area');
+				areaSize.setAttribute("class", "wizard_area2");			//for firefox
+				areaSize.setAttribute("className", "wizard_area2");		//for IE
+				/*///////////////////////////////Settings//////////////////////////////////////////*/
+				document.getElementById('wizard_setupTable').style.display = "none";
+				document.getElementById('Language_th').style.visibility = "hidden";
+				document.getElementById('detection').style.display = "none";
+				document.getElementById('plug_page').style.display = "none";
+				document.getElementById('selectConnectionType').style.display = "none";
+				document.getElementById('pppoe_setupTable').style.display = "none";
+				document.getElementById('staticIP_setupTable').style.display = "none";
+				document.getElementById('wifi_setupTable').style.display = "none";
+				document.getElementById('devicePassword_setupTable').style.display = "none";
+				document.getElementById('confirm_setup').style.display = "none";
+				document.getElementById('checking_connection').style.display = "none";
+				document.getElementById('mydlink_step1').style.display = "none";
+				document.getElementById('mydlink_step2').style.display = "none";
+				document.getElementById('mydlink_step3').style.display = "none";
+				document.getElementById('congratulationsTable').style.display = "inline";
+
+				document.getElementById("wz_24GHz_Wireless").innerHTML =  HTMLEncode(document.getElementById("wifi_networkName24G").value);
+				document.getElementById("wz_5GHz_Wireless").innerHTML = HTMLEncode(document.getElementById("wifi_networkName5G").value);				
+				document.getElementById("wz_24GHz_WirelessPassword").innerHTML = HTMLEncode(document.getElementById("wifi_password24G").value);
+				document.getElementById("wz_5GHz_WirelessPassword").innerHTML = HTMLEncode(document.getElementById("wifi_password5G").value);
+
+				document.getElementById("wz_DeviceAdminPassword").innerHTML = HTMLEncode(document.getElementById("device_password").value);
+				/*/////////////////////////// Button Status Change ///////////////////////////*/
+				document.getElementById('btn_back').innerHTML = I18N("j", "Back");
+				document.getElementById('btn_next').innerHTML = I18N("j", "Finish");
+				document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+				document.getElementById('btn_next').setAttribute("class", "styled-button_enable");
+				document.getElementById('btn_back').disabled = true;
+				document.getElementById("btn_next").disabled = false;
+				document.getElementById('btn_back').style.display = "none";
+
+				document.getElementById('dialogBox').style.top = "50px";
+				//var dialogBoxClient = document.getElementById("dialogBox").clientHeight;
+				//document.getElementById('dialogBox').style.top = (docClientHeight-dialogBoxClient)/2 +"px";
+				break;
+		}
+	}
+	function wizard_back(num)
+	{
+		switch (num)
+		{
+			case 0:	break;
+			case 1:	wizard_update();	break;
+			case 2:	wizard_Step = 0;	wizard_update();	break;
+			case 3:	wizard_Step = 0;	wizard_update();	break;
+			case 4:	wizard_Step = 3;	wizard_update();	break;
+			case 5:	wizard_Step = 3;	wizard_update();	break;
+			case 6:	wizard_Step = 3;	wizard_update();	break;
+			case 7:
+				if (document.getElementById('cb_dhcp').getAttribute('class') == 'clicked')	{	wizard_Step = 6;	}
+	 			else if (document.getElementById('cb_pppoe').getAttribute('class') == 'clicked')	{	wizard_Step = 4;	}
+	 			else if (document.getElementById('cb_static').getAttribute('class') == 'clicked')	{	wizard_Step = 5;	}
+				wizard_update();
+				break;
+			case 8:	wizard_Step = 7;	wizard_update();	break;
+			case 9:	wizard_Step = 3;	wizard_update();	break;
+			case 10:
+				document.getElementById("wz_MydlinkStatus").innerHTML = I18N("j", "Unregistered");
+				document.getElementById("wz_MydlinkStatus").style.color = "#ff0000";
+				wizard_Step = 13;
+				wizard_update();
+				break;
+			case 11:	wizard_Step = 10;	wizard_update();	break;
+			case 12:	wizard_Step = 10;	wizard_update();	break;
+			case 13:	break;
+		}
+	}
+	function wizard_next(num)
+	{
+		switch (num)
+		{
+			case 0:	wizard_Step = 1;	wizard_update();	GetWanConnectionType();	break;
+			case 1:	break;
+			case 2:	wizard_Step = 1;	wizard_update();	GetWanConnectionType();	break;
+			case 3:
+				if(document.getElementById('cb_dhcp').getAttribute('class') == 'clicked')
+				{
+					document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+					document.getElementById('btn_next').setAttribute("class", "styled-button_disable");
+					document.getElementById('btn_back').disabled = true;
+					document.getElementById("btn_next").disabled = true;
+					document.getElementById('wz_ConnectionType').innerHTML = I18N("j", "DHCP");
+					if (Current_Wan_Type != "DHCP")		{	SetDHCPSettings();	Current_Wan_Type = "DHCP";	if (Current_Wan_Type != Wan_Type)	{	typeChanged = 1;	}	}
+					else	{	if (Current_Wan_Type != Wan_Type)	{	typeChanged = 1;	}	wizard_Step = 6;	wizard_update();	}
+				}
+				else if (document.getElementById('cb_pppoe').getAttribute('class') == 'clicked')
+				{
+					document.getElementById('wz_ConnectionType').innerHTML = I18N("j", "DHCPPPPoE");
+					wizard_Step = 4;
+					wizard_update();
+				}
+				else if (document.getElementById('cb_static').getAttribute('class') == 'clicked')
+				{
+					document.getElementById('wz_ConnectionType').innerHTML = I18N("j", "Static");
+					wizard_Step = 5;
+					wizard_update();
+				}
+				break;
+			case 4:	document.getElementById("sumbit_CheckData").click();	break;	// PPPoE
+			case 5:	document.getElementById("sumbit_CheckData1").click();	break;	// Static
+			case 6:	document.getElementById("sumbit_CheckData2").click();	break;	// Wireless
+			case 7:	document.getElementById("sumbit_CheckData3").click();	break;	// Device Admin Password
+			case 8:
+				GetXML_SetDeviceSettings();
+				break;
+			case 9:
+				break;
+			case 10:
+				if (document.getElementById('cb_yes').getAttribute('class') == 'clicked')	{	wizard_Step = 12;	}
+				else if (document.getElementById('cb_no').getAttribute('class') == 'clicked')	{	wizard_Step = 11;	}
+				wizard_update();
+				break;
+			case 11:
+				// Register
+				//if (IsRegisted == "0")
+				{
+					SetMyDlinkRegister();
+				}
+				//else
+				//{
+				//	SetDeviceRegister();	//??
+				//}
+				break;
+			case 12:	SetDeviceRegister_a();	break;	// Login
+			case 13:
+				document.getElementById("CreatePopAlertMessage").style.display = "inline";
+				document.getElementById("waitSettingFinish_Setting").style.display = "inline";
+				document.getElementById("createPop").style.display = "none";
+				Time_GetReciprocalTime = window.clearInterval(Time_GetReciprocalTime);
+				set_wireless();
+				//HNAP.GetXMLAsync("SetWLanRadioSettings", null, "GetXML", function(xml)	{	GetResult_SWLRS(xml)	});
+				break;
+		}
+	}
+
+	function set_wireless()
+	{
+		var soapAction = new SOAPAction();
+		var result_24g = soapAction.sendSOAPAction("SetWLanRadioSettings", setWLanRadioSettings_24g, null);
+		var soapAction2 = new SOAPAction();
+		var result_24g_security = soapAction2.sendSOAPAction("SetWLanRadioSecurity", setWLanRadioSecurity_24g, null);
+
+		var soapAction3 = new SOAPAction();
+		var result_5g = soapAction3.sendSOAPAction("SetWLanRadioSettings", setWLanRadioSettings_5g, null);
+		var soapAction4 = new SOAPAction();
+		var result_5g_security = soapAction4.sendSOAPAction("SetWLanRadioSecurity", setWLanRadioSecurity_5g, null);
+
+		var result_smartconnect = null;
+		//#ifdef featureSmartConnect
+		if(currentDevice.featureSmartConnect)
+		{
+			var soapAction5 = new SOAPAction();
+			var setSmartconnectSettings = new SOAPSetSmartconnectSettings();
+			//setSmartconnectSettings.Enabled = true;
+			setSmartconnectSettings.Enabled = false; // for 880 only. 880 have smart connect but it's default is disable
+			result_smartconnect = soapAction5.sendSOAPAction("SetSmartconnectSettings", setSmartconnectSettings, null);
+		}
+
+		$.when(result_24g, result_24g_security, result_5g, result_5g_security, result_smartconnect)
+		.done(function(obj){
+			HNAP.GetXMLAsync("SetTimeSettings", null, "GetXML", function(xml)	{	GetResult_STS(xml)	});
+		})
+		.fail(function(obj){
+			setTimeout("returnToHome()", 1000);
+		});
+
+	}
+
+	function GetResult_STS(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var d = new Date()
+			var n = d.getTimezoneOffset() / -60;
+			var clientTimeZone = n.toString();
+			switch (clientTimeZone)
+			{
+				case "-12":		result_xml.Set("SetTimeSettings/TimeZone", "1");	break;
+				case "-11":		result_xml.Set("SetTimeSettings/TimeZone", "2");	break;
+				case "-10":		result_xml.Set("SetTimeSettings/TimeZone", "3");	break;
+				case "-9":		result_xml.Set("SetTimeSettings/TimeZone", "4");	break;
+				case "-8":		result_xml.Set("SetTimeSettings/TimeZone", "5");	break;
+				case "-7":		result_xml.Set("SetTimeSettings/TimeZone", "6");	break;
+				case "-6":		result_xml.Set("SetTimeSettings/TimeZone", "9");	break;
+				case "-5":		result_xml.Set("SetTimeSettings/TimeZone", "13");	break;
+				case "-4.5":	result_xml.Set("SetTimeSettings/TimeZone", "15");	break;
+				case "-4":		result_xml.Set("SetTimeSettings/TimeZone", "16");	break;
+				case "-3.5":	result_xml.Set("SetTimeSettings/TimeZone", "19");	break;
+				case "-3":		result_xml.Set("SetTimeSettings/TimeZone", "20");	break;
+				case "-2":		result_xml.Set("SetTimeSettings/TimeZone", "23");	break;
+				case "-1":		result_xml.Set("SetTimeSettings/TimeZone", "24");	break;
+				case "0":		result_xml.Set("SetTimeSettings/TimeZone", "27");	break;
+				case "1":		result_xml.Set("SetTimeSettings/TimeZone", "28");	break;
+				case "2":		result_xml.Set("SetTimeSettings/TimeZone", "33");	break;
+				case "3":		result_xml.Set("SetTimeSettings/TimeZone", "39");	break;
+				case "3.5":		result_xml.Set("SetTimeSettings/TimeZone", "42");	break;
+				case "4":		result_xml.Set("SetTimeSettings/TimeZone", "43");	break;
+				case "4.5":		result_xml.Set("SetTimeSettings/TimeZone", "46");	break;
+				case "5":		result_xml.Set("SetTimeSettings/TimeZone", "47");	break;
+				case "5.5":		result_xml.Set("SetTimeSettings/TimeZone", "48");	break;
+				case "5.75":	result_xml.Set("SetTimeSettings/TimeZone", "50");	break;
+				case "6":		result_xml.Set("SetTimeSettings/TimeZone", "51");	break;
+				case "6.5":		result_xml.Set("SetTimeSettings/TimeZone", "53");	break;
+				case "7":		result_xml.Set("SetTimeSettings/TimeZone", "54");	break;
+				case "8":		result_xml.Set("SetTimeSettings/TimeZone", "60");	break;
+				case "9":		result_xml.Set("SetTimeSettings/TimeZone", "62");	break;
+				case "9.5":		result_xml.Set("SetTimeSettings/TimeZone", "65");	break;
+				case "10":		result_xml.Set("SetTimeSettings/TimeZone", "67");	break;
+				case "11":		result_xml.Set("SetTimeSettings/TimeZone", "72");	break;
+				case "12":		result_xml.Set("SetTimeSettings/TimeZone", "74");	break;
+				case "13":		result_xml.Set("SetTimeSettings/TimeZone", "77");	break;
+				default:		result_xml.Set("SetTimeSettings/TimeZone", "60");	break;
+			}
+			result_xml.Set("SetTimeSettings/DaylightSaving", "false");
+			result_xml.Set("SetTimeSettings/NTP", "true");
+			result_xml.Set("SetTimeSettings/NTPServer", "ntp1.dlink.com");
+			HNAP.SetXMLAsync("SetTimeSettings", result_xml, function(xml)	{	SetResult_STS(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_STS");	}	}
+	}
+	function SetResult_STS(result_xml)
+	{
+		var SetResult_STS = result_xml.Get("SetTimeSettingsResponse/SetTimeSettingsResult");
+		if (SetResult_STS == "OK")
+		{
+			document.getElementById("waitSettingFinish_Setting").style.display = "none";
+			document.getElementById("waitSettingFinish").style.display = "inline";
+			/*var url = location.host.toString();
+			var port = location.port.toString();
+			if (port == "")		{	url = url + "/Home.hml";	}
+			else	{	url = url + ":" + port + "/Home.hml";	}
+			localStorage.setItem("RedirectUrl", url);*/
+			Start_reciprocal_Number_Reboot();
+			//----For dir880 only
+			if(RebootAfterFinish == 1) HNAP.GetXMLAsync("Reboot", null, "GetXML", function(xml)	{	HNAP.SetXML("Reboot", xml);});
+			//For dir880 only----
+		}
+		if (SetResult_STS == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_STS");	}	setTimeout("waitSettingFinished()", 1000);	}
+	}
+	
+	function ValueIsChanged()	{	valueChanged = 1;	}
+	
+	function clearCreateRulePOP()
+	{
+		document.getElementById("createPop").style.display = "none";
+		HNAP.GetXMLAsync("SetDeviceSettings", null, "GetXML", function(xml)	{	SetResult_CloseSWS(xml)	});
+	}
+	function SetResult_CloseSWS(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("SetDeviceSettings/DeviceName", "dlinkrouter");
+			result_xml.Set("SetDeviceSettings/AdminPassword", "");
+			result_xml.Set("SetDeviceSettings/ChangePassword", "true");
+			result_xml.Set("SetDeviceSettings/CAPTCHA", "false");
+			result_xml.Set("SetDeviceSettings/PresentationURL", "http://dlinkrouter.local/");
+			sessionStorage.setItem("RedirectUrl", "http://dlinkrouter.local/");
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetDeviceSettings", result_xml, function(xml)	{	SetResult2_CloseSWS(xml);	});
+			Time_GetReciprocalTime = window.clearInterval(Time_GetReciprocalTime);
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_CloseSWS");	}	}
+	}
+	function SetResult2_CloseSWS(result_xml)
+	{
+		var SetResult2_CloseSWS = result_xml.Get("SetDeviceSettingsResponse/SetDeviceSettingsResult");
+		if (SetResult2_CloseSWS == "OK")	{	setTimeout("waitSettingFinished()", 2000);	}
+		else								{	setTimeout("waitSettingFinished()", 2000);	}
+	}
+	function waitSettingFinished()	{	self.location.href = "Home.html";	}
+	function returnToHome()			{	self.location.href = "Home.html";	}
+	
+	function changeButtonStatus()
+	{
+		if($("#option1").prop('checked'))
+		{
+			$("#btn_next").attr("class", "styled-button_enable").prop("disabled", false);
+		}
+		else
+		{
+			$("#btn_next").attr("class", "styled-button_disable").prop("disabled", true);
+		}
+	}
+	
+	function Start_reciprocal_Number_Reboot()
+	{
+		if (_ReciprocalRebootNumber >= 0)
+		{
+			document.getElementById("reciprocal_Number").innerHTML = _ReciprocalRebootNumber + " " + I18N("j", "Sec");
+			_ReciprocalRebootNumber --;
+			setTimeout("Start_reciprocal_Number_Reboot()", 1000);
+		}
+		else	{	waitSettingFinished();	}
+	}
+</script>
+
+<body onload="SetXML();popupWizard();">
+
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="Lheader">
+				<div id="logo">
+						<img id="D-Link logo" src="image/logo_2.gif" width="105" height="95"  />
+				</div>
+				<table class="versionTable" id="versionTable" border="0" cellspacing="0">
+					<tbody>
+						<thead>
+					     <td><script>I18N("h", "Model Name");</script>:&nbsp;<label id="modelName">&nbsp;</label></td>
+					     <td><script>I18N("h", "Hardware Version");</script>:&nbsp;<label id="HWversion">&nbsp;</label></td>
+					     <td><script>I18N("h", "Firmware Version");</script>:&nbsp;<label id="FWversion">&nbsp;</label></td>
+						</thead>
+					</tbody>
+				</table>
+		</div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+		</div>
+		<div id="createPop">
+				<div id="popRect">
+					<div id="dialogBox"  style="width:616px; "> <!--overflow-x:hidden; overflow-y:auto;-->
+					<div id="wizard_title_bg"><div id="wizard_title"><script>I18N("h", "Welcome");</script></div></div>
+					<div id="closeCreatePopBtn" onclick="clearCreateRulePOP()" style="cursor:pointer"></div>
+						<!--///////////////////////////////Topology//////////////////////////////////-->
+						<div id="wizard_topology">
+							<div id="topology">
+								<div id="wizard_internet"></div>
+								<div id="wizard_wan_line" class="wizard_wan_line_off"></div>
+								<div id="wizard_router" class="wizard_router_off"></div>
+								<div id="wizard_wifi_line" class="wizard_wifi_line_off"></div>
+								<div id="wizard_wifi"></div>
+							</div>
+							<table  id="wizard_deviceName"  border="0">
+								<tbody>
+									<tr>
+										<td><script>I18N("h", "Internet");</script></td>
+										<td><label id="modelName2">&nbsp;</label></td>
+										<td><script>I18N("h", "Wi-Fi Client");</script></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!--///////////////////////////////Settings//////////////////////////////////-->
+						<div id="wizard_settings">
+							<!--0.Welcome-->
+							<div id = "wizard_settings_area" class="wizard_area1">
+							<div id= "wizard_wording" class="wizard_wording_r"><script>I18N("h", "This wizard will guide you through a step-by-step process to configure your new D-Link device.");</script></div>
+							<div id= "wizard_settings_body">
+								<table id="wizard_setupTable"  border="0">
+									<tbody>
+										<tr><th style="text-align: left;"><script>I18N("h", "Step 1: Install your device");</script></th></tr>
+										<tr><th style="text-align: left;"><script>I18N("h", "Step 2: Configure your Network and Wi-Fi settings");</script></th></tr>
+										<tr><th style="text-align: left;"><script>I18N("h", "Step 3: Set your router password");</script></th></tr>
+										<tr><th style="text-align: left;"><script>I18N("h", "Step 4: Set up mydlink service");</script></th></tr>
+									</tbody>
+								</table> 
+								<!--1.Detection-->
+								<div id="detection">
+									<center><div id="Loading_pop_image"></div></center></br>
+								</div>
+								<!--2.Plug-->
+								<div id ="plug_page">
+									<img id="plugImage" src="image/wanport.gif" width="365" height="150"  style="margin:20px 0px 0px 50px;"/>
+									<table id="device_name_plug"  border="0">
+										<tbody>
+											<tr>
+												<th><script>I18N("h", "Your Device");</script></th>
+												<td style="width:100px;">&nbsp;</td>
+												<th><script>I18N("h", "Cable/xDSL Broadband Modem");</script></th>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--3.Manually select connection type-->
+								<div id="selectConnectionType">
+									<table id="connectionType_Table"  border="0" style="margin:10px 0px 0px 0px;">
+										<tbody>
+											<tr>
+												<td style="width:10px;"><div id="cb_dhcp" class="clicked" OnClick="selectConnectionType('dhcp');"></div></td>
+												<th style="text-align: left;"><script>I18N("h", "DHCP Connection (Dynamic IP Address)");</script></th>
+											</tr>
+											<tr>
+												<td></td>
+												<td><script>I18N("h", "Choose this if your Internet connection automatically provides you with an IP Address. Most Cable Modems use this type of connection.");</script></td>
+											</tr>
+											<tr>
+												<td style="width:10px;"><div id="cb_pppoe" class="unclick" OnClick="selectConnectionType('pppoe');"></div></td>
+												<th style="text-align: left;"><script>I18N("h", "Username/Password Connection (PPPoE)");</script></th>
+											</tr>
+											<tr>
+												<td></td>
+												<td><script>I18N("h", "Choose this option if your Internet connection reguires a username and passowrd to get online. Most DSL modems use this connection type of connection.");</script></td>
+											</tr>
+											<tr>
+												<td style="width:10px;"><div id="cb_static" class="unclick" OnClick="selectConnectionType('static');"></div></td>
+												<th style="text-align: left;"><script>I18N("h", "Static IP Address Connection");</script></th>
+											</tr>
+											<tr>
+												<td></td>
+												<td><script>I18N("h", "Choose this option if your Internet Setup Provider provided you with IP Address information that has to be manually configured.");</script></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--4.PPPoE-->
+								<form name="pppoe_Settings" id="pppoe_Settings" method="POST" action="">
+								<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+								<table id="pppoe_setupTable"  border="0">
+									<tbody>
+										<tr><th style="width:150px;"><script>I18N("h", "Username");</script>:</th><td><input class="styled-text" type="text" size="30" id="pppoe_username" name="pppoe_username" onkeyup="ValueIsChanged();"></input></td></tr>
+										<tr><th style="width:150px;"><script>I18N("h", "Password");</script>:</th><td><input class="styled-text" type="text" size="30" id="pppoe_password" name="pppoe_password" onkeyup="ValueIsChanged();"></input></td></tr>
+									</tbody>
+								</table> 
+								</form>
+								<!--5.Static IP Address-->
+								<form name="staticIP_Settings" id="staticIP_Settings" method="POST" action="">
+								<input id="sumbit_CheckData1" class="submit" type="submit" value="Submit" style="display:none" />
+								<table id="staticIP_setupTable"  border="0">
+									<tbody>
+										<tr>
+											<th style="text-align: right;"><script>I18N("h", "IP Address");</script>:</th>
+											<td style="width:250px;"><input class="styled-text" type="text" size="30" id="static_ipAddress" name="static_ipAddress" onkeyup="ValueIsChanged();"></input></td>
+										</tr>
+										<tr>
+											<th style="text-align: right;"><script>I18N("h", "Subnet Mask");</script>:</th>
+											<td style="width:250px;"><input class="styled-text" type="text" size="30" id="static_subnetMask" name="static_subnetMask" onkeyup="ValueIsChanged();"></input></td>
+										</tr>
+										<tr>
+											<th style="text-align: right;"><script>I18N("h", "Gateway Address");</script>:</th>
+											<td style="width:250px;"><input class="styled-text" type="text" size="30" id="static_gateway" name="static_gateway" onkeyup="ValueIsChanged();"></input></td>
+										</tr>
+										<tr>
+											<th style="text-align: right;"><script>I18N("h", "Primary DNS Address");</script></th>
+											<td style="width:250px;"><input class="styled-text" type="text" size="30" id="static_primaryDNS" name="static_primaryDNS" onkeyup="ValueIsChanged();"></input></td>
+										</tr>
+										<tr>
+											<th style="text-align: right;"><script>I18N("h", "Secondary DNS Address");</script></th>
+											<td style="width:250px;"><input class="styled-text" type="text" size="30" id="static_secondaryDNS" name="static_secondaryDNS" onkeyup="ValueIsChanged();"></input></td>
+										</tr>
+									</tbody>
+								</table>
+								</form>
+								<!--6.Wi-Fi-->
+								<form name="wifi_Settings" id="wifi_Settings" method="POST" action="">
+								<input id="sumbit_CheckData2" class="submit" type="submit" value="Submit" style="display:none" />
+								<table id="wifi_setupTable"  border="0">
+									<tbody>
+										<tr>
+											<th style="width:270px; text-align:right;" id="wifi_networkName24G_show"><script>I18N("h", "2.4GHz Wi-Fi Network Name");</script>:</th>
+											<td><input class="styled-text" type="text" size="30" id="wifi_networkName24G" maxlength="32" name="wifi_networkName24G"></input>
+										</tr>
+										<tr class="wifi_5g">
+											<th style="width:270px; text-align:right;"><script>I18N("h", "5GHz Wi-Fi Network Name");</script>:</th>
+											<td><input class="styled-text" type="text" size="30" id="wifi_networkName5G" maxlength="32" name="wifi_networkName5G"></input></th>
+										</tr>
+										<tr>
+											<td colspan="2" style="width:590px;"><script>I18N("h", "The Wi-Fi Network Name is up to 32 characters. You will need to join your Wi-Fi network using this Network Name (SSID).");</script></td>
+										</tr>
+										<!-- <tr id="wifi_password_show" style="display:none">
+											<th style="width:270px; text-align:right;"><script>I18N("h", "Wi-Fi Password");</script>:</th>
+											<td><input class="styled-text" type="text" size="30" id="wifi_password" maxlength="63" name="wifi_password"></input></td>
+										</tr> -->
+										<!-- <tr id="wifi_copyto5g_1" style="display:none">
+											<th></th>
+											<td><input type="checkbox" id="Copy_pwd1" onclick="CheckPWD()"><script>I18N("h", "Use the same password for both networks");</script></input></td>
+										</tr> -->
+										<tr>
+											<th>&nbsp;</th>
+											<td>&nbsp;</td>
+										</tr>
+										<tr>
+											<th style="width:270px; text-align:right;" id="wifi_password24G_show"><script>I18N("h", "2.4GHz Wi-Fi Password");</script>:</th>
+											<td><input class="styled-text" type="text" size="30" id="wifi_password24G" maxlength="63" name="wifi_password24G"></input></td>
+										</tr>
+										<!-- <tr id="wifi_copyto5g_2" style="display:none">
+											<th></th>
+											<td><input type="checkbox" id="Copy_pwd2" onclick="CheckPWD2()"><script>I18N("h", "Use the same password for both networks");</script></input></td>
+										</tr> -->
+										<tr class="wifi_5g">
+											<th style="width:270px; text-align:right;"><script>I18N("h", "5GHz Wi-Fi Password");</script>:</th>
+											<td><input class="styled-text" type="text" size="30" id="wifi_password5G" maxlength="63" name="wifi_password5G"></input></td>
+										</tr>
+										<tr>
+											<td colspan="2" style="width:590px;"><script>I18N("h", "The password must contain at least 8 characters. You will need to join your Wi-Fi network using this password.");</script></td>
+										</tr>
+									</tbody>
+								</table>
+								</form>
+								<!--7.Device Password-->
+								<form name="devicePassword_Settings" id="devicePassword_Settings" method="POST" action="">
+								<input id="sumbit_CheckData3" class="submit" type="submit" value="Submit" style="display:none" />
+								<table id="devicePassword_setupTable"  border="0">
+									<tbody>
+										<tr><th>&nbsp;</th><td></td></tr>
+										<tr><th><script>I18N("h", "Device Admin Password");</script>:</th><td><input class="styled-text" type="text" size="30" id="device_password" name="device_password"></input></td></tr>
+									</tbody>
+								</table>
+								</form>
+								<p></p>
+								<!--8.Confirm-->
+								<div id="confirm_setup">
+									<table id="confirm_setupTable"  border="0">
+										<tbody>
+											<tr>
+												<th><script>I18N("h", "Connection Type");</script>:</th>
+												<td><label id="confirm_connection_type"></label></td>
+											</tr>
+											<tr>
+												<th id="confirm_wifi_networkName24G_show"><script>I18N("h", "2.4GHz Wi-Fi Network Name");</script>:</th>
+												<td><label id="confirm_wifi_networkName24G"></label></td>
+											</tr>
+											<tr>
+												<th id="confirm_wifi_password24G_show"><script>I18N("h", "2.4GHz Wi-Fi Password");</script>:</th>
+												<td><label id="confirm_wifi_password24G"></label></td>
+											</tr>
+											<tr class="wifi_5g">
+												<th><script>I18N("h", "5GHz Wi-Fi Network Name");</script>:</th>
+												<td><label id="confirm_wifi_networkName5G"></label></td>
+											</tr>
+											<tr class="wifi_5g">
+												<th><script>I18N("h", "5GHz Wi-Fi Password");</script>:</th>
+												<td><label id="confirm_wifi_password5G"></label></td>
+											</tr>
+											<!-- <tr id="wifi_confirm_password_show" style="display:none">
+												<th><script>I18N("h", "Wi-Fi Password");</script>:</th>
+												<td><label id="confirm_wifi_password"></label></td>
+											</tr> -->
+											<tr>
+												<th><script>I18N("h", "Device Admin Password");</script>:</th>
+												<td><label id="confirm_device_password"></label></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--9.Checking-->
+								<div id="checking_connection">
+									<center><div id="Loading_pop_image"></div></center></br>
+								</div>
+								<!--10.mydlink p1-->
+								<div id="mydlink_step1">
+									<div id="mydlinkIcon"><img src="image/mydlink_w.png" alt="" width="115" height="66"/></div>
+									<div id="wording">
+										<script>I18N("h", "This device is mydlink-enabled, which allows you to remotely monitor and manage your network through the mydlink.com website, or through the mydlink mobile app.");</script><br/> 
+										<script>I18N("h", "You can register this device with your existing mydlink account. If you do not have one, you can create one now.");</script>
+									</div>
+									<table id="mydlink_Table"  border="0">
+										<tbody>
+											<tr>
+												<td colspan="3" style="font-weight:bold;"><script>I18N("h", "Do you have an existing mydlink account?");</script>?</td>
+											</tr>
+											<tr>
+												<td style="width:10px;"><div id="cb_yes" class="unclick" OnClick="mydlinkAccount('yes');"></div></td>
+												<td style="font-weight:bold;"><script>I18N("h", "Yes, I have a mydlink account");</script></td>
+											</tr>
+											<tr>
+												<td style="width:10px;"><div id="cb_no" class="clicked" OnClick="mydlinkAccount('no');"></div></div></td>
+												<td style="font-weight:bold;"><script>I18N("h", "No, I want to create a new mydlink account");</script></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--11.mydlink p2-->
+								<div id="mydlink_step2">
+									<table id="mydlink_Table2"  border="0">
+										<tbody>
+											<tr>
+												<td colspan="3" style="text-align: center;"><img src="image/mydlink_w.png" alt="" width="115" height="66"/></td>
+											</tr>
+											<tr>
+												<th style="text-align: right;"><script>I18N("h", "E-mail Address (Account Name)");</script>:</th>
+												<td colspan="2"><input class="styled-text" type="text" name="account_24" size="30" id="accountName"></td>
+											</tr>
+											<tr>
+												<th style="text-align: right;"><script>I18N("h", "Password");</script>:</th>
+												<td colspan="2"><input class="styled-text" type="text" name="password_24" size="30" id="password_mydlink"></td>
+											</tr>
+											<tr>
+												<th style="text-align: right;"><script>I18N("h", "First Name");</script>:</th>
+												<td colspan="2"><input class="styled-text" type="text" name="firstName_24" size="30" id="firstName"></td>
+											</tr>
+											<tr>
+												<th style="text-align: right;"><script>I18N("h", "Last Name");</script>:</th>
+												<td colspan="2"><input class="styled-text" type="text" name="lastName_24" size="30" id="lastName"></td>
+											</tr>
+											<tr>
+												<td style="text-align: right;"><input type="checkbox" name="option1" id="option1" onclick="changeButtonStatus()"></td>
+												<td class="linkstyle_1"><script>I18N("h", "I accept the mydlink");</script></td>
+											</tr>
+											<tr>
+												<td colspan="3" style="text-align: center;"><label style="color:#FF0000" id="MyDLink_description" size="100"></label></td>
+											</tr>
+											<tr id="show_loadingImageDefault" style="display:none;">
+												<td colspan="3" style="text-align: center;"><img src="image/loading.gif" alt="" width="62" height="62"/></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--12.mydlink p3-->
+								<div id="mydlink_step3">
+									<table id="mydlink_Table3"  border="0">
+										<tbody>
+											<tr>
+												<td colspan="3" style="text-align: center;"><img src="image/mydlink_w.png" alt="" width="115" height="66"/></td>
+											</tr>
+											<tr>
+												<th style="text-align: right;"><script>I18N("h", "E-mail Address (Account Name)");</script>:</th>
+												<td colspan="2"><input class="styled-text" type="text" name="account_24_a" size="30" id="accountName_a"></td>
+											</tr>
+											<tr>
+												<th style="text-align: right;"><script>I18N("h", "Password");</script>:</th>
+												<td colspan="2"><input class="styled-text" type="password" name="password_24_a" size="30" id="password_mydlink_a"></td>
+											</tr>
+											<tr>
+												<td colspan="3" style="text-align: center;"><label style="color:#FF0000"id="MyDLink_description_a" size="100"></label></td>
+											</tr>
+											<tr id="show_loadingImage" style="display:none;">
+												<td colspan="3" style="text-align: center;"><img src="image/loading.gif" alt="" width="62" height="62"/></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<!--13.Congratulations-->
+								<table id="congratulationsTable"  border="0">
+									<tbody>
+										<tr>
+											<th><img id="wz_internet_status" class="wz_status" src="image/connected.png" width="35" height="35"/></th>
+											<th width="90px;"><center><img src="image/internet_z.png" width="63" height="63"/></center></th>
+											<td>
+												<div class="wz_settings_title"><script>I18N("h", "Connection Type");</script>:</div>
+												<div class="wz_settings"><label id="wz_ConnectionType"><script>I18N("h", "Not Available");</script></label></div>
+											</td>
+										</tr>
+										<tr>
+											<th><img id="wz_router_status" class="wz_status" src="image/connected.png" width="35" height="35"/></th>
+											<th><center><img  src="image/router_z_off.gif" width="73" height="43"/></center></th>
+											<td>
+												<div class="wz_settings_title"><script>I18N("h", "Device Admin Password");</script>:</div>
+												<div class="wz_settings"><label id="wz_DeviceAdminPassword"><script>I18N("h", "Not Available");</script></label></div>
+											</td>
+										</tr>
+										<tr>
+											<th><img id="wz_wifi_status" class="wz_status" src="image/connected.png" width="35" height="35"/></th>
+											<th><center><img src="image/wifiCients_z.gif" width="54" height="66"/></center></th>
+											<td style="min-width:300px;">
+												<table id="congratulationsTable2"  border="0" cellspacing="0">
+													<tbody>
+														<tr>
+															<td>
+																<div class="wz_settings_title" id="wz_24GHz_Wireless_show"><script>I18N("h", "2.4GHz Wi-Fi Network Name");</script>:</div>
+																<div class="wz_settings"><label id="wz_24GHz_Wireless"><script>I18N("h", "Not Available");</script></label></div>
+															</td>
+														</tr>
+														<tr id="show_wz_24GHzWP">
+															<td>
+																<div class="wz_settings_title" id="wz_24GHz_WirelessPassword_show"><script>I18N("h", "2.4GHz Wi-Fi Password");</script>:</div>
+																<div class="wz_settings"><label id="wz_24GHz_WirelessPassword"><script>I18N("h", "Not Available");</script></label></div>
+															</td>
+														</tr>
+														<tr class="wifi_5g">
+															<td>
+																<div class="wz_settings_title"><script>I18N("h", "5GHz Wi-Fi Network Name");</script>:</div>
+																<div class="wz_settings"><label id="wz_5GHz_Wireless"><script>I18N("h", "Not Available");</script></label></div>
+															</td>
+														</tr>
+														<tr class="wifi_5g">
+															<td>
+																<div class="wz_settings_title"><script>I18N("h", "5GHz Wi-Fi Password");</script>:</div>
+																<div class="wz_settings"><label id="wz_5GHz_WirelessPassword"><script>I18N("h", "Not Available");</script></label></div>
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</td>
+										</tr>
+										<tr id="wz_mydlink_summary">
+											<th><img id="wz_mydlink_status" class="wz_status" src="image/disconnected.png" width="35" height="35"/></th>
+											<th><center><img src="image/mydlink_s.png" width="73" height="40"/></center></th>
+											<td><div class="wz_settings_title"><script>I18N("h", "Status");</script>:</div><div class="wz_settings"><label id="wz_MydlinkStatus"><script>I18N("h", "Unregistered");</script></label></div></td>
+										</tr>
+									</tbody>
+								</table>
+								</div>
+							</div>
+								<!--Back & Next-->
+								<table id="buttonTable"  border="0" style="margin: 0px;">
+									<tbody>
+										<tr>
+											<th id="Language_th">
+												<select name="Language" id="Language" onChange="switch_Language(this.value)">
+													<option value="en-us">English</option>
+													<option value="zh-tw">繁體中文</option>
+													<option value="zh-cn">简体中文</option>
+													<option value="ko-kr">한국</option>
+													<option value="fr-fr">français</option>
+													<option value="pt-br">português</option>
+													<option value="es-es">Español</option>
+													<option value="it-it">Italiano</option>
+													<option value="de-de">Deutsch</option>
+													<option value="ru-ru">русский</option>
+												</select>
+											</th>
+											<td style="text-align:right;" width="20px"><button type="button" class="styled-button_disable" id="btn_back"  onclick="wizard_back(wizard_Step);"><script>I18N("h", "Back");</script></button></td>
+											<td style="text-align:left;" width="20px"><button type="button" class="styled-button_enable" id="btn_next"   onclick="wizard_next(wizard_Step);"><script>I18N("h", "Next");</script></button></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+				</div>
+			</div>
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<center><label id="alert_Message" style="color:#4598aa"><script>I18N("h", "Please wait");</script>...</label></center>
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<br />
+		<div id="CreatePopAlertMessage" style="display:none">
+			<div id="AlertPopRect">
+			<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0" style="display:none">
+					<tbody>
+						<tr>
+							<td colspan="2">
+								<center><div id="Loading_pop_image"></div></center>
+							</td>
+						</tr>
+						<tr>
+						 	<td><label id="reciprocal_Number">&nbsp;</label></td>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<div id="dialog_msg_black" style="margin: 20px 0 0 0;"><script>I18N("h", "Your changes are being saved. When reconnecting to this device, please use the new Wi-Fi name and password you created.");</script></div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="waitSettingFinish_Setting" border="0" cellspacing="0" style="display:none">
+					<tbody>
+						<tr>
+							<td>
+								<center><div id="Loading_pop_image2"></div></center>
+							</td>
+						</tr>
+						<tr>
+							<td><label id="reciprocal_Number_Setting"></label></td>
+						</tr>
+						<tr>
+							<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+<script type="text/javascript" charset="utf-8">
+	function setValidate(){
+		
+		// Check IPv4 Format
+		$.validator.addMethod("checkIPFormat", function( value, element ) {
+			var ValidIpAddressRegex = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+			var returnVal = true;
+			if (ValidIpAddressRegex.test(value))
+			{
+			//	alert(value);
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.address_Check);
+		
+		// Check WPA Password
+		$.validator.addMethod("checkWPAPassword", function( value, element ) {
+			var returnVal = true;
+			if (value.length > 63 || value.length < 8)
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.password_WPACheck);
+		
+		// check illegal char
+		$.validator.addMethod("checkASCIIChar", function( value, element ) {
+			var ValidHEXRegex = /^[ -~]+$/;
+			var returnVal = true;
+			
+			if (ValidHEXRegex.test(value))
+			{
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.check_IllegalChar);
+		
+		// Check Device Password
+		$.validator.addMethod("checkDevicePassword", function( value, element ) {
+			var returnVal = true;
+			if (value.length > 15 || value.length < 6)
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.check_DeviceAdminPassword);
+		
+		// check second DNS ,it can be null,if not null check it.
+		$.validator.addMethod("checkSecondDNS", function( value, element ) {
+			var ValidIpAddressRegex = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+			var returnVal = true;
+			if(value != "")
+			{
+			if (ValidIpAddressRegex.test(value))
+			{
+			//	alert(value);
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			}
+			return returnVal;
+		}, jQuery.validator.messages.address_Check);
+		
+		$("#pppoe_Settings, #staticIP_Settings, #wifi_Settings, #devicePassword_Settings").each(function(index, el)  {
+		    $(el).validate({
+		    	rules: {
+		    		pppoe_username: "required",
+		    		pppoe_password: "required",
+			    	static_ipAddress: {
+						required: true,
+						checkIPFormat: true
+					},
+					static_subnetMask: {
+						required: true,
+						checkIPFormat: true
+					},
+					static_gateway: {
+						required: true,
+						checkIPFormat: true
+					},
+					static_primaryDNS: {
+						required: true,
+						checkIPFormat: true
+					},
+					static_secondaryDNS: "checkSecondDNS"
+,
+					wifi_networkName24G: "required",
+					wifi_networkName5G: "required",
+					wifi_password24G: {
+						required: true,
+						checkWPAPassword: true
+					},
+					wifi_password5G: {
+						required: true,
+						checkWPAPassword: true
+					},
+					device_password: {
+						required: true,
+						checkASCIIChar: true,
+						checkDevicePassword: true
+					}
+				},
+				messages: {
+					pppoe_username: {
+						required: jQuery.validator.messages.check_UserName
+					},
+					pppoe_password: {
+						required: jQuery.validator.messages.check_Password
+					},
+					static_subnetMask: {
+						required: jQuery.validator.messages.subnet_Mask,
+						checkIPFormat: jQuery.validator.messages.netmask_Check
+					},
+					static_gateway: {
+						required: jQuery.validator.messages.gateway_Address
+					},
+					wifi_networkName24G: jQuery.validator.messages.ssid,
+					wifi_networkName5G: jQuery.validator.messages.ssid,
+					wifi_password24G: {
+						required: jQuery.validator.messages.check_Password
+					},
+					wifi_password5G: {
+						required: jQuery.validator.messages.check_Password
+					},
+					device_password: {
+						required: jQuery.validator.messages.check_Password
+					}
+				},
+		        submitHandler: function(form) {
+		        	if (form.id == "pppoe_Settings")
+		        	{
+		        		document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+						document.getElementById('btn_next').setAttribute("class", "styled-button_disable");
+						document.getElementById('btn_back').disabled = true;
+						document.getElementById("btn_next").disabled = true;
+		        		if (Current_Wan_Type != "DHCPPPPoE")	{	SetPPPoESettings();	valueChanged = 0;	Current_Wan_Type = "DHCPPPPoE";	typeChanged = 1;	}
+		        		else	{	SetPPPoESettings();	valueChanged = 0;	Current_Wan_Type = "DHCPPPPoE";	typeChanged = 1;	}
+		        	}
+		            if (form.id == "staticIP_Settings")
+		            {
+		            	document.getElementById('btn_back').setAttribute("class", "styled-button_disable");
+						document.getElementById('btn_next').setAttribute("class", "styled-button_disable");
+						document.getElementById('btn_back').disabled = true;
+						document.getElementById("btn_next").disabled = true;
+		            	if (Current_Wan_Type != "Static")	{	SetStaticSettings();	valueChanged = 0;	Current_Wan_Type = "Static";	typeChanged = 1;	}
+		        		else	{	SetStaticSettings();	valueChanged = 0;	Current_Wan_Type = "Static";	typeChanged = 1;	}
+		            }
+		            if (form.id == "wifi_Settings")
+		            {
+		            	/*document.getElementById("wz_24GHz_WirelessPassword").innerHTML = document.getElementById("wifi_password24G").value;
+						document.getElementById("wz_5GHz_WirelessPassword").innerHTML = document.getElementById("wifi_password5G").value;
+						var get_24wifi_Name = document.getElementById("wifi_networkName24G").value;
+						var get_5wifi_Name = document.getElementById("wifi_networkName5G").value;
+						document.getElementById("wz_24GHz_Wireless").innerHTML = get_24wifi_Name;
+						document.getElementById("wz_5GHz_Wireless").innerHTML = get_5wifi_Name;*/
+						setWLanRadioSettings_24g.SSID = $("#wifi_networkName24G").val();
+						setWLanRadioSecurity_24g.Key = $("#wifi_password24G").val();
+						//#ifdef featureSmartConnect
+						//if(currentDevice.featureSmartConnect)
+						if((currentDevice.featureSmartConnect) && (GetSmartConnect == "1")) // for 880 only. 880 have smart connect but it's default is disable
+						{
+							setWLanRadioSettings_5g.SSID = setWLanRadioSettings_24g.SSID;
+							setWLanRadioSecurity_5g.Key = $("#wifi_password24G").val();
+						}
+						else
+						{
+							setWLanRadioSettings_5g.SSID = $("#wifi_networkName5G").val();
+							setWLanRadioSecurity_5g.Key = $("#wifi_password5G").val();
+						}
+
+						wizard_Step = 7;
+						wizard_update();
+		            }
+		            if (form.id == "devicePassword_Settings")
+		            {
+		            	wizard_Step = 8;
+						wizard_update();
+		            }
+		        }
+		    });
+		});
+	};
+</script>
+</body>
+</html>

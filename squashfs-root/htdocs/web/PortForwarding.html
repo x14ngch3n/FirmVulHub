@@ -1,0 +1,609 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="/css/jquery.selectbox.css" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/PortForwarding.js"></script>
+
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+	// Detect how many Schedule.
+	var Total_ScheduleRules = 0;
+	// Set up the limit total Portforward
+	var Limit_TotalPortForwardingRules = 24;
+	// Detect how many Client.
+	var Total_Client = 0;
+	// Set up the limit total Client
+	var Limit_Client = 256;
+	//data list
+	var datalist;
+	
+	// validate checkIPAddress
+	var lanIP;
+	var submask;
+	
+	function Load_HTML()	{	$("#header").load("header.html");	}
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+		
+		datalist = new Datalist();
+	}
+	
+	function GetXML()	{	HNAP.GetXMLAsync("GetMultipleHNAPs", null, "GetXML", function(xml)	{	GetResult_1st(xml)	});	}
+	function GetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("GetMultipleHNAPs/GetScheduleSettings");
+			result_xml.Set("GetMultipleHNAPs/GetClientInfo");
+			result_xml.Set("GetMultipleHNAPs/GetPortForwardingSettings");
+			
+			result_xml.Set("GetMultipleHNAPs/GetRouterLanSettings");
+			
+			HNAP.SetXMLAsync("GetMultipleHNAPs", result_xml, function(xml)	{	GetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_1st");	}	}
+	}
+	function GetResult_2nd(result_xml)
+	{
+		lanIP = result_xml.Get("GetMultipleHNAPsResponse/GetRouterLanSettingsResponse/RouterIPAddress");
+		submask = result_xml.Get("GetMultipleHNAPsResponse/GetRouterLanSettingsResponse/RouterSubnetMask");
+	
+		var GetResult_2nd = result_xml.Get("GetMultipleHNAPsResponse/GetMultipleHNAPsResult");
+		if (GetResult_2nd == "OK")
+		{
+			var GetSC_ListNumber = result_xml.Get("GetMultipleHNAPsResponse/GetScheduleSettingsResponse/ScheduleInfoLists#");
+			Total_ScheduleRules = GetSC_ListNumber;
+			var pf_Schedule = document.getElementById("pf_Schedule");
+			for (var i = 1; i <= Total_ScheduleRules; i ++)
+			{
+				var Schedule_Name = decode_char_text(result_xml.Get("GetMultipleHNAPsResponse/GetScheduleSettingsResponse/ScheduleInfoLists:" + i + "/ScheduleName"));
+				pf_Schedule.options.add(new Option(Schedule_Name, Schedule_Name));
+			}
+			Total_Client = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo#");
+			var Add_Select1 = document.getElementById("select_pf_LocalIP");
+			var ListCount = 1;
+			for (var j = 1; j <= Total_Client; j ++)
+			{
+				var GetClientInfo_DeviceName = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/DeviceName");
+				var GetClientInfo_IPv4Address = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/IPv4Address");
+				if (GetClientInfo_DeviceName == "")		{	GetClientInfo_DeviceName = "Unknown";	}
+				if (GetClientInfo_IPv4Address != "")
+				{
+					Add_Select1.options.add(new Option(GetClientInfo_IPv4Address + " (" + GetClientInfo_DeviceName + ")", ListCount));
+					ListCount ++;
+				}
+			}
+			var GetPF_ListNumber = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo#");
+			for (var k = 1; k <= GetPF_ListNumber; k ++)
+			{
+				var GetPF_Enable = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo:" + k + "/Enabled");
+				var GetPF_PortForwardingDescription = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo:" + k + "/PortForwardingDescription");
+				var GetPF_LocalIPAddress = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo:" + k + "/LocalIPAddress");
+				var GetPF_TCPPort = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo:" + k + "/TCPPorts");
+				var GetPF_UDPPort = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo:" + k + "/UDPPorts");
+				var GetPF_Schedule = result_xml.Get("GetMultipleHNAPsResponse/GetPortForwardingSettingsResponse/PortForwardingList/PortForwardingInfo:" + k + "/ScheduleName");
+				
+				var data = new Data(decode_char_text(GetPF_PortForwardingDescription), GetPF_LocalIPAddress, GetPF_TCPPort, GetPF_UDPPort, decode_char_text(GetPF_Schedule));
+				data.setEnable(GetPF_Enable);
+				datalist.push(data);
+			}
+			check_TotalRule(Limit_TotalPortForwardingRules, datalist.length());
+
+			$("#select_pf_LocalIP").selectbox();
+			$("#pf_Schedule").selectbox();
+			CheckNetworkStatus();
+			document.getElementById("main").style.display = "inline";
+			
+			//set trigger for save button
+			$("select").change(function () {	save_button_changed();	});
+			$("input").keydown(function () {	save_button_changed();	});
+			$("input").change(function () {	save_button_changed();	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_2nd");	}	}
+	}
+	function CheckConnectionStatus()
+	{
+		$.ajax({
+			cache : false,
+			url : "./js/CheckConnection",
+			timeout : 5000,
+			type : "GET",
+			success : function(data) { SetXML(); },
+			error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+		});
+	}
+	function SetXML()
+	{
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		HNAP.GetXMLAsync("SetPortForwardingSettings", null, "GetXML", function(xml)	{	SetResult_1st(xml)	});
+	}
+	function SetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			for (var i = 0; i < datalist.length(); i ++)
+			{
+				var pf_enable = "false";
+				if(datalist.list[i].enable == true || datalist.list[i].enable == "true") pf_enable = "true";
+				result_xml.Set("SetPortForwardingSettings/PortForwardingList/PortForwardingInfo:" + (i+1) + "/Enabled", pf_enable);
+				result_xml.Set("SetPortForwardingSettings/PortForwardingList/PortForwardingInfo:" + (i+1) + "/PortForwardingDescription", encode_char_text(datalist.list[i].name));
+				result_xml.Set("SetPortForwardingSettings/PortForwardingList/PortForwardingInfo:" + (i+1) + "/LocalIPAddress", datalist.list[i].ipAddress);
+				result_xml.Set("SetPortForwardingSettings/PortForwardingList/PortForwardingInfo:" + (i+1) + "/TCPPorts", datalist.list[i].tcpPort);
+				result_xml.Set("SetPortForwardingSettings/PortForwardingList/PortForwardingInfo:" + (i+1) + "/UDPPorts", datalist.list[i].udpPort);
+				result_xml.Set("SetPortForwardingSettings/PortForwardingList/PortForwardingInfo:" + (i+1) + "/ScheduleName", encode_char_text(datalist.list[i].schedule));
+			}
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetPortForwardingSettings", result_xml, function(xml)	{	SetResult_2nd(xml);	});
+		}
+		
+	}
+	function SetResult_2nd(result_xml)
+	{
+		var SetResult_2nd = result_xml.Get("SetPortForwardingSettingsResponse/SetPortForwardingSettingsResult");
+		if (SetResult_2nd == "OK")		{	setTimeout("waitSettingFinished()", 1000);	}
+		if (SetResult_2nd == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_2nd");	}	window.location.reload();	}
+	}
+	function waitSettingFinished()	{	window.location.reload();	}
+
+	function createUserButton()
+	{
+		changeTimeoutAction();
+		
+		$("#popTitle").html(I18N("j", "Create New Rule"));
+	
+		document.getElementById("createPop").style.display = "inline";
+		document.getElementById("createButton").disabled = true;
+		$("#portforwarding_form").val(-1);
+	}
+	function closeCreateRulePOP(id)
+	{
+		changeTimeoutAction();
+		
+		var result = false;
+		var name = $("#pf_Name").val();
+		var localIP = $("#pf_LocalIP").val();
+		var tcpPort = $("#pf_TCPPort").val();
+		var udpPort = $("#pf_UDPPort").val();
+		var schedule = $("#pf_Schedule").val();
+	
+		var data = new Data(name, localIP, tcpPort, udpPort, schedule);
+		if(id < 0)
+		{
+			result = datalist.push(data);
+		}
+		else
+		{
+			result = datalist.editData(id,data);
+		}
+
+		if(result)
+		{
+			resetRulePOP();
+			check_TotalRule(Limit_TotalPortForwardingRules, datalist.length());
+		}
+	}
+	function clearCreateRulePOP()
+	{
+		changeTimeoutAction();
+		
+		resetRulePOP();
+		$("#portforwarding_form").validate().resetForm();
+		$(':text').prop('className', 'styled-text');
+		check_TotalRule(Limit_TotalPortForwardingRules, datalist.length());
+	}
+	
+	function resetRulePOP()
+	{
+		$("select").selectbox('detach');
+		$("input").val('');
+		document.getElementById("createPop").style.display = "none";
+		$("#select_pf_LocalIP").val('0');
+		$("#pf_Schedule").val('Always');
+
+		$("select").selectbox('attach');
+	}
+	
+	function editData(id)
+	{
+		changeTimeoutAction();
+		
+		$("#popTitle").html(I18N("j", "Edit Rule"));
+	
+		document.getElementById("createPop").style.display = "inline";
+		document.getElementById("createButton").disabled = true;
+		$("#portforwarding_form").val(id);
+		
+		//insert data to pop form
+		var data = datalist.getData(id);
+	
+		document.getElementById("pf_Name").value = data.name;
+		document.getElementById("pf_LocalIP").value = data.ipAddress;
+		document.getElementById("pf_TCPPort").value = data.tcpPort;
+		document.getElementById("pf_UDPPort").value = data.udpPort;
+
+		$("#pf_Schedule").selectbox('detach');
+		$("#pf_Schedule").val(data.schedule);
+		$("#pf_Schedule").selectbox('attach');
+	}
+	
+	function deleteData(id)
+	{
+		changeTimeoutAction();
+		
+		datalist.deleteData(id);
+		check_TotalRule(Limit_TotalPortForwardingRules, datalist.length());
+		save_button_changed();
+	}
+	
+	function pf_LocalIP_Description(element, value)
+	{
+		var get_Selection = element.options[value].text;
+		var splitString = get_Selection.split('(')[0];
+		var finalString = splitString.replace(/\s/g, "");
+		if (value == "0")	{	document.getElementById("pf_LocalIP").value = "";	}
+		else		{	document.getElementById("pf_LocalIP").value = finalString;	}
+		$("#pf_LocalIP").valid();
+	}
+
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+
+	// 2013/07/30 Timmy Add
+	function focusToFirstIndex(str)
+	{
+		if (str.id == "save_buttonFocus")	{	if(window.event.keyCode == 9)	{	document.getElementById("pf_Name").focus();	}			}
+	}
+
+	function save_button_changed()
+	{
+		document.getElementById("Save_Disable_btn").style.display = "none";
+		document.getElementById("Save_btn").style.display = "block";
+		changeFlag = true;
+		checkFlag = true;
+		changeTimeoutAction();
+	}
+	
+	function check_TotalRule(maxRule, totalRule)
+	{
+		var IsFull = maxRule - totalRule;
+		document.getElementById("RemainingRules").innerHTML = IsFull;
+		
+		if (IsFull == 0)
+		{
+			$("#createButton").attr("class", "styled_button_dis").prop("disabled", true);
+		}
+		else
+		{
+			$("#createButton").attr("class", "styled_button_s").prop("disabled", false);
+		}
+	}
+	
+	//OnLoad
+	$(document).ready( function() {	
+		Load_HTML();
+		Initial();
+		setMenu("menu_Advanced");
+		GetXML();
+		startTimeout();
+	});
+</script>
+<!--<style>
+#createPop	{	display: none;	}
+</style>-->
+</head>
+<body>
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->	
+	  		<div id="info">
+				<div id="FunctionName"><script>I18N("h", "Port Forwarding");</script></div>
+				<div id="wallimage"><img src="image/page_PortForwarding.png" alt="" width="195" height="119"/></div>
+				<div id="directions">
+					<script>I18N("h", "Your router helps share a single IP address assigned by your ISP among several clients in your home. Port forwarding allows traffic requests from a specified application to be directed to a specified client inside.");</script>
+					<label id="Get_Help" onClick="showOnlineHelp('Port Forwarding');" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+				</div>
+			</div>
+			<!-------------------- funcBar ---------------------->
+			<div id="funcBar">
+				<div id="pagePath"><script>I18N("h", "Features");</script> >> <script>I18N("h", "Port Forwarding");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="CheckConnectionStatus();changeTimeoutAction();" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li> 
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+					<li style="display:block"><a href="javascript:CheckHTMLStatus('VirtualServer');" style="text-decoration:none;" onclick="return confirmExit()"><div id="page_btn" class="linkstyle_1"><script>I18N("h", "Virtual Server");</script></div></a></li>
+				</ul>
+			</div>
+			<div id="main" style="display:none">
+				<!-------------------- table ---------------------->
+				<table class="mainTable" border="0" cellspacing="0" id="tblPortForwarding">
+				<thead>
+					<tr>
+						<th><script>I18N("h", "Status");</script></th>
+						<th><script>I18N("h", "Name");</script></th>
+						<th><script>I18N("h", "Local IP");</script></th>
+						<th><script>I18N("h", "TCP Port");</script></th>
+						<th><script>I18N("h", "UDP Port");</script></th>
+						<th><script>I18N("h", "Schedule");</script></th>
+						<th><script>I18N("h", "Edit");</script></th>
+						<th><script>I18N("h", "Delete");</script></th>
+					</tr>
+				</thead>
+				<tbody></tbody>
+				</table>
+				<br />
+				<br />
+					<button type="button" id="createButton" name="createButton" class="styled_button_s"  onclick="createUserButton()"><script>I18N("h", "Add Rule");</script></button>
+					&nbsp;&nbsp;<script>I18N("h", "Remaining");</script>:&nbsp;<label id="RemainingRules">10</label>
+				<br />
+				<!----------------------PopUp----------------------->
+				<form name="portforwarding_form" id="portforwarding_form" action="">
+				<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+				<div id="createPop" style="display:none">
+					<div class="dialogBox"  style="width:616px">
+					<div id="closeCreatePopBtn" onclick="clearCreateRulePOP()" style="cursor:pointer"></div>
+						<table class="myCreatePop_table" border="0" cellspacing="0" id="tblPortForwarding3">
+							<tbody>
+								<tr>
+								 	<td colspan="3"><div class ="popTitle" id="popTitle"></div></td>
+								</tr>
+								<tr>
+							     	<th><script>I18N("h", "Name");</script>:</th>
+									<td valign="top" width="20px"><input class="styled-text" type="text" name="pf_Name" size="27" id="pf_Name" Maxlength="20" tabindex="1"></td>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+							     	<th><script>I18N("h", "Local IP");</script>:</th>
+									<td valign="top" width="20px"><input class="styled-text" type="text" name="pf_LocalIP" size="27" id="pf_LocalIP" tabindex="2"></td>
+									<td valign="top">
+										<div class="styled-select">
+										<select style="width: 150px" name="select_pf_LocalIP" id="select_pf_LocalIP" onChange="pf_LocalIP_Description(this, this.value)">
+											<option value="0" selected>&lt;&lt; Computer Name</option>
+										</select>
+										</div>
+									</td>
+								</tr>
+								<tr>
+							     	<th><script>I18N("h", "TCP Port");</script>:</th>
+									<td valign="top" width="20px"><input class="styled-text" type="text" name="pf_TCPPort" size="27" id="pf_TCPPort" tabindex="3" >
+									</td>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+							     	<th><script>I18N("h", "UDP Port");</script>:</th>
+									<td valign="top" width="20px"><input class="styled-text" type="text" name="pf_UDPPort" size="27" id="pf_UDPPort" tabindex="4" >
+									</td>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+							     	<th class="linkstyle_1"><a href="Schedule.html"><script>I18N("h", "Schedule");</script></a>:</th>
+									<td width="20px">
+										<div class="styled-select" tabindex="5">
+										<select style="width: 120px" name="pf_Schedule" id="pf_Schedule">
+											<option value="Always">Always</option>
+										</select>
+										</div>
+									</td>
+									<td>&nbsp;</td>
+								</tr>
+								<tr>
+									<td id="save_td" colspan="4">
+										<center><button type="button" class="styled_button_s" id="save_buttonFocus" tabindex="6" onkeyup="focusToFirstIndex(this)" onclick="document.getElementById('sumbit_CheckData').click();"><script>I18N("h", "Apply");</script></button></center>	
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				</form>
+				<div id="CreatePopAlertMessage" style="display:none">
+				<div id="AlertPopRect">
+				<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+				   <tbody>
+						<tr>
+							<td>
+								<center><div id="Loading_pop_image2"></div></center>
+							</td>
+						</tr>
+						<tr>
+						 	<td label id="reciprocal_Number"></label></td>
+						</tr>
+						<tr>
+						 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						</tr>
+				   </tbody>
+				</table>
+				</div>
+				</div>
+				</div>
+				<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+				<div id="DetectRouterConnection" style="display:none"></div>
+			</div>
+			<div id="footer">
+				<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+			</div>
+		</div>
+	</div>
+<script type="text/javascript" charset="utf-8">
+	$(document).ready( function() {
+		$.validator.addMethod("checkALLNULL", function( value, element, anotherElement ) {
+			var returnVal = true;
+
+			if(($(element).val() == "") && ($(anotherElement).val() == ""))
+			{
+				returnVal = false;
+			}
+			
+			//trigger another element
+			this.showMessage(anotherElement, "checkALLNULL", returnVal);
+
+			return returnVal;
+		}, jQuery.validator.messages.port);
+		
+		// Check Port Range
+		$.validator.addMethod("checkPortRange", function( value, element ) 
+		{		
+			var FullValue = value.replace(/\s/g, "");
+			var eachPortValue = FullValue.split(",");
+			var portValue;
+			//var ValidPortRangeRegex = /(^([1-9]|[1-9]\d|[1-9]\d\d|[1-9]\d{3}|[1-5]\d{4}|6[0-5][0-5][0-3][0-5]))+$/;
+			var ValidPortRangeRegex = /(^\d{1,})+$/;
+			var ValidPortRangesRegex = /(^\d{1,}-\d{1,})$/;
+			//var ValidPortRangesRegex = /(^([1-9]|[1-9]\d|[1-9]\d\d|[1-9]\d{3}|[1-5]\d{4}|6[0-5][0-5][0-3][0-5])-([1-9]|[1-9]\d|[1-9]\d\d|[1-9]\d{3}|[1-5]\d{4}|6[0-5][0-5][0-3][0-5]))+$/;
+			
+			if(value=="")
+			{
+				return true;
+			}
+			else
+			{
+				for(var i = 0; i < eachPortValue.length; i ++)
+				{
+					if(eachPortValue[i].search("-") > -1)
+					{
+						if (ValidPortRangesRegex.test(eachPortValue[i]))
+						{
+							portValue = eachPortValue[i].split("-");
+							var start = parseInt(portValue[0], 10);
+							var end = parseInt(portValue[1], 10);
+							if((start > 65535)||(start <=0) || (end > 65535)||(end <=0))
+							{
+								return false;
+							}
+							if(start > end)
+							{
+								return false;
+							}
+						}
+						else
+						{
+							return false;
+						}
+					}
+					else
+					{
+						if (ValidPortRangeRegex.test(eachPortValue[i]))
+						{
+							if((parseInt(eachPortValue[i], 10) > 65535)||(parseInt(eachPortValue[i], 10)  <=0))
+							{
+								return false;
+							}
+						}
+						else
+						{
+							return false;
+						}
+					}
+
+				}
+			}
+	
+			return true;
+		}, jQuery.validator.messages.port_Check);
+		
+		// Check IPv4 Format
+		$.validator.addMethod("checkIPFormat", function( value, element ) {
+			var ValidIpAddressRegex = /(^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))+$/;
+			var returnVal = true;
+			if (ValidIpAddressRegex.test(value))
+			{
+			//	alert(value);
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.address_Check);
+		
+		$.validator.addMethod("checkIPAddress", function( value, element ) {
+			var returnVal = true;
+			var mask = COMM_IPv4MASK2INT(submask);
+			
+			if (lanIP==value)
+			{
+				returnVal = false;
+			}
+			else if(!COMM_ValidV4Format(value) || !COMM_ValidV4Addr(value) || !COMM_ValidV4HOST(value, mask))
+			{
+				returnVal = false;
+			}else
+			{
+				returnVal = true;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.address_Check);
+		
+		$("#portforwarding_form").each(function(index, el)  {
+		    $(el).validate({
+		    	rules: {
+			    	pf_Name: {
+						required: true
+					},
+					pf_LocalIP: {
+						required: true,
+						checkIPFormat: true,
+						checkIPAddress: true
+					},
+					pf_TCPPort: {
+						checkALLNULL: $("#pf_UDPPort"),
+						checkPortRange: true
+						
+					},
+					pf_UDPPort: {
+						checkALLNULL: $("#pf_TCPPort"),
+						checkPortRange: true
+					}
+				},
+				messages: {
+					pf_Name: {
+						required: jQuery.validator.messages.rule_Name
+					},
+					pf_TCPPort: {
+						required: jQuery.validator.messages.port
+					},
+					pf_UDPPort: {
+						required: jQuery.validator.messages.port
+					}
+				},
+		        submitHandler: function(form) {
+					var id = form.value;
+
+					closeCreateRulePOP(id);
+		        },
+		        debug: true
+		    });
+		});
+	});
+</script>
+</body>
+</html>

@@ -1,0 +1,724 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml" xml:lang="zh_TW" lang="zh_TW">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="css/style_h.css" media="all" />
+<link href="css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="./js/comm.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hmac_md5.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/libajax.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hnap.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/i18n.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/pagetool.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/checkTimeout.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/includeLang.js"></script>
+
+<script>
+$(document).ready(function(){
+	
+	presetCheckBox("enableReserveIP", true);
+	presetCheckBox("enableAccess", true);
+	
+	//jquery
+	$("div.checkbox_on" || "div.checkbox_off").click(function(e) {
+	 var checkboxId =  e.target.id +'_ck';	 
+		if(e.target.getAttribute("class") == "checkbox_on") {
+			var disable;
+			if(checkboxId == "enableAccess_ck")
+			{
+				disable = I18N("j","Blocked");
+			}
+			else
+			{
+				disable = I18N("j","Disabled");
+			}
+			e.target.setAttribute("class", "checkbox_off");
+			e.target.setAttribute("className", "checkbox_off");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked>'+disable;
+			document.getElementById(checkboxId).checked=false;
+			
+			if(checkboxId == "enableAccess_ck")
+			{
+				document.getElementById("TimmyCheckBox").checked = false;
+			}
+			if(checkboxId == "enableReserveIP_ck")
+			{
+				document.getElementById("TimmyCheckBox2").checked = false;
+			}
+		}
+		else {
+			var enable;
+			if(checkboxId == "enableAccess_ck")
+			{
+				enable = I18N("j","Allowed");
+			}
+			else
+			{
+				enable = I18N("j","Enabled");
+			}
+			e.target.setAttribute("class", "checkbox_on");
+			e.target.setAttribute("className", "checkbox_on");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked="">'+enable;
+			document.getElementById(checkboxId).checked=true;
+			
+			if(checkboxId == "enableAccess_ck")
+			{
+				document.getElementById("TimmyCheckBox").checked = true;
+			}
+			if(checkboxId == "enableReserveIP_ck")
+			{
+				document.getElementById("TimmyCheckBox2").checked = true;
+			}
+		}
+	});
+	
+	// GetXML();
+});
+</script>
+<script type="text/javascript">
+	
+	var HNAP = new HNAP_XML();
+	
+	var Total_WirelessClients = 0;
+	var Total_MacFilterList = 0;
+	var ClientNumber = 0;
+	var CheckMACFilterList;
+	var allText;
+	
+	LoadMACList();
+	
+	// Create Array to storage
+	var array2Dv;
+	var array2DvMF;
+	var array2DvNM;
+	
+	function Load_HTML()
+	{ 
+		$("#header").load("header.html");
+	}
+	
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	
+	function LoadMACList()
+	{
+		$.ajax({
+			url: "/js/MacList.txt",
+			type: "GET",
+			dataType: "html",
+			success: function(data) {
+			allText = data;
+			GetXML();
+			},
+		});
+	}
+
+
+	function GetXML()
+	{
+		var xml_GetClientinfo = HNAP.GetXML("GetClientInfo");
+		var xml_GetMacFilter = HNAP.GetXML("GetMACFilters2");
+		
+		var count = 0, CheckCount = 0;
+		
+		Total_WirelessClients = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo#");
+		Total_MacFilterList = xml_GetMacFilter.Get("GetMACFilters2Response/MACList/MACInfo#");
+		
+		array2Dv = new Array2DVar(Total_WirelessClients, 10);
+		array2DvMF = new Array2DVar(Total_MacFilterList, 3);
+		
+		for (var i = 1; i <= Total_WirelessClients; i ++)
+		{
+			var GetClientType = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/Type");
+			
+			if (GetClientType == "WiFi_2.4G" || GetClientType == "WiFi_5G")
+			{
+				array2Dv[count][0] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/DeviceName");
+				array2Dv[count][1] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/MacAddress");
+				array2Dv[count][2] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/IPv4Address");
+				array2Dv[count][3] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/IPv6Address");
+				array2Dv[count][9] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/NickName");
+				array2Dv[count][5] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/ReserveIP");
+				
+				var split_ClientMacAddress = array2Dv[count][1].split(/[\s:]+/);
+				var get_SplitClientMacAddress1 = split_ClientMacAddress[split_ClientMacAddress.length - 6];
+				var get_SplitClientMacAddress2 = split_ClientMacAddress[split_ClientMacAddress.length - 5];
+				var get_SplitClientMacAddress3 = split_ClientMacAddress[split_ClientMacAddress.length - 4];
+				var FullStr_ClientMacAddress = get_SplitClientMacAddress1 + ":" + get_SplitClientMacAddress2 + ":" + get_SplitClientMacAddress3;
+				var Str_toUpperCase = FullStr_ClientMacAddress.toUpperCase();
+
+				if (allText.match(Str_toUpperCase) == Str_toUpperCase)
+				{
+					var StrIndexOfNumber = allText.indexOf(Str_toUpperCase) + 9;
+					var StrIndexOfNumber_ToString = allText.slice(StrIndexOfNumber, StrIndexOfNumber + 17);
+					array2Dv[count][4] = StrIndexOfNumber_ToString;
+				}
+				else
+				{
+					array2Dv[count][4] = "Unknown Vendor";
+				}
+				
+				if (array2Dv[count][3] == "")
+				{
+					array2Dv[count][3] = "";
+				}
+				count ++;
+			}
+		}
+
+		if (Total_MacFilterList >= 1)
+		{
+			// alert("Total_MacFilterList = " + Total_MacFilterList);
+			var find = 0;
+			for (var i = 1; i <= Total_MacFilterList; i ++)
+			{
+				array2DvMF[CheckCount][0] = xml_GetMacFilter.Get("GetMACFilters2Response/MACList/MACInfo:" + i + "/DeviceName");
+				array2DvMF[CheckCount][1] = xml_GetMacFilter.Get("GetMACFilters2Response/MACList/MACInfo:" + i + "/MacAddress");
+				array2DvMF[CheckCount][2] = i;
+				// alert(array2DvMF[CheckCount][0] + "," + array2DvMF[CheckCount][1] + "," + array2DvMF[CheckCount][2]);
+
+				CheckCount ++;
+			}
+			
+			for (var i = 0; i < Total_WirelessClients; i ++)
+			{
+				array2Dv[i][6] = I18N("j", "Allowed");
+				array2Dv[i][7] = "#000000";
+				array2Dv[i][8] = "link_IconW_Allow";
+			}
+			
+			for (var i = 0; i < Total_MacFilterList; i ++)
+			{
+				// alert("MAC Filter第 " + i + " 筆資料開始比對");
+				for (var j = 0; j < Total_WirelessClients; j ++)
+				{
+					// alert("Client List第 " + j + " 筆資料與MAC Filter第 " + i + " 筆資料開始比對");
+					if (array2Dv[j][1] == array2DvMF[i][1])
+					{
+						// alert(array2Dv[j][1] + " 與 " + array2DvMF[i][1] + " 相同，Block!");
+						array2Dv[j][6] = I18N("j", "Blocked");
+						array2Dv[j][7] = "#FF0000";
+						array2Dv[j][8] = "link_IconW_Block";
+						find = 1;
+						break;
+					}
+				}
+				if (find == 0)
+				{
+					array2Dv[Total_WirelessClients] = new Array(10);
+					array2Dv[Total_WirelessClients][0] = array2DvMF[i][0];	// device name;
+					array2Dv[Total_WirelessClients][1] = array2DvMF[i][1];	// device mac;
+					array2Dv[Total_WirelessClients][2] = "";
+					array2Dv[Total_WirelessClients][3] = "";
+					array2Dv[Total_WirelessClients][4] = "";
+					array2Dv[Total_WirelessClients][5] = "";
+
+					
+					array2Dv[Total_WirelessClients][6] = I18N("j", "Blocked");
+					array2Dv[Total_WirelessClients][7] = "#FF0000";
+					array2Dv[Total_WirelessClients][8] = "link_IconW_Block";
+					array2Dv[Total_WirelessClients][9] = "";
+
+					Total_WirelessClients ++;
+				}
+
+			}
+		}
+		else
+		{
+			for (var j = 0; j < Total_WirelessClients; j ++)
+			{
+				array2Dv[j][6] = I18N("j", "Allowed");
+				array2Dv[j][7] = "#000000";
+				array2Dv[j][8] = "link_IconW_Allow";
+			}
+		}
+
+		WirelessClient_List();
+	}
+	
+	function WirelessClient_List()
+	{
+		var tmp = "";
+		var print_Count = 0;
+		tmp = "<table class=\"block\" border=\"0\" ondragstart=\"return false\" onselectstart=\"return false\" width=\"900px\">";
+		tmp += "<tbody>";
+		
+		for (var i = 1; i <= Total_WirelessClients; i ++)
+		{
+			var Get_ClientName = array2Dv[print_Count][0];
+			var Get_ClientMacAddress = array2Dv[print_Count][1];
+			var Get_ClientIPV4Address = array2Dv[print_Count][2];
+			var Get_ClientIPV6Address = array2Dv[print_Count][3];
+			var Get_ClientVendor = array2Dv[print_Count][4];
+			// var Get_ClientReservationIP = array2Dv[print_Count][5];
+			var Get_ClientMacFilter = array2Dv[print_Count][6];
+			var Get_FontColor = array2Dv[print_Count][7];
+			var Get_CSSBackGround = array2Dv[print_Count][8];
+			var Get_ClientNickName = array2Dv[print_Count][9];
+			
+			// alert(Get_ClientName + "," + Get_ClientMacAddress + "," + Get_ClientIPV4Address + "," + Get_ClientVendor + "," + Get_ClientMacFilter + "," + Get_FontColor + "," + Get_CSSBackGround);
+			
+			if (typeof(Get_ClientMacAddress) == "undefined" || Get_ClientMacAddress.length == 0)
+			{
+				break;
+			}
+			
+			if (Get_ClientName == 0)
+			{
+				Get_ClientName = "Unknown";
+			}
+			
+			if (Get_ClientNickName != 0)
+			{
+				Get_ClientName = Get_ClientNickName;
+			}
+			
+			if (i % 2 != 0)
+			{
+				ClientNumber = i;
+				tmp += "<tr>";
+				tmp += "<td>";
+				tmp += "<div class =\"client_Tag\">";
+				tmp += "<div class =\"" + Get_CSSBackGround + "\"></div>";
+				tmp += "<div class =\"client_Info\">";
+				tmp += "<div class =\"client_Name\">" + Get_ClientName + "</div>";
+				tmp += "<div style=\"display:none;\" class =\"client_EditImage\" onclick=\"client_EditMember(" + ClientNumber + ")\" style=\"cursor:pointer\"></div>";
+				tmp += "<div class =\"client_Vender\">" + Get_ClientVendor + "</div>";
+				tmp += "<div class =\"client_IPv4Address\">" + Get_ClientIPV4Address + "</div>";
+				tmp += "<div class =\"client_IPv6Address\">" + Get_ClientIPV6Address + "</div>";
+				
+				if (Get_ClientMacFilter == "Allowed")
+				{
+					tmp += "<div class =\"client_Access\">" + "Access: " + "<font color=\"" + Get_FontColor + "\">" +Get_ClientMacFilter + "</font></div>";
+				}
+				else
+				{
+					tmp += "<div class =\"client_Access\">" + "Access: " + "<B><font color=\"" + Get_FontColor + "\">" +Get_ClientMacFilter + "</font><B></div>";
+				}
+				
+				tmp += "</div>";
+				tmp += "</div>";
+				tmp += "</td>";
+			}
+			else
+			{
+				ClientNumber = i;
+				tmp += "<td>";
+				tmp += "<div class =\"client_Tag\">";
+				tmp += "<div class =\"" + Get_CSSBackGround + "\"></div>";
+				tmp += "<div class =\"client_Info\">";
+				tmp += "<div class =\"client_Name\">" + Get_ClientName + "</div>";
+				tmp += "<div style=\"display:none;\" class =\"client_EditImage\" onclick=\"client_EditMember(" + ClientNumber + ")\" style=\"cursor:pointer\"></div>";
+				tmp += "<div class =\"client_Vender\">" + Get_ClientVendor + "</div>";
+				tmp += "<div class =\"client_IPv4Address\">" + Get_ClientIPV4Address + "</div>";
+				tmp += "<div class =\"client_IPv6Address\">" + Get_ClientIPV6Address + "</div>";
+				
+				if (Get_ClientMacFilter == "Allowed")
+				{
+					tmp += "<div class =\"client_Access\">" + "Access: " + "<font color=\"" + Get_FontColor + "\">" +Get_ClientMacFilter + "</font></div>";
+				}
+				else
+				{
+					tmp += "<div class =\"client_Access\">" + "Access: " + "<B><font color=\"" + Get_FontColor + "\">" +Get_ClientMacFilter + "</font><B></div>";
+				}
+				
+				tmp += "</div>";
+				tmp += "</div>";
+				tmp += "</td>";
+				tmp += "</tr>";
+			}
+			
+			print_Count ++;
+		}
+		
+		if (Total_WirelessClients % 2 == 1)
+		{
+			tmp += "<td>";
+			tmp += "</td>";
+			tmp += "</tr>";
+		}
+		
+		tmp += "</tbody>";
+		tmp += "</table>";
+		
+		document.getElementById("wireless_Client_Group").innerHTML = tmp;
+		setTimeout("ClearAndRenew()", 3000);
+	}
+
+	function client_EditMember(GetValue)
+	{
+		document.getElementById("editPop").style.display = "inline";
+		
+		var Get_ClientName = array2Dv[GetValue - 1][0];
+		var Get_ClientMacAddress = array2Dv[GetValue - 1][1];
+		var Get_ClientIPV4Address = array2Dv[GetValue - 1][2];
+		var Get_ClientIPV6Address = array2Dv[GetValue - 1][3];
+		var Get_ClientVendor = array2Dv[GetValue - 1][4];
+		var Get_ClientReservationIP = array2Dv[GetValue - 1][5];
+		var Get_ClientMacFilter = array2Dv[GetValue - 1][6];
+		var Get_ClientNickName = array2Dv[GetValue - 1][9];
+		
+		if (Get_ClientNickName != 0)
+		{
+			document.getElementById("client_Name").value = Get_ClientNickName;
+		}
+		else
+		{
+			document.getElementById("client_Name").value = Get_ClientName;
+		}
+		
+		document.getElementById("Name_TimmyCheck").value = Get_ClientNickName;
+		document.getElementById("client_IPAddress").value = Get_ClientIPV4Address;
+		document.getElementById("client_MACAddress").innerHTML = Get_ClientMacAddress;
+		document.getElementById("client_Vendor").innerHTML = Get_ClientVendor;
+		
+		
+		if (Get_ClientReservationIP != 0)
+		{
+			presetCheckBox("enableReserveIP", true);
+			document.getElementById("TimmyCheckBox2").checked = true;
+		}
+		else
+		{
+			presetCheckBox("enableReserveIP", false);
+			document.getElementById("TimmyCheckBox2").checked = false;
+		}
+		
+		var getAllowedString = I18N("j", "Allowed");
+		if (Get_ClientMacFilter == getAllowedString)
+		{
+			presetCheckBox("enableAccess", true);
+			document.getElementById("TimmyCheckBox").checked = true;
+		}
+		else
+		{
+			presetCheckBox("enableAccess", false);
+			document.getElementById("TimmyCheckBox").checked = false;
+		}
+	}
+	
+	function closeEditPOP()
+	{
+		var xml_SetClientInfo = HNAP.GetXML("SetClientInfo");
+		var xml_GetClientinfo = HNAP.GetXML("GetClientInfo");
+		
+		//var Get_ClientInfoListNumber = xml_SetClientInfo.Get("SetClientInfo/ClientInfoLists/ClientInfo#");
+		var Get__MACAddress = document.getElementById("client_MACAddress").innerHTML;
+		var Get__DeviceName = document.getElementById("client_Name").value;
+		var Get__NickName = document.getElementById("Name_TimmyCheck").value;
+		var Get__ReserveIP = document.getElementById("client_IPAddress").value;
+		var Get__SetNickNameMark;
+		
+		array2DvNM = new Array2DVar(Total_WirelessClients, 3);
+		
+		var NickNameListCounter = 1;
+		var SetNickName = 1;
+		
+		// 建立NickName名單
+		for (var n = 0; n < Total_WirelessClients; n ++)
+		{
+			var GetClientType = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + NickNameListCounter + "/Type");
+			
+			if (GetClientType == "WiFi_2.4G" || GetClientType == "WiFi_5G")
+			{
+				array2DvNM[n][0] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + NickNameListCounter + "/MacAddress");
+				array2DvNM[n][1] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + NickNameListCounter + "/NickName");
+				array2DvNM[n][2] = xml_GetClientinfo.Get("GetClientInfoResponse/ClientInfoLists/ClientInfo:" + NickNameListCounter + "/ReserveIP");
+				// alert(array2DvNM[n][0] + ", " + array2DvNM[n][1] + ", " + array2DvNM[n][2]);
+			}	
+			NickNameListCounter ++;
+		}
+		
+		// 先找出目前要設定的NickName的MAC Address是否有相符
+		for (var m = 0; m < Total_WirelessClients; m ++)
+		{
+			if (Get__MACAddress == array2DvNM[m][0])
+			{
+				xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/MacAddress", Get__MACAddress);
+				if (Get__DeviceName != Get__NickName)
+				{
+					// alert("Get__DeviceName != Get__NickName");
+					// 如果相符就先 Mark，並確認DeviceName是否有作變更
+					xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/NickName", Get__DeviceName);
+				}	
+				if (document.getElementById("TimmyCheckBox2").checked == true)
+				{
+					// alert("ReserveIP is ON");
+					xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/ReserveIP", Get__ReserveIP);
+				}
+				else
+				{
+					// alert("ReserveIP is OFF");
+					xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/ReserveIP", "");
+				}
+			}
+			else
+			{
+				
+				// alert("n, Get__MACAddress = " + Get__MACAddress + " , array2DvNM[" + m + "][0] = " + array2DvNM[m][0]);
+				// 沒有的話就先把目前所有的List重新設定進去
+				xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/MacAddress", array2DvNM[m][0]);
+				xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/NickName", array2DvNM[m][1]);
+				if (document.getElementById("TimmyCheckBox2").checked == true)
+				{
+					// alert("ReserveIP is ON");
+					xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/ReserveIP", array2DvNM[m][2]);
+				}
+				else
+				{
+					// alert("ReserveIP is OFF");
+					xml_SetClientInfo.Set("SetClientInfo/ClientInfoLists/ClientInfo:" + SetNickName + "/ReserveIP", "");
+				}
+			}
+			SetNickName ++;
+		}
+		
+		var xml_SetClientInfoResult = HNAP.SetXML("SetClientInfo", xml_SetClientInfo);
+		// alert(xml_SetClientInfoResult.Get("SetClientInfoResponse/SetClientInfoResult"));
+
+		var xml_GetMacFilter = HNAP.GetXML("GetMACFilters2");
+		var xml_SetMacFilter = HNAP.GetXML("SetMACFilters2");
+		
+		var GetMacFilterListNumber = xml_GetMacFilter.Get("GetMACFilters2Response/MACList/MACInfo#");
+		
+		var CheckCount = 0;
+		for (var i = 1; i <= GetMacFilterListNumber; i ++)
+		{
+			array2DvMF[CheckCount][0] = xml_GetMacFilter.Get("GetMACFilters2Response/MACList/MACInfo:" + i + "/DeviceName");
+			array2DvMF[CheckCount][1] = xml_GetMacFilter.Get("GetMACFilters2Response/MACList/MACInfo:" + i + "/MacAddress");
+			CheckCount ++;
+		}
+		
+		if (GetMacFilterListNumber == 0 && document.getElementById("TimmyCheckBox").checked == false)
+		{
+			var Set_Client_MACAddress = document.getElementById("client_MACAddress").innerHTML;
+			var Set_Client_Description = document.getElementById("client_Name").value;
+			
+			xml_SetMacFilter.Set("SetMACFilters2/Enabled", "true");
+			xml_SetMacFilter.Set("SetMACFilters2/IsAllowList", "true");
+			xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:1/MacAddress", Set_Client_MACAddress);
+			xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:1/DeviceName", Set_Client_Description);
+			
+			var xml_SetMacFilterResult = HNAP.SetXML("SetMACFilters2", xml_SetMacFilter);
+			// alert(xml_SetMacFilterResult.Get("SetMACFilters2Response/SetMACFilters2Result"));
+			window.location.reload();
+		}
+		else if (GetMacFilterListNumber == 0 && document.getElementById("TimmyCheckBox").checked == true)
+		{
+			window.location.reload();
+		}
+		else if (GetMacFilterListNumber >= 1 && document.getElementById("TimmyCheckBox").checked == false)
+		{
+			var Set_Client_MACAddress = document.getElementById("client_MACAddress").innerHTML;
+			var Set_Client_Description = document.getElementById("client_Name").value;
+			var SetCounter = 1;
+			for (var j = 0; j < GetMacFilterListNumber; j ++)
+			{
+				if (Set_Client_MACAddress == array2DvMF[j][1])
+				{
+					CheckMACFilterList = 999;
+				}
+				else
+				{		
+					CheckMACFilterList = 1000;
+				}
+			}
+			
+			xml_SetMacFilter.Set("SetMACFilters2/Enabled", "true");
+			xml_SetMacFilter.Set("SetMACFilters2/IsAllowList", "true");
+			
+			if (CheckMACFilterList == 1000)
+			{
+				for (var k = 1; k <= GetMacFilterListNumber; k ++)
+				{
+					xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:" + SetCounter + "/MacAddress", array2DvMF[SetCounter - 1][1]);
+					xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:" + SetCounter + "/DeviceName", array2DvMF[SetCounter - 1][0]);
+					SetCounter ++;		
+				}
+				
+				xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:" + SetCounter + "/MacAddress", Set_Client_MACAddress);
+				xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:" + SetCounter + "/DeviceName", Set_Client_Description);
+			
+				var xml_SetMacFilterResult = HNAP.SetXML("SetMACFilters2", xml_SetMacFilter);
+				// alert(xml_SetMacFilterResult.Get("SetMACFilters2Response/SetMACFilters2Result"));
+				window.location.reload();
+			}
+			else
+			{
+				window.location.reload();
+			}
+		}
+		else if (GetMacFilterListNumber >= 1 && document.getElementById("TimmyCheckBox").checked == true)
+		{
+			var Set_Client_MACAddress = document.getElementById("client_MACAddress").innerHTML;
+			var Set_Client_Description = document.getElementById("client_Name").value;
+			
+			CheckMACFilterList = 999;
+			for (var j = 0; j < GetMacFilterListNumber; j ++)
+			{
+				if (Set_Client_MACAddress == array2DvMF[j][1])
+				{
+					CheckMACFilterList = j + 1;
+				}
+			}
+			
+			if (GetMacFilterListNumber != 1 && CheckMACFilterList != 999)
+			{
+				var SetCounter = 1;
+				
+				xml_SetMacFilter.Set("SetMACFilters2/Enabled", "true");
+				xml_SetMacFilter.Set("SetMACFilters2/IsAllowList", "true");
+
+				for (var i = 0; i < GetMacFilterListNumber; i ++)
+				{
+					
+					if (Set_Client_MACAddress != array2DvMF[i][1])
+					{
+						xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:" + SetCounter + "/DeviceName", array2DvMF[i][0]);
+						xml_SetMacFilter.Set("SetMACFilters2/MACList/MACInfo:" + SetCounter + "/MacAddress", array2DvMF[i][1]);
+						SetCounter ++;
+					}
+				}
+				var xml_SetMacFilterResult = HNAP.SetXML("SetMACFilters2", xml_SetMacFilter);
+				// alert(xml_SetMacFilterResult.Get("SetMACFilters2Response/SetMACFilters2Result"));
+				window.location.reload();
+			}
+			else if (GetMacFilterListNumber == 1 && CheckMACFilterList == 999)
+			{
+				window.location.reload();
+			}
+			else if (GetMacFilterListNumber == 1 && CheckMACFilterList != 999)
+			{
+				xml_SetMacFilter.Set("SetMACFilters2/Enabled", "true");
+				xml_SetMacFilter.Set("SetMACFilters2/IsAllowList", "false");
+				var xml_SetMacFilterResult = HNAP.SetXML("SetMACFilters2", xml_SetMacFilter);
+				// alert(xml_SetMacFilterResult.Get("SetMACFilters2Response/SetMACFilters2Result"));
+				window.location.reload();
+			}
+		}
+	}
+	
+	function clearCreateRulePOP()
+	{
+		document.getElementById("editPop").style.display = "none";
+	}
+	
+	function ClearAndRenew()
+	{
+		var tmp = "";
+		document.getElementById("wireless_Client_Group").innerHTML = tmp;
+		GetXML();
+	}
+	
+	function Array2DVar(x, y)
+	{
+		this.length = x;
+		this.x = x;
+		this.y = y;
+		for(var i = 0; i < this.length; i++)
+		{
+			this[i] = new Array(y);
+		}
+	}
+
+</script>
+<style>
+#editPop {
+	display: none;
+}
+</style>
+</head>
+
+<body>
+	<div id="wrapper">		
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<div id="menu"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+		<!-------------------- info ------------------------->	
+			<div id="info"> 
+				<div id="FunctionName"><script>I18N("h", "Wi-Fi Clients");</script></div>
+				<div id="wallimage"><img src="image/wifi_24.png" alt="" width="195" height="119"/></div>
+			    <div id="directions">
+					<script>I18N("h", "Here, you can see a list of all devices connected through Wi-Fi. Click on a device to view more information about it, or click on the pencil icon to give the device a name to make it easy to identify. You can block a device from accessing your network always or according to a schedule by using the Block dropdown box.");</script>
+				</div>
+			</div> 
+			<a href="Home.html" style="text-decoration:none;"><div class="back_btn" id="back_button"><script>I18N("h", "Home");</script></div></a>
+			<a href="Wireless_g.html" style="text-decoration:none;"><div class="gestZone_button" id="gz_button"><script>I18N("h", "Guest Zone");</script></div></a>
+		</div>
+		<div id="main">
+			<div id="wireless_Client_Group"></div>
+			
+			<!---------------------- PopUp----------------------->
+				<div id="editPop" style="display:none">
+					<div id="dialogBox"  style="width:500px">
+					<div id="closeCreatePopBtn" onclick="clearCreateRulePOP()" style="cursor:pointer"></div>
+					<table class="myCreatePop_table" border="0" cellspacing="0">
+						<tbody>
+							<tr>
+								<td colspan="3"><div class ="popTitle"><script>I18N("h", "Edit");</script></div></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Name");</script>:</th>
+								<td>
+									<input class="styled-text" type="text" name="client_Name" size="15" id="client_Name">
+								</td>
+								<td style="display:none">
+									<input class="styled-text" type="text" name="Name_TimmyCheck" size="15" id="Name_TimmyCheck">
+								</td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Vendor");</script>:</th>
+								<td><Label id="client_Vendor">Unknown Vendor</Label></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "IP Address");</script>:</th>
+								<td><input class="styled-text" type="text" name="client_IPAddress" size="15" id="client_IPAddress"></td>
+							</tr>
+							<tr style="display:none">
+								<th><script>I18N("h", "MAC Address");</script>:</th>
+								<td><Label id="client_MACAddress"></Label></td>
+							</tr>
+							<tr>
+								<th><script>I18N("h", "Reserve IP");</script>:</th>
+								<td><div id="enableReserveIP" class="checkbox_on"><input type="checkbox" name="enableReserveIP" id="enableReserveIP_ck" checked></div></td>
+								<td style="display:none"><input type="checkbox" name="TimmyCheckBox2" id="TimmyCheckBox2"></td>
+							</tr>
+							
+							<tr>
+								<th><script>I18N("h", "Access");</script>:</th>
+								<td><div id="enableAccess" class="checkbox_on"><input type="checkbox" name="enableAccess" id="enableAccess_ck" checked></div></td>
+								<td style="display:none"><input type="checkbox" name="TimmyCheckBox" id="TimmyCheckBox"></td>
+							</tr>
+							<tr>
+								<td id="save_td" colspan="4">
+									<center><button type="button" class="styled_button_s" onclick="closeEditPOP()"><script>I18N("h", "Save");</script></button></center>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+	</div>
+</body>
+<script type="text/javascript">
+	Load_HTML();
+	Initial();
+	startTimeout();
+</script>
+</html>

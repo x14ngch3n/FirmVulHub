@@ -1,0 +1,740 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="/css/jquery.selectbox.css" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/DynamicDNS.js"></script>
+
+<script>
+$(document).ready(function(){
+	presetCheckBox("enableDynamicDNS", true);
+	//jquery
+	$("div.checkbox_on" || "div.checkbox_off").click(function(e) {
+	 var checkboxId =  e.target.id +'_ck';	 
+		if(e.target.getAttribute("class") == "checkbox_on") {
+			var disable = I18N("j","Disabled");
+			e.target.setAttribute("class", "checkbox_off");
+			e.target.setAttribute("className", "checkbox_off");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked>'+disable;
+			document.getElementById(checkboxId).checked=false;
+			
+			if (checkboxId == "enableDynamicDNS_ck")
+			{
+				document.getElementById("show_Server_Address").style.display = "none";
+				$("#ServerName").selectbox("disable");
+				document.getElementById("show_Host_Name").style.display = "none";
+				document.getElementById("show_User_Name").style.display = "none";
+				document.getElementById("show_Password").style.display = "none";
+				document.getElementById("show_Time_Out").style.display = "none";
+				document.getElementById("advancedBlock1").style.display = "none";
+			}
+			changeFlag = true;
+			save_button_changed();
+		}
+		else {
+			var enable = I18N("j","Enabled");
+			e.target.setAttribute("class", "checkbox_on");
+			e.target.setAttribute("className", "checkbox_on");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked="">'+enable;
+			document.getElementById(checkboxId).checked=true;
+			if (checkboxId == "enableDynamicDNS_ck")
+			{
+				document.getElementById("show_Server_Address").style.display = "table-row";
+				$("#ServerName").selectbox("enable");
+				document.getElementById("show_Host_Name").style.display = "table-row";
+				document.getElementById("show_User_Name").style.display = "table-row";
+				document.getElementById("show_Password").style.display = "table-row";
+				document.getElementById("show_Time_Out").style.display = "table-row";
+				document.getElementById("advancedBlock1").style.display = "table-row";
+				if (availableDNS == 0)
+				{
+					$("#ServerName").selectbox('detach');
+					$("#ServerName").val('0');
+					$("#ServerName").selectbox('attach');
+					document.getElementById("serverAddress_input").value = "dyndns.com";
+					document.getElementById("serverAddress_input").disabled = true;
+				}
+			}
+			changeFlag = true;
+			save_button_changed();
+		}
+	});
+});
+</script>
+
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+	var set_Iteration;
+	var availableDNS = 0;
+	// Detect how many DynamicDNS IPv6 we can use.
+	var Total_DynamicDNSIPv6Rules = 0;
+	// Set up the limit total DynamicDNS IPv6
+	var Limit_TotalDynamicDNSIPv6Rules = 10;
+	// Detect how many Client.
+	var Total_Client = 0;
+	// Set up the limit total Client
+	var Limit_Client = 256;
+	// Create Array to storage
+	var array2Dv;
+	function Load_HTML()	{	$("#header").load("header.html");	}
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	
+	function GetXML()	{	HNAP.GetXMLAsync("GetMultipleHNAPs", null, "GetXML", function(xml)	{	GetResult_1st(xml)	});	}
+	function GetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("GetMultipleHNAPs/GetDynamicDNSSettings");
+			result_xml.Set("GetMultipleHNAPs/GetClientInfo");
+			result_xml.Set("GetMultipleHNAPs/GetDynamicDNSIPv6Settings");
+			HNAP.SetXMLAsync("GetMultipleHNAPs", result_xml, function(xml)	{	GetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_1st");	}	}
+	}
+	function GetResult_2nd(result_xml)
+	{
+		var GetResult_2nd = result_xml.Get("GetMultipleHNAPsResponse/GetMultipleHNAPsResult");
+		if (GetResult_2nd == "OK")
+		{
+			// Enable DynamicDNS
+			var enable_DDNS = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/Enabled");
+			if(enable_DDNS == "true")
+			{
+				presetCheckBox("enableDynamicDNS", true);
+				document.getElementById("show_Server_Address").style.display = "table-row";
+				$("#ServerName").selectbox("enable");
+				document.getElementById("show_Host_Name").style.display = "table-row";
+				document.getElementById("show_User_Name").style.display = "table-row";
+				document.getElementById("show_Password").style.display = "table-row";
+				document.getElementById("show_Time_Out").style.display = "table-row";
+				document.getElementById("advancedBlock1").style.display = "table-row";
+			}
+			else
+			{
+				presetCheckBox("enableDynamicDNS", false);
+				document.getElementById("show_Server_Address").style.display = "none";
+				$("#ServerName").selectbox("disable");
+				document.getElementById("show_Host_Name").style.display = "none";
+				document.getElementById("show_User_Name").style.display = "none";
+				document.getElementById("show_Password").style.display = "none";
+				document.getElementById("show_Time_Out").style.display = "none";
+				document.getElementById("advancedBlock1").style.display = "none";
+			}
+			// SysLog Server IP Address
+			var get_ServerStatus = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/Status");
+			switch (get_ServerStatus)
+			{
+				case "Connected":		document.getElementById("serverStatus").innerHTML = I18N("j", "Connected");		break;
+				case "Disconnected":	document.getElementById("serverStatus").innerHTML = I18N("j", "Disconnected");	break;
+			}
+			// Server Address
+			var get_ServerAddress = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/ServerAddress");
+			if (get_ServerAddress != "")
+			{
+				document.getElementById("serverAddress_input").value = get_ServerAddress;
+				availableDNS = 1;
+				switch (get_ServerAddress)
+				{
+					case "dlinkddns.com":
+						document.getElementById("ServerName").options[0].selected = true;
+						document.getElementById("serverAddress_input").disabled = true;
+						break;
+					case "dyndns.com":
+						document.getElementById("ServerName").options[1].selected = true;
+						document.getElementById("serverAddress_input").disabled = true;
+						break;
+					default:
+						document.getElementById("ServerName").options[2].selected = true;
+						break;
+				}
+			}
+			// Host Name
+			var get_HostName = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/Hostname");
+			document.getElementById("hostName").value = get_HostName;
+			// User Name
+			var get_UserName = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/Username");
+			document.getElementById("userName").value = get_UserName;
+			// Password
+			var get_Password = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/Password");
+			document.getElementById("password").value = get_Password;
+			// Time Out
+			var get_TimeOut = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSSettingsResponse/Timeout");
+			if (get_TimeOut != "0")	{	document.getElementById("timeOut").value = get_TimeOut;	}
+			else					{	document.getElementById("timeOut").value = "24";		}
+			Total_Client = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo#");
+			var Client_Count = 1;
+			for (var i = 1; i <= Total_Client; i ++)
+			{
+				var GetClientInfo_IPv6Address = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/IPv6Address");
+				if (GetClientInfo_IPv6Address != "")
+				{
+					var Add_Select1 = document.getElementById("select_dnsv6_IPAddress");
+					var Add_Select2 = document.getElementById("select_dnsv6_EditIPAddress");
+					var GetClientInfo_DeviceName = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + i + "/DeviceName");
+					Add_Select1.options.add(new Option(GetClientInfo_IPv6Address + " (" + GetClientInfo_DeviceName + ")", Client_Count));
+					Add_Select2.options.add(new Option(GetClientInfo_IPv6Address + " (" + GetClientInfo_DeviceName + ")", Client_Count));
+					Client_Count ++;
+				}
+			}
+			////////// IPv6 DynamicDNS List //////////
+			var GetDNS_ListNumber = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSIPv6SettingsResponse/DynamicDNSIPv6List/DDNSIPv6Info#");
+			Total_DynamicDNSIPv6Rules = GetDNS_ListNumber;
+			for (var i = 1; i <= Total_DynamicDNSIPv6Rules; i ++)
+			{
+				var GetDNS_Status = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSIPv6SettingsResponse/DynamicDNSIPv6List/DDNSIPv6Info:" + i + "/Status");
+				var GetDNS_HostName = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSIPv6SettingsResponse/DynamicDNSIPv6List/DDNSIPv6Info:" + i + "/Hostname");
+				var GetDNS_v6Address = result_xml.Get("GetMultipleHNAPsResponse/GetDynamicDNSIPv6SettingsResponse/DynamicDNSIPv6List/DDNSIPv6Info:" + i + "/IPv6Address");
+				GetHNAPInformation(GetDNS_Status, GetDNS_HostName, GetDNS_v6Address);
+				addRowToTable(null);
+			}
+			document.getElementById("createButton").disabled = false;
+			var IsFull = Limit_TotalDynamicDNSIPv6Rules - Total_DynamicDNSIPv6Rules;
+			document.getElementById("RemainingRules").innerHTML = IsFull;
+			if (IsFull == 0)	{	document.getElementById("createButton").disabled = true;	}
+			$("#ServerName").selectbox();
+			$("#select_dnsv6_IPAddress").selectbox();
+			$("#select_dnsv6_EditIPAddress").selectbox();
+			if (document.getElementById("enableDynamicDNS_ck").checked != "1")	{	$("#ServerName").selectbox("disable");	}
+			CheckNetworkStatus();
+			document.getElementById("main").style.display = "inline";
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_2nd");	}	}
+	}
+	function CheckConnectionStatus()
+	{
+		$.ajax({
+			cache : false,
+			url : "./js/CheckConnection",
+			timeout : 5000,
+			type : "GET",
+			success : function(data) { SetXML(); },
+			error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+		});
+	}
+	function SetXML()
+	{
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		HNAP.GetXMLAsync("SetDynamicDNSSettings", null, "GetXML", function(xml)	{	SetResult_1st(xml)	});
+	}
+	function SetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			// Enable DynamicDNS
+			var put_DDNS = document.getElementById("enableDynamicDNS_ck").checked;
+			if (put_DDNS == "1")	{	result_xml.Set("SetDynamicDNSSettings/Enabled", "true");	}
+			else					{	result_xml.Set("SetDynamicDNSSettings/Enabled", "false");	}
+			// Server Address
+			result_xml.Set("SetDynamicDNSSettings/ServerAddress", document.getElementById("serverAddress_input").value);
+			// Host Name
+			result_xml.Set("SetDynamicDNSSettings/Hostname", document.getElementById("hostName").value);
+			// User Name
+			result_xml.Set("SetDynamicDNSSettings/Username", document.getElementById("userName").value);
+			// Password
+			result_xml.Set("SetDynamicDNSSettings/Password", document.getElementById("password").value);
+			// Time Out
+			var getTimeoutValue = document.getElementById("timeOut").value;
+			if (getTimeoutValue == "0" || getTimeoutValue == "")	{	result_xml.Set("SetDynamicDNSSettings/Timeout", "24");	}
+			else													{	result_xml.Set("SetDynamicDNSSettings/Timeout", document.getElementById("timeOut").value);	}
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetDynamicDNSSettings", result_xml, function(xml)	{	SetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_1st");	}	}
+	}
+	function SetResult_2nd(result_xml)
+	{
+		var SetResult_2nd = result_xml.Get("SetDynamicDNSSettingsResponse/SetDynamicDNSSettingsResult");
+		if (SetResult_2nd == "REBOOT")	{	HNAP.GetXMLAsync("SetDynamicDNSIPv6Settings", null, "GetXML", function(xml)	{	SetResult_3rd(xml)	});	}
+		if (SetResult_2nd == "OK")		{	HNAP.GetXMLAsync("SetDynamicDNSIPv6Settings", null, "GetXML", function(xml)	{	SetResult_3rd(xml)	});	}
+		if (SetResult_2nd == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_2nd");	}	window.location.reload();	}
+		if (SetResult_2nd == "ERROR_SERVERADDRESS")	{	HNAP.GetXMLAsync("SetDynamicDNSIPv6Settings", null, "GetXML", function(xml)	{	SetResult_3rd(xml)	});	}
+	}
+	function SetResult_3rd(result_xml)
+	{
+		if (result_xml != null)
+		{
+			var tbl = document.getElementById(TABLE_NAME);
+			var count = 0;
+			array2Dv = new Array2DVar(Total_DynamicDNSIPv6Rules, 3);
+			
+			for(var i = 1; i <= Total_DynamicDNSIPv6Rules; i ++)
+			{
+				var tmp_GetDNSIPv6Status = tbl.rows[i].childNodes[0].childNodes[0].checked;
+				if (tmp_GetDNSIPv6Status == true)	{	array2Dv[count][0] = "Enabled";		}
+				else								{	array2Dv[count][0] = "Disabled";	}
+				array2Dv[count][1] = tbl.rows[i].childNodes[1].childNodes[0].innerHTML;
+				array2Dv[count][2] = tbl.rows[i].childNodes[2].childNodes[0].innerHTML;
+				count ++;
+			}
+			var SetCount = 0;
+			for (var i = 1; i <= Total_DynamicDNSIPv6Rules; i ++)
+			{
+				result_xml.Set("SetDynamicDNSIPv6Settings/DynamicDNSIPv6List/DDNSIPv6Info:" + i + "/Status", array2Dv[SetCount][0]);
+				result_xml.Set("SetDynamicDNSIPv6Settings/DynamicDNSIPv6List/DDNSIPv6Info:" + i + "/Hostname", array2Dv[SetCount][1]);
+				result_xml.Set("SetDynamicDNSIPv6Settings/DynamicDNSIPv6List/DDNSIPv6Info:" + i + "/IPv6Address", array2Dv[SetCount][2]);
+				SetCount ++;
+			}
+			// Send HNAP to DUT
+			HNAP.SetXMLAsync("SetDynamicDNSIPv6Settings", result_xml, function(xml)	{	SetResult_4th(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_3rd");	}	}
+	}
+	function SetResult_4th(result_xml)
+	{
+		var SetResult_2nd = result_xml.Get("SetDynamicDNSIPv6SettingsResponse/SetDynamicDNSIPv6SettingsResult");
+		if (SetResult_2nd == "REBOOT")	{	setTimeout("waitSettingFinished()", 1000);	}
+		if (SetResult_2nd == "OK")		{	setTimeout("waitSettingFinished()", 1000);	}
+		if (SetResult_2nd == "ERROR")	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_4th");	}	window.location.reload();	}
+	}
+	function waitSettingFinished()	{	window.location.reload();	}
+	function setIteration(value)	{	set_Iteration = value;		}
+	function createUserButton()
+	{
+		changeTimeoutAction();
+		
+		document.getElementById("createPop").style.display = "inline";
+		document.getElementById("createButton").disabled = true;
+	}
+	function closeCreateRulePOP()
+	{
+		changeTimeoutAction();
+		
+		var GetResult = AddRowToIndex();
+		if (GetResult == "Success")
+		{
+			document.getElementById("createPop").style.display = "none";
+			document.getElementById("dnsv6_HostName").value = "";
+			document.getElementById("select_dnsv6_IPAddress").value = "0";
+			document.getElementById("dnsv6_IPAddress").value = "";
+			check_TotalRule(Limit_TotalDynamicDNSIPv6Rules, Total_DynamicDNSIPv6Rules);
+		}
+	}
+	function clearCreateRulePOP()
+	{
+		changeTimeoutAction();
+		
+		document.getElementById("createPop").style.display = "none";
+		document.getElementById("createButton").disabled = false;
+		document.getElementById("dnsv6_HostName").value = "";
+		document.getElementById("select_dnsv6_IPAddress").value = "0";
+		document.getElementById("dnsv6_IPAddress").value = "";
+	}
+	function editData(id)
+	{
+		changeTimeoutAction();
+		
+		document.getElementById("editPop").style.display = "inline";
+		document.getElementById("createButton").disabled = true;
+		editDataGet(id);
+	}
+	function closeEditRulePOP(set_Iteration)
+	{
+		changeTimeoutAction();
+		
+		var the_Iteration = set_Iteration;
+		var GetResult = assignRowToIndex(the_Iteration);
+		if (GetResult == "Success")
+		{
+			document.getElementById("editPop").style.display = "none";
+			document.getElementById("dnsv6_EditHostName").value = "";
+			document.getElementById("select_dnsv6_EditIPAddress").value = "0";
+			document.getElementById("dnsv6_EditIPAddress").value = "";
+			check_TotalRule(Limit_TotalDynamicDNSIPv6Rules, Total_DynamicDNSIPv6Rules);
+		}
+	}
+	function clearEditRulePOP()
+	{
+		changeTimeoutAction();
+		
+		document.getElementById("editPop").style.display = "none";
+		document.getElementById("dnsv6_EditHostName").value = "";
+		document.getElementById("select_dnsv6_EditIPAddress").value = "0";
+		document.getElementById("dnsv6_EditIPAddress").value = "";
+		check_TotalRule(Limit_TotalDynamicDNSIPv6Rules, Total_DynamicDNSIPv6Rules);
+	}
+	function Array2DVar(x, y)
+	{
+		this.length = x;
+		this.x = x;
+		this.y = y;
+		for(var i = 0; i < this.length; i++)
+		{
+			this[i] = new Array(y);
+		}
+	}
+	function dnsv6_IPAddress_Description(element, value)
+	{
+		var get_Selection = element.options[value].text;
+		var splitString = get_Selection.split('(')[0];
+		var finalString = splitString.replace(/\s/g, "");
+		if (value == "0")	{	document.getElementById("dnsv6_IPAddress").value = "";	}
+		else	{	document.getElementById("dnsv6_IPAddress").value = finalString;	}
+	}
+	function dnsv6_EditIPAddress_Description(element, value)
+	{
+		var get_Selection = element.options[value].text;
+		var splitString = get_Selection.split('(')[0];
+		var finalString = splitString.replace(/\s/g, "");
+		if (value == "0")	{	document.getElementById("dnsv6_EditIPAddress").value = "";	}
+		else	{	document.getElementById("dnsv6_EditIPAddress").value = finalString;	}
+	}
+	function ddns_ServerIPAddress_Description(element, value)
+	{
+		var get_Selection = element.options[value].text;
+		if (value == "0" || value == "1")
+		{
+			document.getElementById("serverAddress_input").value = get_Selection;
+			document.getElementById("serverAddress_input").disabled = true;
+		}
+		else
+		{
+			document.getElementById("serverAddress_input").value = "";
+			document.getElementById("serverAddress_input").disabled = false;
+		}
+	}
+	
+	function timeout_Check(element, value)
+	{
+		element.value = value.replace(/[^0-9]/g,'');
+		if (value.charAt(0) == '-' || value <= 0 || element.value.length == 0)	{	element.value = 24;	}
+	}
+	
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+</script>
+<script language="JavaScript">
+	// 2013/07/30 Timmy Add
+	function focusToFirstIndex(str)
+	{
+		if (str.id == "save_buttonFocus")	{	if(window.event.keyCode == 9)		{	document.getElementById("dnsv6_HostName").focus();	}	}
+		if (str.id == "Save_edit_pop_btn")	{	if(window.event.keyCode == 9)	{	document.getElementById("dnsv6_EditHostName").focus();	}	}
+	}
+</script>
+<script language="JavaScript">
+	// 2013/09/23 Timmy Modify
+	$(function() {
+		$("select").change(function () {	save_button_changed();	});
+		$("input").keydown(function () {	save_button_changed();	});
+	});
+	function save_button_changed()
+	{
+		document.getElementById("Save_Disable_btn").style.display = "none";
+		document.getElementById("Save_btn").style.display = "block";
+		changeFlag = true;
+		checkFlag = true;
+		changeTimeoutAction();
+	}
+</script>
+<style>
+#editPop		{	display: none;	}
+#createPop		{	display: none;	}
+</style>
+</head>
+
+<body>
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->
+	  		<div id="info">
+			  	<div id="FunctionName"><script>I18N("h", "Dynamic DNS");</script></div>
+				<div id="wall"><img src="image/page_DDNS.png" alt="" width="195" height="119"/></div>
+	      		<div id="directions">
+			        <script>I18N("h", "Dynamic Domain Name Service allows your router to associate an easy-to-remember domain name such as [YourDomainName].com with the regularly changing IP address assigned by your Internet Service provider. This feature is helpful when running a virtual server.");</script>
+					<label id="Get_Help" onClick="showOnlineHelp('Dynamic DNS');" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+				</div>
+			</div>
+			<!-------------------- funcBar ---------------------->
+			<form name="dynamicdns_form" id="dynamicdns_form" method="POST" action="">
+			<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+			<div id="funcBar">
+				<div id="pagePath"><script>I18N("h", "Features");</script> >> <script>I18N("h", "Dynamic DNS");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="document.getElementById('sumbit_CheckData').click();changeTimeoutAction();" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li>
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+				</ul>
+			</div>
+			<!-------------------- main ---------------------->
+	     	<div id="main" style="display:none">
+				<br />
+				<table class="block" border="0">
+					<tbody>
+						 <tr>
+						   	<th><script>I18N("h", "Enable Dynamic DNS");</script>:</th>
+						   	<td><div id="enableDynamicDNS"><input type="checkbox" name="enableDynamicDNS_ck" id="enableDynamicDNS_ck"></div></td>
+						 </tr>
+						 <tr>
+						   	<th><script>I18N("h", "Status");</script>:</th>
+						   	<td><label name="serverStatus" id="serverStatus">&nbsp;<script>I18N("h", "Not Available");</script></td>
+						 </tr>
+						 <tr id="show_Server_Address" style="display:none">
+						   	<th><script>I18N("h", "Server Address");</script>:</th>
+						   	<td width="20px"><input class="styled-text required" type="text" name="serverAddress_input" size="27" id="serverAddress_input" value="dyndns.com"></td>
+							<td valign="top">
+								<div class="styled-select">
+								<select name="ServerName" id="ServerName" onChange="ddns_ServerIPAddress_Description(this, this.value)">
+									<option value="0" selected>dlinkddns.com</option>
+									<option value="1" selected>dyndns.com</option>
+								 	<option value="2">Manual</option>
+								</select>
+								</div> 
+							</td>
+						 </tr>
+						 <tr id="show_Host_Name" style="display:none">
+						   	<th><script>I18N("h", "Host Name");</script>:</th>
+						   	<td ><input class="styled-text required" type="text" name="hostName" size="27" id="hostName"></td>
+						 </tr>
+						 <tr id="show_User_Name" style="display:none">
+						   	<th><script>I18N("h", "User Name");</script>:</th>
+						   	<td ><input class="styled-text required" type="text" name="userName" size="27" id="userName"></td>
+						 </tr>
+						 <tr id="show_Password" style="display:none">
+						   	<th><script>I18N("h", "Password");</script>:</th>
+						   	<td ><input class="styled-text required" type="password" name="password" size="27" id="password"></td>
+						 </tr>
+						 <tr id="show_Time_Out" style="display:none">
+						   	<th><script>I18N("h", "Time Out");</script>:</th>
+						   	<td ><input class="styled-text" type="text" name="timeOut" size="5" Maxlength="3" id="timeOut" onChange="timeout_Check(this, this.value)"></td>
+						   	<td><script>I18N("h", "hours");</script></td>
+						 </tr>
+					</tbody>
+				</table>
+				</div>
+			</form>
+				<!-------------------- advancedBlock1---------------------->
+				<div id="advancedBlock1" style="display:none">
+					<table class="mainTable" border="0" cellspacing="0" id="tblIPv6DynamicDNS">
+						<thead>
+							<tr>
+								<th><script>I18N("h", "Status");</script></th>
+								<th><script>I18N("h", "Host Name");</script></th>
+								<th><script>I18N("h", "IPv6 Address");</script></th>
+								<th><script>I18N("h", "Edit");</script></th>
+								<th><script>I18N("h", "Delete");</script></th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+					<br />
+					<br />
+					<button type="button" name="createButton" id="createButton" class="styled_button_s" onclick="createUserButton()"><script>I18N("h", "Add Record");</script></button>
+					&nbsp;&nbsp;<script>I18N("h", "Remaining");</script>:&nbsp;<label id="RemainingRules">10</label>
+				</div>
+				<!----------------------PopUp----------------------->
+				<form name="dynamicDNSforIPv6_form" id="dynamicDNSforIPv6_form" action="">
+				<input id="sumbit_CheckData2" class="submit" type="submit" value="Submit" style="display:none" />
+				<div id="createPop" style="display:none">
+					<div class="dialogBox" style="width:616px; top:180px;">
+					<div id="closeCreatePopBtn" onclick="clearCreateRulePOP()" style="cursor:pointer"></div>
+						<table class="myCreatePop_table" border="0" cellspacing="0" id="tblIPv6DynamicDNS2">
+							<tbody>
+								<tr>
+									<td colspan="3"><div class ="popTitle"><script>I18N("h", "Create New Record");</script></div></td>
+								</tr>
+									<th style="width=30px"><script>I18N("h", "Host Name");</script>:</th>
+									<td colspan=2><input class="styled-text" type="text" name="dnsv6_HostName" style="width:280px" id="dnsv6_HostName" tabindex="1"></td>
+								<tr>
+									<th style="width=30px"><script>I18N("h", "IPv6 Address");</script>:</th>
+									<td valign="top">
+										<input class="styled-text" type="text" name="dnsv6_IPAddress" style="width:280px" Maxlength="39" id="dnsv6_IPAddress" tabindex="2">
+									</td>
+									<td valign="top">
+										<div class="styled-select">
+											<select name="select_dnsv6_IPAddress" id="select_dnsv6_IPAddress" onChange="dnsv6_IPAddress_Description(this, this.value)">
+												<option value="0">&lt;&lt; Computer Name</option>
+											</select>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<td id="save_td" colspan="4">
+										<center><button type="button" class="styled_button_s" id="save_buttonFocus" tabindex="3" onkeyup="focusToFirstIndex(this)"  onclick="document.getElementById('sumbit_CheckData2').click()"><script>I18N("h", "Apply");</script></button></center>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				</form>
+				<!---------------------- PopUp Edit ----------------------->
+				<form name="dynamicDNSforIPv6_form2" id="dynamicDNSforIPv6_form2" action="">
+				<input id="sumbit_CheckData3" class="submit" type="submit" value="Submit" style="display:none" />
+				<div id="editPop" style="display:none">
+					<div class="dialogBox" style="width:616px; top:180px;">
+					<div id="closeCreatePopBtn" onclick="clearEditRulePOP()" style="cursor:pointer"></div>
+						<table class="myCreatePop_table" border="0" cellspacing="0" id="tblIPv6DynamicDNS3">
+							<tbody>
+								<tr>
+									<td colspan="3"><div class ="popTitle"><script>I18N("h", "Edit Record");</script></div></td>
+								</tr>
+									<th style="width=30px"><script>I18N("h", "Host Name");</script>:</th>
+									<td colspan=2><input class="styled-text" type="text" name="dnsv6_EditHostName" style="width:280px" id="dnsv6_EditHostName" tabindex="4"></td>
+								<tr>
+									<th style="width=30px"><script>I18N("h", "IPv6 Address");</script>:</th>
+									<td valign="top">
+										<input class="styled-text" type="text" name="dnsv6_EditIPAddress" style="width:280px" Maxlength="39" id="dnsv6_EditIPAddress" tabindex="5">
+									</td>
+									<td valign="top">
+										<div class="styled-select">
+											<select name="select_dnsv6_EditIPAddress" id="select_dnsv6_EditIPAddress" onChange="dnsv6_EditIPAddress_Description(this, this.value)">
+												<option value="0">&lt;&lt; Computer Name</option>
+											</select>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<td id="save_td" colspan="4">
+										<center><div id="Save_edit_pop_btn" style="cursor:pointer" tabindex="6" onkeyup="focusToFirstIndex(this)" onclick="document.getElementById('sumbit_CheckData3').click()"><script>I18N("h", "Apply");</script></div></center>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+				</form>
+		</div>
+		<div id="CreatePopAlertMessage" style="display:none">
+			<div id="AlertPopRect">
+			<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+				   <tbody>
+						 <tr>
+						 	<td>
+								<center><div id="Loading_pop_image2"></div></center>
+							</td>
+						 </tr>
+						 <tr>
+						 	<td label id="reciprocal_Number"></label></td>
+						 </tr>
+						 <tr>
+						 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						 </tr>
+				   </tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+	<div id="footer">
+		<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+	</div>
+<script type="text/javascript" charset="utf-8">
+	$(document).ready( function() {
+		// Check IPv6 Format
+		$.validator.addMethod("checkIPv6Format", function( value, element ) {
+			var ValidIpAddressRegex = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/;
+			var returnVal = true;
+			if (ValidIpAddressRegex.test(value))
+			{
+			//	alert(value);
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.ipv6address_Check);
+		
+		$("#dynamicdns_form, #dynamicDNSforIPv6_form, #dynamicDNSforIPv6_form2").each(function(index, el) {
+			$(el).validate({
+				rules: {
+					hostName: {
+						required: true
+					},
+					userName: {
+						required: true
+					},
+					password: {
+						required: true
+					},
+					dnsv6_HostName: {
+						required: true
+					},
+					dnsv6_IPAddress: {
+						required: true,
+						checkIPv6Format: true
+					},
+					dnsv6_EditHostName: {
+						required: true
+					},
+					dnsv6_EditIPAddress: {
+						required: true,
+						checkIPv6Format: true
+					}
+				},
+				messages: {
+					hostName: jQuery.validator.messages.host_Name,
+					userName: jQuery.validator.messages.check_UserName,
+					password: jQuery.validator.messages.check_Password,
+					dnsv6_HostName: {
+						required: jQuery.validator.messages.host_Name
+					},
+					dnsv6_IPAddress: {
+						required: jQuery.validator.messages.ipv6
+					},
+					dnsv6_EditHostName: {
+						required: jQuery.validator.messages.host_Name
+					},
+					dnsv6_EditIPAddress: {
+						required: jQuery.validator.messages.ipv6
+					}
+				},
+				submitHandler: function(form) {
+					if (form.id == "dynamicDNSforIPv6_form")
+		            {
+		            	closeCreateRulePOP();
+		            }
+		            if (form.id == "dynamicDNSforIPv6_form2")
+		            {
+		            	closeEditRulePOP(set_Iteration);
+		            }
+		            if (form.id == "dynamicdns_form")
+		            {
+		            	CheckConnectionStatus();
+		            }
+		        },
+		        debug: true
+			});
+		});
+	});
+</script>
+</body>
+<script type="text/javascript">
+	Load_HTML();
+	Initial();
+	setMenu("menu_Advanced");
+	GetXML();
+	startTimeout();
+</script>
+</html>

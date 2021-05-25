@@ -1,0 +1,1383 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="css/jquery-ui.min.css" media="all" />
+<link rel=stylesheet type="text/css" href="/css/style_h.css" media="all" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/jquery-ui.custom.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/DetectBrowserVersion.js"></script>
+
+<script type="text/javascript">
+	// Detect Browser
+	var DetectBrowserMessage = 1;
+	var GetDBV = DetectBrowserVersion();
+	if (GetDBV[0] == "Microsoft Internet Explorer" && parseInt(GetDBV[1]) < 9)	{	DetectBrowserMessage = 0;	}
+</script>
+<script type="text/javascript">
+	
+	var HNAP = new HNAP_XML();
+	var _ReciprocalRebootNumber = 80;
+	var macList = "";
+	var arrayQoS2Dv;
+	var array2Dv;
+	
+	function LoadMACList()
+	{
+		$.ajax({
+			url: "/js/MacList.json?v=20160226193446",
+			type: "GET",
+			dataType: "json",
+			success: function(data) {
+				macList = data;
+				GetXML();
+			},
+		});
+	}
+	LoadMACList();
+	function Base92(input)
+	{
+		var BASE = 92;
+
+		function getCharCode(i)
+		{
+			if((i+35) == 92)        //skip '\'  (ASCII 92)
+				return '!';
+			return String.fromCharCode(i+35);
+		}
+
+		var Q = Math.floor(input/BASE);
+		var R = input%BASE;
+		var str = "";
+
+		if(Q >= BASE)
+		{
+			str += Base92(Q);
+		}
+		else
+		{
+			str += getCharCode(Q);
+		}
+
+		str += getCharCode(R);
+		return str;
+	}
+	function getVendor(mac)
+	{
+		var unknown = "Unknown Vendor";
+		var str;
+
+		if((typeof macList == 'undefined')||(macList == ""))
+		return unknown;
+
+		var macUnit = mac.split(':');
+		var L1 = Base92(parseInt(macUnit[0], 16));
+		var L2 = Base92(parseInt(macUnit[1]+macUnit[2], 16));
+
+		if (typeof macList[L1] == 'undefined' || typeof macList[L1][L2] == 'undefined')
+			str = unknown;
+		else
+			str = macList[L1][L2];
+
+		return decode_char_text(str);
+	}
+	
+	function Load_HTML()	{	$("#header").load("header.html");	}
+	
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	
+	var Total_Clients = 0;
+	var Total_QoSClients = 0;
+	var ClientNumber = 0;
+	
+	function GetXML()	{	HNAP.GetXMLAsync("GetMultipleHNAPs", null, "GetXML", function(xml)	{	GetResult_1st(xml)	});	}
+	function GetResult_1st(result_xml)
+	{
+		if (result_xml != null)
+		{
+			result_xml.Set("GetMultipleHNAPs/GetQoSSettings");
+			result_xml.Set("GetMultipleHNAPs/GetClientInfo");
+			HNAP.SetXMLAsync("GetMultipleHNAPs", result_xml, function(xml)	{	GetResult_2nd(xml);	});
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_1st");	}	}
+	}
+	function GetResult_2nd(result_xml)
+	{
+		var uplink = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/uplink");
+		var downlink = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/downlink");
+		document.getElementById("uplink_speed").value = uplink/1024; //kbps in router and Mbps in GUI;
+		document.getElementById("downlink_speed").value = downlink/1024; //kbps in router and Mbps in GUI;
+
+		var GetResult_2nd = result_xml.Get("GetMultipleHNAPsResponse/GetMultipleHNAPsResult");
+		if (GetResult_2nd == "OK")
+		{
+			var count = 0;
+			Total_QoSClients = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/QoSInfoList/QoSInfo#");
+			arrayQoS2Dv = new Array2D_Var(Total_QoSClients, 6);
+			for (var i = 1; i <= Total_QoSClients; i ++)
+			{
+				arrayQoS2Dv[count][0] = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/QoSInfoList/QoSInfo:" + i + "/Hostname");
+				arrayQoS2Dv[count][1] = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/QoSInfoList/QoSInfo:" + i + "/IPAddress");
+				arrayQoS2Dv[count][2] = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/QoSInfoList/QoSInfo:" + i + "/MACAddress");
+				var Get_Priority = result_xml.Get("GetMultipleHNAPsResponse/GetQoSSettingsResponse/QoSInfoList/QoSInfo:" + i + "/Priority");
+				switch (Get_Priority)
+				{
+					case "":
+					case "0":	arrayQoS2Dv[count][3] = "none";		break;
+					case "1":	arrayQoS2Dv[count][3] = "medium";	break;
+					case "2":	arrayQoS2Dv[count][3] = "high";		break;
+					case "3":	arrayQoS2Dv[count][3] = "highest";	break;
+				}
+				arrayQoS2Dv[count][4] = "Unknown Vendor";		// For Client vendor use
+				arrayQoS2Dv[count][5] = arrayQoS2Dv[count][0];	// For Client nickname use
+				count ++;
+			}
+			
+			var count_A = 0;
+			var flag_A = 0;
+			Total_Clients = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo#");
+			array2Dv = new Array2DVar(Total_Clients, 6);
+			
+			for (var j = 1; j <= Total_Clients; j ++)
+			{
+				array2Dv[count_A][0] = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/DeviceName");
+				array2Dv[count_A][1] = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/NickName");
+				if (array2Dv[count_A][1] == "")
+				{
+					if (array2Dv[count_A][0] == "")	{	array2Dv[count_A][0]	= "Unknown";	array2Dv[count_A][1]	= "Unknown";	}
+					else							{	array2Dv[count_A][1] = array2Dv[count_A][0];}
+				}
+				var Client_IP = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/IPv4Address");
+				var Client_ReserveIP = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/ReserveIP");
+
+				if (Client_IP == "") //if reserved IP clients which is not connected, it will cause <IPv4Address> is empty
+				{	array2Dv[count_A][2] = Client_ReserveIP;	}
+				
+				if(Client_IP != "") 
+				{
+					if(Client_ReserveIP != "")
+						array2Dv[count_A][2] = Client_ReserveIP;
+					else
+						array2Dv[count_A][2] = Client_IP;
+				}
+
+				array2Dv[count_A][3] = result_xml.Get("GetMultipleHNAPsResponse/GetClientInfoResponse/ClientInfoLists/ClientInfo:" + j + "/MacAddress");
+				var vendor = getVendor(array2Dv[count_A][3]);
+				if(vendor.length > 19)
+				{
+					vendor = vendor.substr(0, 16) + "...";
+				}
+				array2Dv[count_A][4] = vendor;
+				
+				for (var a = 0; a < Total_QoSClients; a ++)
+				{
+					var tmpMAC = arrayQoS2Dv[a][2];
+					if (tmpMAC == array2Dv[count_A][3])
+					{
+						arrayQoS2Dv[a][4] = array2Dv[count_A][4];
+						if (array2Dv[count_A][0] == "" && array2Dv[count_A][1] == "")	{	}
+						else														{	arrayQoS2Dv[a][5] = array2Dv[count_A][1];	}
+						setTimeout("addDevice_List(" + a + ")", 100);
+					}
+				}
+				
+				array2Dv[count_A][5] = "none";
+				
+				for (var k = 0; k < Total_QoSClients; k ++)	{	if (array2Dv[count_A][3] == arrayQoS2Dv[k][2])	{	flag_A = 1;	}	}
+				
+				if (flag_A != 1)	{	setTimeout("addDevice_List2(" + count_A + ")", 100);	}
+				flag_A = 0;
+				count_A ++;
+			}
+			CheckNetworkStatus();
+			document.getElementById("main").style.display = "inline";
+		}
+		else	{	if (DebugMode == 1)	{	alert("[!!GetXML Error!!] Function: GetResult_2nd");	}	}
+	}
+	
+	function addDevice_List(val)	{	addDevice(arrayQoS2Dv[val][5], arrayQoS2Dv[val][4], arrayQoS2Dv[val][1], arrayQoS2Dv[val][3], arrayQoS2Dv[val][2], arrayQoS2Dv[val][0]);	}
+	function addDevice_List2(val)	{	addDevice(array2Dv[val][1], array2Dv[val][4], array2Dv[val][2], array2Dv[val][5], array2Dv[val][3], array2Dv[val][0]);						}
+	
+	function Array2DVar(x, y)
+	{
+		this.length = x;
+		this.x = x;
+		this.y = y;
+		for(var i = 0; i < this.length; i++)	{	this[i] = new Array(y);	}
+	}
+	
+	function Array2D_Var(x, y)
+	{
+		this.length = x;
+		this.x = x;
+		this.y = y;
+		for(var i = 0; i < this.length; i++)	{	this[i] = new Array(y);	}
+	}
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+</script>
+<style>
+#slideshow	{	margin: 0 0 0 0;	}
+/* ---------------- Item Instance ---------------- */
+#itemInstance {
+	width:  188px;
+	height: 86px;
+	background-image: url('image/qos_itemBg.png');
+	z-index: 10;
+}
+.dataElement {
+	position: relative;
+	background-image: url('image/qos_itemBg.png');
+}
+.dataElement_deviceName {
+	position: absolute;
+	top: 18px;
+	left: 30px;
+	color: #4598aa;
+	font-size: 13px;
+	width: 140px;
+	overflow: hidden;
+}
+.dataElement_vendor {
+	position: absolute;
+	text-transform:uppercase;
+	top: 38px;
+	left: 30px;
+	color: #888;
+	width: 140px;
+	overflow: hidden;
+	font-size: 12px;
+}
+.dataElement_ip {
+	position: absolute;
+	top: 55px;
+	left: 30px;
+	color: #666;
+	width: 140px;
+	overflow: hidden;
+	font-size: 12px;
+}
+.dataElement_mac {
+	position: absolute;
+	display: none;
+	top: 55px;
+	left: 30px;
+	color: #666;
+	width: 140px;
+	overflow: hidden;
+	font-size: 12px;
+}
+.dataElement_deviceNameReal {
+	position: absolute;
+	display: none;
+	top: 55px;
+	left: 30px;
+	color: #666;
+	width: 140px;
+	overflow: hidden;
+	font-size: 12px;
+}
+.qos_label {
+	font-size: 16px;
+	color: #888;
+	text-align: center;
+}
+#qos_label_alldevices {
+	margin: 18px 0 8px 0;
+}
+#qos_label_priority {
+	margin: 25px 0 20px 0;
+	font-size: 12px;
+}
+/* ---------------- prioity ---------------- */
+#prioity {
+	width:  825px;
+	height: 400px;
+	margin: 0 auto;
+}
+/* ---------------- prioity : highest ---------------- */
+#prioity_highest {
+	position: relative;
+	display: inline-block;
+	margin: 0 2px;
+	width:  200px;
+	height: 116px;
+	vertical-align: top;
+}
+#prioity_highest_bg {
+	position: absolute;
+	width:  100%;
+	height: 100%;
+	background-image: url('image/qos_priority_highest.gif');
+}
+#prioity_high_bg {
+	position: absolute;
+	width:  100%;
+	height: 100%;
+	background-image: url('image/qos_priority_high.gif');
+}
+#prioity_medium_bg {
+	position: absolute;
+	width:  100%;
+	height: 100%;
+	background-image: url('image/qos_priority_medium.gif');
+}
+#prioity_highest_label, #prioity_high_label, #prioity_medium_label {
+	position: absolute;
+	top:4px;
+	left: 0;
+	text-align:center;
+	width: 100%;
+	color: #fff;
+	font-size: 14px;
+}
+#prioity_highest_container, #prioity_high_container, #prioity_medium_container{
+	position: relative;
+	top: 22px;
+	left: 6px;
+}
+#prioity_highest_hitarea {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width:  200px;
+	height: 116px;
+	background-color: blue;
+	z-index: 500;
+	opacity: 0;
+	filter: alpha(opacity=0); 
+}
+/* ---------------- prioity : high ---------------- */
+#prioity_high {
+	position: relative;
+	display: inline-block;
+	margin: 0 2px;
+	width:  200px;
+	height: 202px;
+	vertical-align: top;
+}
+#prioity_high_hitarea {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width:  200px;
+	height: 202px;
+	background-color: blue;
+	z-index: 500;
+	opacity: 0;
+	filter: alpha(opacity=0); 
+}
+/* ---------------- prioity : medium ---------------- */
+#prioity_medium {
+	position: relative;
+	display: inline-block;
+	margin: 0 2px;
+	width:  388px;
+	height: 374px;
+	vertical-align: top;
+}
+#prioity_medium_hitarea {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width:  388px;
+	height: 374px;
+	background-color: blue;
+	z-index: 500;
+	opacity: 0;
+	filter: alpha(opacity=0); 
+}
+</style>
+</head>
+
+<body onselectstart="return false;" ondragstart="return false;">
+	<form name="qos_form" id="qos_form" method="POST" action="">
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->
+	  		<div id="info">
+			  	<div id="FunctionName">&nbsp;<script>I18N("h", "QoS Engine");</script></div>
+				<div id="wallimage"><img src="image/page_QoS.png" alt="" width="195" height="119"/></div>
+	    		<div id="directions">
+                 	<script>I18N("h", "Connected clients can be assigned Internet access priority. Click and drag client cards into open slots.");</script>
+    				<label id="Get_Help" onClick="showOnlineHelp('QoS Engine');" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+    			</div>
+			</div>
+			<!-------------------- funcBar ---------------------->
+			<div id="funcBar">
+				<div id="pagePath"><script>I18N("h", "Features");</script> >> <script>I18N("h", "QoS Engine");</script></div>
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="document.getElementById('sumbit_CheckData').click()" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li>
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+					<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+				</ul>
+			</div>
+			<!-------------------- main ---------------------->
+			<div id="qos_label_alldevices" class="qos_label"><script>I18N("h", "Bandwidth");</script></div>
+			<table class="block" border="0" style="height: 82px;">
+				<tbody>
+					<tr>
+						<th><script>I18N("h", "Uplink Speed(Mbps)");</script>:</th>
+						<td><input class="styled-text" type="text" name="uplink_speed" size="27" maxlength="8" id="uplink_speed"></td>
+						<td><img src="image/Infor2.png" style="cursor:pointer;" onclick="document.getElementById('CreatePopAlertMessage').style.display='inline';document.getElementById('popRect').style.display='';document.getElementById('AlertPopRect').style.display='none';"></td>
+					</tr>
+					<tr>
+						<th><script>I18N("h", "Downlink Speed(Mbps)");</script>:</th>
+						<td><input class="styled-text" type="text" name="downlink_speed" size="27" maxlength="8" id="downlink_speed"></td>
+					</tr>
+				</tbody>
+			</table>
+			<hr>
+			<div id="main" style="display:none">
+				<div id="qos_label_alldevices" class="qos_label"><script>I18N("h", "Connected Clients");</script></div>
+				<div id="slideshow"></div>
+				<div id="qos_label_priority" class="qos_label"><script>I18N("h", "Drag the device cards above to the Priority boxes below.");</script></div>
+				<div id="prioity">
+					<div id="prioity_highest">
+						<div id="prioity_highest_bg"></div>
+						<div id="prioity_highest_label"><script>I18N("h", "Highest");</script></div>
+						<div id="prioity_highest_container"></div>
+						<div id="prioity_highest_hitarea" style="display:none;cursor:pointer;" onmouseover="setDraggingTargetPriority('highest')" onmouseout="setDraggingTargetPriority('none')"></div>
+					</div>
+					<div id="prioity_high">
+						<div id="prioity_high_bg"></div>
+						<div id="prioity_highest_label"><script>I18N("h", "High");</script></div>
+						<div id="prioity_high_container"></div>
+						<div id="prioity_high_hitarea" style="display:none;cursor:pointer;" onmouseover="setDraggingTargetPriority('high')" onmouseout="setDraggingTargetPriority('none')"></div>
+					</div>
+					<div id="prioity_medium">
+						<div id="prioity_medium_bg"></div>
+						<div id="prioity_medium_label"><script>I18N("h", "Medium");</script></div>
+						<div id="prioity_medium_container"></div>
+						<div id="prioity_medium_hitarea" style="display:none;cursor:pointer;" onmouseover="setDraggingTargetPriority('medium')" onmouseout="setDraggingTargetPriority('none')"></div>
+					</div>
+				</div>
+			</div>
+		 <div id="CreatePopAlertMessage" style="display:none">
+		 	<div id="popRect" style="display:none">
+		 		<div id="dialogBox" style="width: 616px; overflow-x: hidden; overflow-y: auto; max-height: 554px; top: 40px;">
+		 			<div id="closeCreatePopBtn" onclick="document.getElementById('CreatePopAlertMessage').style.display='none';document.getElementById('popRect').style.display='none';document.getElementById('AlertPopRect').style.display='';" style="cursor:pointer;"></div>
+		 			<div style="padding-top: 80px;font-weight:bold;"><script>I18N("h", "Specify your internet speed provided by your ISP; for example 10Mbps Upload, 20 Mbps download. You can measure your uplink and downlink speed with a speed test service on the internet.");</script></div>
+		 			<div style="padding-top: 60px;">
+		 				<button type="button" class="styled-button_enable" onclick="document.getElementById('CreatePopAlertMessage').style.display='none';document.getElementById('popRect').style.display='none';document.getElementById('AlertPopRect').style.display='';" style="cursor:pointer;">OK</button>
+		 			</div>
+		 		</div>
+		 	</div>
+			<div id="AlertPopRect">
+			<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+				   <tbody>
+						 <tr>
+						 	<td>
+								<center><div id="Loading_pop_image2"></div></center>
+							</td>
+						 </tr>
+						 <tr>
+						 	<td label id="reciprocal_Number"></label></td>
+						 </tr>
+						 <tr>
+						 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						 </tr>
+				   </tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+<!-------------------- main ---------------------->
+<div id="itemInstance" style="position:absolute; top:0; left:0; display:none;cursor:pointer;">
+	<div class="data">
+		<div class="dataElement_deviceName" id="itemInstance_deviceName"></div>
+		<div class="dataElement_vendor" id="itemInstance_vendor"></div>
+		<div class="dataElement_ip" id="itemInstance_ip"></div>
+		<div class="dataElement_mac" id="itemInstance_mac"></div>
+		<div class="dataElement_deviceNameReal" id="itemInstance_deviceNameReal"></div>
+	</div>
+</div>
+</form>
+<script type="text/javascript" charset="utf-8" src="./js/Slideshow.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/GridPanel.js"></script>
+<script>
+//--------------------------------------------------------------
+//		Globel Vars
+//--------------------------------------------------------------
+var mousex 				= 0;
+var mousey 				= 0;
+var itemMouseOffsetX 	= 0;
+var itemMouseOffsetY 	= 0;
+var instance 			= document.getElementById("itemInstance");
+var isDraggingItem 		= false;
+var dragginItemData		= null;
+var targetPriority		= "";
+//--------------------------------------------------------------
+//		DeviceData
+//--------------------------------------------------------------
+var deviceData = function(deviceName, vendor, ip, priority, mac, deviceNameReal) {
+
+	this.deviceName 	= deviceName;
+	this.vendor			= vendor;
+	this.ip				= ip;
+	this.mac			= mac
+	this.priority 		= priority;
+	this.deviceNameReal	= deviceNameReal;
+	this.element;
+	
+	//--------------------------------------------------------------
+	// create element
+	this.element 						= document.createElement("div");
+	this.element.style.width 			= "188px";
+	this.element.style.height 			= "86px";
+	this.element.style.fontSize			= "12px";
+	this.element.style.cursor			= "pointer";
+	this.element.style.verticalAlign	= "top";
+	this.element.style.margin			= "0 6px";
+	this.element.className				= "dataElement";
+	this.element.onmouseover = function() {
+		this.style.backgroundPosition = "bottom left";
+	};
+	this.element.onmouseout = function() {
+		this.style.backgroundPosition = "top left";
+	};
+	
+	// DeviceName
+	this.element_deviceName 			= document.createElement("div");
+	this.element_deviceName.className	= "dataElement_deviceName";
+	this.element_deviceName.innerHTML 	= deviceName;
+	
+	// Vendor
+	this.element_vendor 				= document.createElement("div");
+	this.element_vendor.className		= "dataElement_vendor";
+	this.element_vendor.innerHTML 		= vendor;
+	
+	// IP
+	this.element_ip 					= document.createElement("div");
+	this.element_ip.className			= "dataElement_ip";
+	this.element_ip.innerHTML 			= ip;
+	
+	// MAC
+	this.element_mac 					= document.createElement("div");
+	this.element_mac.className			= "dataElement_mac";
+	this.element_mac.innerHTML 			= mac;
+	
+	// deviceNameReal
+	this.element_deviceNameReal 				= document.createElement("div");
+	this.element_deviceNameReal.className		= "dataElement_deviceNameReal";
+	this.element_deviceNameReal.innerHTML 		= deviceNameReal;
+	
+	this.element.appendChild(this.element_deviceName);
+	this.element.appendChild(this.element_vendor);
+	this.element.appendChild(this.element_ip);
+	this.element.appendChild(this.element_mac);
+	this.element.appendChild(this.element_deviceNameReal);
+	
+	// preset priority status
+	if (priority != "none") {
+		this.element.style.width 	= "0px";
+		this.element.style.opacity 	= "0";
+		this.element.style.filter = "alpha(opacity=0)"; //for IE8
+		this.element.style.margin	= "0";
+
+		//for IE8
+		this.element_deviceName.style.display 	= "none";
+		this.element_vendor.style.display 	= "none";
+		this.element_ip.style.display 	= "none";
+	}
+	
+	var data = this;
+	//--------------------------------------------------------------
+	// set priority
+	this.setPriority = function(value) {
+		data.priority = value;
+	}
+	//--------------------------------------------------------------
+	// Events
+	// mouse
+	this.element.onmousedown = function() {
+		if	(data.priority == "none") {
+		
+			$(this.element).stop(); // prevent double click error (hide animation is playing)
+			
+			// get element position
+			var itemPos = getElementXY(this);
+			
+			// count mouse offset
+			itemMouseOffsetX = itemPos.x - mousex;
+			itemMouseOffsetY = itemPos.y - mousey;
+			
+			// pass value to instance
+			document.getElementById("itemInstance_deviceName").innerHTML		= data.deviceName;
+			document.getElementById("itemInstance_vendor").innerHTML			= data.vendor;
+			document.getElementById("itemInstance_ip").innerHTML				= data.ip;
+			document.getElementById("itemInstance_mac").innerHTML				= data.mac; 
+			document.getElementById("itemInstance_deviceNameReal").innerHTML	= data.deviceNameReal;
+			
+			// hide this
+			data.hideElement_noAnimation();
+			
+			// show instance
+			instance.style.top  	= itemPos.y + "px";
+			instance.style.left 	= itemPos.x + "px";
+			instance.style.display 	= "block";
+			
+			// isDragging
+			startDrag(data);
+		}
+	}
+
+	if ( this.element.addEventListener ) {
+		this.element.addEventListener("touchstart", function(e) {
+			
+			if	(data.priority == "none") {
+			
+				$(this.element).stop(); // prevent double click error (hide animation is playing)
+				
+				// get element position
+				var itemPos = getElementXY(this);
+				
+				// count mouse offset
+				itemMouseOffsetX = itemPos.x - e.changedTouches[0].pageX; // Touch position!!
+				itemMouseOffsetY = itemPos.y - e.changedTouches[0].pageY; // Touch position!!
+				
+				// pass value to instance
+				document.getElementById("itemInstance_deviceName").innerHTML		= data.deviceName;
+				document.getElementById("itemInstance_vendor").innerHTML			= data.vendor;
+				document.getElementById("itemInstance_ip").innerHTML				= data.ip;
+				document.getElementById("itemInstance_mac").innerHTML				= data.mac; 
+				document.getElementById("itemInstance_deviceNameReal").innerHTML	= data.deviceNameReal;
+				
+				// hide this
+				data.hideElement_noAnimation();
+				
+				// show instance
+				instance.style.top  	= itemPos.y + "px";
+				instance.style.left 	= itemPos.x + "px";
+				instance.style.display 	= "block";
+				
+				// isDragging
+				startDrag(data);
+			}
+		});
+	}
+	//--------------------------------------------------------------
+	// show
+	this.showElement_backToSlideshow = function() {
+		mySlideshow.putAndSlideToLast(data.element, function() {
+			$(data.element).stop();
+			$(data.element).animate({opacity:1, width:"188px"}, 300, 'easeOutCubic');
+			data.element.style.cursor					= "pointer";
+			data.element.style.margin					= "0 6px";
+			data.element_deviceName.style.display		= "block";
+			data.element_vendor.style.display			= "block";
+			data.element_ip.style.display				= "block"; 
+			data.element_mac.style.display				= "none";
+			data.element_deviceNameReal.style.display	= "none";
+		});
+	}
+	this.showElement_noAnimation = function() {
+		data.element.style.width					= "188px";
+		$(data.element).css({ opacity: 1 });        // for IE8
+		data.element.style.opacity					= 1
+		data.element.style.margin 					= "0 6px";
+		data.element.style.cursor  					= "pointer";
+		data.element_deviceName.style.display 		= "block";
+		data.element_vendor.style.display 			= "block";
+		data.element_ip.style.display 				= "block";
+		data.element_mac.style.display 				= "none";
+		data.element_deviceNameReal.style.display	= "none";
+	}
+	//--------------------------------------------------------------
+	// hide
+	this.hideElement = function() {
+		$(data.element).stop();
+		$(data.element).animate({width:"0px", margin:"0px"}, 300, 'easeOutCubic');
+		data.element.style.cursor  = "default";
+		data.element_deviceName.style.display 		= "none";
+		data.element_vendor.style.display 			= "none";
+		data.element_ip.style.display 				= "none";
+		data.element_mac.style.display 				= "none"; 
+		data.element_deviceNameReal.style.display	= "none";
+		mySlideshow.updateToLastPage();
+	}
+	this.hideElement_noAnimation = function() {
+		data.element.style.opacity = "0";
+		$(data.element).css({ opacity: 0 }); //for IE8
+		data.element_deviceName.style.display 		= "none";
+		data.element_vendor.style.display 			= "none";
+		data.element_ip.style.display 				= "none";
+		data.element_mac.style.display 				= "none"; 
+		data.element_deviceNameReal.style.display	= "none";
+	}
+	
+}
+// createDeviceData
+var deviceDataArray = new Array(); 		// contain all device in here!
+var createDeviceData = function(deviceName, vendor, ip, priority, mac, deviceNameReal) {
+	var data = new deviceData(deviceName, vendor, ip, priority, mac, deviceNameReal);
+	deviceDataArray.push(data);
+	return data;
+}
+
+//--------------------------------------------------------------
+//		Slideshow 
+//--------------------------------------------------------------
+// setup
+var mySlideshow = new Slideshow("slideshow");
+
+//--------------------------------------------------------------
+//		Mouse Event (window)
+//--------------------------------------------------------------
+// Start Drag
+function startDrag(dataObject) {
+
+	isDraggingItem  = true;
+	dragginItemData = dataObject;
+	
+	// show priority hitareas
+	document.getElementById("prioity_highest_hitarea").style.display = "block";
+	document.getElementById("prioity_high_hitarea").style.display    = "block";
+	document.getElementById("prioity_medium_hitarea").style.display  = "block";
+	
+}
+// End Drag
+function endDrag() {
+	isDraggingItem = false;
+	
+	// hide priority hitareas
+	document.getElementById("prioity_highest_hitarea").style.display = "none";
+	document.getElementById("prioity_high_hitarea").style.display    = "none";
+	document.getElementById("prioity_medium_hitarea").style.display  = "none";
+	$("#prioity_highest_bg").stop();
+	$("#prioity_highest_bg").stop();
+	$("#prioity_highest_bg").stop();
+	$("#prioity_highest_bg").animate({opacity:1}, 200);
+	$("#prioity_high_bg").animate({opacity:1}, 200);
+	$("#prioity_medium_bg").animate({opacity:1}, 200);
+	
+}
+// Mouse Move
+document.body.onmousemove = function(e){ //for IE8
+
+    mousex = event.clientX + document.body.scrollLeft;
+    mousey = event.clientY + document.body.scrollTop;
+	
+	if (isDraggingItem) {
+		instance.style.top  = mousey + itemMouseOffsetY + "px";
+		instance.style.left = mousex + itemMouseOffsetX + "px";
+	}
+}
+window.onmousemove = function(e){
+	mousex = e.clientX;
+	mousey = e.clientY;
+	
+	if (isDraggingItem) {
+		instance.style.top  = mousey + itemMouseOffsetY + "px";
+		instance.style.left = mousex + itemMouseOffsetX + "px";
+	}
+}
+// Mouse Up
+function mouseup() {
+	if(!isDraggingItem)
+		return;
+
+	// check priority
+	switch (targetPriority) {
+		case "highest":
+			if (!priorityGrid_highest.isFull()) {	// check not full
+				if(!priorityGrid_highest.existData(dragginItemData)) { 	// check not already in grid (just for safe)
+					addDataToPriorityGrid(dragginItemData, priorityGrid_highest, "highest")
+					endDrag();
+					return;
+				}
+			}
+			break;
+			
+		case "high":
+			if (!priorityGrid_high.isFull()) {	// check not full
+				if(!priorityGrid_high.existData(dragginItemData)) { 	// check not already in grid (just for safe)
+					addDataToPriorityGrid(dragginItemData, priorityGrid_high, "high")
+					endDrag();
+					return;
+				}
+			}
+			break;
+			
+		case "medium":
+			if (!priorityGrid_medium.isFull()) {	// check not full
+				if(!priorityGrid_medium.existData(dragginItemData)) { 	// check not already in grid (just for safe)
+					addDataToPriorityGrid(dragginItemData, priorityGrid_medium, "medium")
+					endDrag();
+					return;
+				}
+			}
+			break;
+		
+		// none : show item back
+		default:
+			endDrag();
+			break;
+	}
+	// instance fly back to original position (animation) //BB
+	var originalPos = getElementXY(dragginItemData.element);
+	$(instance).animate({top:originalPos.y, left:originalPos.x}, 200, 
+		function(){
+			// fly back animation completed
+			instance.style.display = "none"; 				// hide instance
+			dragginItemData.showElement_noAnimation();		// show original item
+		});
+	
+	// End Dragging settings
+	endDrag();
+}
+document.body.onmouseup = function(e) { //for IE8
+	mouseup();
+}
+window.onmouseup = function(e)	{	mouseup();	}
+
+// touch
+function checkIfInElement(x, y, element) {
+	var pos = getElementXY(element);
+	var width  = parseInt(getStyle(element, "width").replace("px", ""));
+	var height = parseInt(getStyle(element, "height").replace("px", ""));
+	if(x > pos.x && x < pos.x + width && y > pos.y && y < pos.y + height) {
+		return true;
+	} else {
+		return false;
+	}
+}
+function getStyle(oElm, strCssRule){
+	var strValue = "";
+	if(document.defaultView && document.defaultView.getComputedStyle){
+		strValue = document.defaultView.getComputedStyle(oElm, "").getPropertyValue(strCssRule);
+	}
+	else if(oElm.currentStyle){
+		strCssRule = strCssRule.replace(/\-(\w)/g, function (strMatch, p1){
+			return p1.toUpperCase();
+		});
+		strValue = oElm.currentStyle[strCssRule];
+	}
+	return strValue;
+}
+	if ( document.addEventListener ) {
+		document.addEventListener("touchmove", function(e) {
+			mousex = e.changedTouches[0].pageX;
+			mousey = e.changedTouches[0].pageY;
+			
+			if (isDraggingItem) {
+				e.preventDefault();
+				instance.style.top  = mousey + itemMouseOffsetY + "px";
+				instance.style.left = mousex + itemMouseOffsetX + "px";
+				
+				// area detection
+				// medium
+				var ishighest = checkIfInElement(mousex, mousey, document.getElementById("prioity_highest_hitarea"));
+				if(ishighest) {
+					setDraggingTargetPriority("highest");
+				} else {
+					var ishigh = checkIfInElement(mousex, mousey, document.getElementById("prioity_high_hitarea"));
+					if(ishigh) {
+						setDraggingTargetPriority("high");
+					} else {
+						var ismedium = checkIfInElement(mousex, mousey, document.getElementById("prioity_medium_hitarea"));
+						if(ismedium) {
+							setDraggingTargetPriority("medium");
+						} else {
+							setDraggingTargetPriority("none");
+						}
+					}
+				}
+			}
+		});
+	}
+	if ( document.addEventListener ) {
+		document.addEventListener("touchend", function(e)	{	mouseup();	});
+	}
+//--------------------------------------------------------------
+//		Add Data To PriorityGrid
+//--------------------------------------------------------------
+function addDataToPriorityGrid(data, priorityGrid, priorityName) {
+	
+	// get next cell Position
+	var targetPos = priorityGrid.nextCellPosition();
+	
+	// instance fly to target
+	$(instance).animate({top:targetPos.y, left:targetPos.x}, 100, 
+		function(){
+			// fly back animation completed
+			instance.style.display 	= "none"; 	// hide instance
+			
+			// add data to cell
+			priorityGrid.addData(data);
+			
+			// set priority to data
+			data.setPriority(priorityName);
+			
+			// hide original
+			data.hideElement();
+			save_button_changed();
+			changeFlag = true;
+			checkFlag = true;
+			changeTimeoutAction();
+		});
+}
+//--------------------------------------------------------------
+//		Set Dragging Target Priority (when mouse over priority hitarea)
+//--------------------------------------------------------------
+function setDraggingTargetPriority(priority) {
+	if (isDraggingItem) {
+		targetPriority = priority;
+		switch(priority) {
+			case "highest":
+				$("#prioity_highest_bg").stop();
+				$("#prioity_high_bg").stop();
+				$("#prioity_medium_bg").stop();
+				$("#prioity_highest_bg").animate({opacity:1}, 200);
+				$("#prioity_high_bg").animate({opacity:0.5}, 200);
+				$("#prioity_medium_bg").animate({opacity:0.5}, 200);
+				break;
+			case "high":
+				$("#prioity_highest_bg").stop();
+				$("#prioity_high_bg").stop();
+				$("#prioity_medium_bg").stop();
+				$("#prioity_highest_bg").animate({opacity:0.5}, 200);
+				$("#prioity_high_bg").animate({opacity:1}, 200);
+				$("#prioity_medium_bg").animate({opacity:0.5}, 200);
+				break;
+			case "medium":
+				$("#prioity_highest_bg").stop();
+				$("#prioity_high_bg").stop();
+				$("#prioity_medium_bg").stop();
+				$("#prioity_highest_bg").animate({opacity:0.5}, 200);
+				$("#prioity_high_bg").animate({opacity:0.5}, 200);
+				$("#prioity_medium_bg").animate({opacity:1}, 200);
+				break;
+			case "none":
+				$("#prioity_highest_bg").stop();
+				$("#prioity_high_bg").stop();
+				$("#prioity_medium_bg").stop();
+				$("#prioity_highest_bg").animate({opacity:0.5}, 200);
+				$("#prioity_high_bg").animate({opacity:0.5}, 200);
+				$("#prioity_medium_bg").animate({opacity:0.5}, 200);
+				break;
+		}
+	}
+}
+
+//--------------------------------------------------------------
+//		InstanceObject (like DeviceData but has a remove button)
+//--------------------------------------------------------------
+// Instance
+var InstanceObject = function() {
+	this.deviceName	 = "none";
+	this.vendor			= "none";
+	this.ip				= "none";
+	this.mac			= "none";
+	this.deviceNameReal	= "none";
+	this.element;
+	this.delete_btn;
+	this.status;
+	this.parent;
+	this.deviceData;
+	
+	// Create Element
+	this.element					= document.createElement("div");
+	this.element.style.width 		= "188px";
+	this.element.style.height 		= "86px";
+	this.element.style.fontSize		= "12px";
+	this.element.className			= "dataElement";
+	this.element.style.cursor		= "default";
+	
+	// DeviceName
+	var deviceName 			= document.createElement("div");
+	deviceName.className	= "dataElement_deviceName";
+	deviceName.innerHTML 	= this.deviceName;
+	
+	// Vendor
+	var vendor 				= document.createElement("div");
+	vendor.className		= "dataElement_vendor";
+	vendor.innerHTML		= this.vendor;
+	
+	// IP
+	var ip 					= document.createElement("div");
+	ip.className			= "dataElement_ip";
+	ip.innerHTML			= this.ip;
+	
+	// MAC
+	var mac					= document.createElement("div");
+	mac.className			= "dataElement_mac";
+	mac.innerHTML			= this.mac;
+	
+	// deviceNameReal
+	var deviceNameReal			= document.createElement("div");
+	deviceNameReal.className	= "dataElement_deviceNameReal";
+	deviceNameReal.innerHTML	= this.deviceNameReal;
+	
+	// Remove Button
+	var remove 						= document.createElement("div");
+	remove.style.position 			= "absolute";
+	remove.style.top 				= "15px";
+	remove.style.right 				= "14px";
+	remove.style.width 			 	= "13px";
+	remove.style.height			 	= "13px";
+	remove.style.backgroundImage 	= "url('image/slideshow_closeBtn.png')";
+	remove.style.cursor				= "pointer";
+	/*remove.onmouseover = function() {
+		this.style.backgroundPosition = "top right";
+	};
+	remove.onmouseout = function() {
+		this.style.backgroundPosition = "top left";
+	};*/
+	
+	this.element.appendChild(deviceName);
+	this.element.appendChild(vendor);
+	this.element.appendChild(ip);
+	this.element.appendChild(mac);
+	this.element.appendChild(deviceNameReal);
+	this.element.appendChild(remove);
+	
+	var base = this;
+	//--------------------------------------------------------------
+	// Remove Button Event
+	remove.onclick = function() {
+		base.deviceData.setPriority("none");
+		base.deviceData.showElement_backToSlideshow();
+		base.parent.removeData(base.deviceData); // remove from prioity grid
+		save_button_changed();
+		changeFlag = true;
+		checkFlag = true;
+		changeTimeoutAction();
+	}
+	
+	//--------------------------------------------------------------
+	// Functions
+	// setDeviceData (for grid update)
+	this.setDeviceData = function(data) {
+		base.deviceData 		 = data;
+		deviceName.innerHTML	 = data.deviceName;
+		vendor.innerHTML		 = data.vendor;
+		ip.innerHTML 			 = data.ip;
+		mac.innerHTML			 = data.mac;
+		deviceNameReal.innerHTML = data.deviceNameReal;
+	}
+	// removeDeviceData (for grid update)
+	this.removeDeviceData = function() {
+		base.deviceData 		 = null;
+		deviceName.innerHTML	 = "none";
+		vendor.innerHTML 		 = "none";
+		ip.innerHTML 			 = "none";
+		mac.innerHTML 			 = "none";
+		deviceNameReal.innerHTML = "none";
+	}
+	this.show = function() {
+		$(this.element).css({ opacity: 1 }); 
+		this.element.style.opacity = 1;
+		deviceName.style.display  	= "block";
+		vendor.style.display  		= "block";
+		ip.style.display  			= "block";
+		//mac.style.display  			= "block";
+		remove.style.display  		= "block";
+	}
+	this.hide = function() {
+		$(this.element).css({ opacity: 0 }); 
+		this.element.style.opacity = 0;
+		deviceName.style.display  	= "none";
+		vendor.style.display  		= "none";
+		ip.style.display  			= "none";
+		//mac.style.display  			= "none";
+		remove.style.display 		= "none";
+	}
+}
+
+//--------------------------------------------------------------
+//		Priority Cell (initialize)
+//--------------------------------------------------------------
+var priorityGrid_highest = new GridPanel(1, 1, "prioity_highest_container");
+var highestInstance = new InstanceObject();
+priorityGrid_highest.addInstance(highestInstance);
+
+var priorityGrid_high = new GridPanel(2, 1, "prioity_high_container");
+for(var i=0; i<2; i++) {
+	var _instance = new InstanceObject();
+	priorityGrid_high.addInstance(_instance);
+}
+var priorityGrid_medium = new GridPanel(4, 2, "prioity_medium_container");
+for(var i=0; i<8; i++) {
+	var _instance = new InstanceObject();
+	priorityGrid_medium.addInstance(_instance);
+}
+//--------------------------------------------------------------
+//		Fill Devices
+//--------------------------------------------------------------
+// addDevice
+function addDevice(deviceName, vendor, ip, priority, mac, deviceNameReal) {
+
+	// create data
+	var data = createDeviceData(deviceName, vendor, ip, priority, mac, deviceNameReal); 
+	
+	// add data.element to slideshow
+	mySlideshow.addItem(data);
+	
+	// put to priority grid
+	switch (priority) {
+		case "highest":
+			if (!priorityGrid_highest.isFull()) {	// check priority grid is full or not
+				priorityGrid_highest.addData(data);
+			} else {
+				data.setPriority("none"); 		// priority grid is full, set priority to "none".
+			}
+			break;
+		case "high":
+			if (!priorityGrid_high.isFull()) {	// check priority grid is full or not
+				priorityGrid_high.addData(data);
+			} else {
+				data.setPriority("none");		 // priority grid is full, set priority to "none".
+			}
+			break;
+		case "medium":
+			if (!priorityGrid_medium.isFull()) {	// check priority grid is full or not
+				priorityGrid_medium.addData(data);
+			} else {
+				data.setPriority("none"); 		// priority grid is full, set priority to "none".
+			}
+			break;
+	}
+}
+
+//--------------------------------------------------------------
+//		Position functions
+//--------------------------------------------------------------
+function getElementXY(element) {
+	var x = 0;
+	var y = 0;
+	while( element != null ) {
+		x += element.offsetLeft;
+		y += element.offsetTop;
+		element = element.offsetParent;
+	}
+	return {x:x, y:y};
+}
+function getMousePosition(e) {
+	var _x;
+	var _y;
+	if (!isIE) {
+		_x = e.pageX;
+		_y = e.pageY;
+	}
+	if (isIE) {
+		_x = event.clientX + document.body.scrollLeft;
+		_y = event.clientY + document.body.scrollTop;
+	}
+	return true;
+}
+
+function SetXML()
+{
+	document.getElementById("CreatePopAlertMessage").style.display = "inline";
+	HNAP.GetXMLAsync("SetQoSSettings", null, "GetXML", function(xml)	{	SetResult_1st(xml)	});
+}
+function SetResult_1st(result_xml)
+{
+	if (result_xml != null)
+	{
+		var counter = 0;
+
+		result_xml.Set("SetQoSSettings/uplink", document.getElementById("uplink_speed").value*1024); //kbps in router and Mbps in GUI
+		result_xml.Set("SetQoSSettings/downlink", document.getElementById("downlink_speed").value*1024); //kbps in router and Mbps in GUI
+
+		for(var i = 1; i <= deviceDataArray.length; i ++)
+		{
+			result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/Hostname", deviceDataArray[counter].deviceNameReal);
+			result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/IPAddress", deviceDataArray[counter].ip);
+			result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/MACAddress", deviceDataArray[counter].mac);
+			switch (deviceDataArray[counter].priority)
+			{
+				case "highest":	result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/Priority", "3");	break;
+				case "high":	result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/Priority", "2");	break;
+				case "medium":	result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/Priority", "1");	break;
+				case "none":	result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/Priority", "0");	break;
+			}
+			result_xml.Set("SetQoSSettings/QoSInfoData/QoSInfo:" + i + "/Type", "TC_WFQ");
+			counter ++;
+		}
+		// Send HNAP to DUT
+		HNAP.SetXMLAsync("SetQoSSettings", result_xml, function(xml)	{	SetResult_2nd(xml);	});
+	}
+	else	{	if (DebugMode == 1)	{	alert("[!!SetXML Error!!] Function: SetResult_1st");	}	}
+}
+
+function SetResult_2nd(result_xml)
+{
+	var SetResult_2nd = result_xml.Get("SetQoSSettingsResponse/SetQoSSettingsResult");
+	if (SetResult_2nd == "OK")
+	{
+		waitSettingFinished();
+	}
+	else if(SetResult_2nd == "REBOOT")
+	{
+		Device_Reboot();
+	}
+	else if (SetResult_2nd == "ERROR")
+	{
+		if (DebugMode == 1)
+		{
+			alert("[!!SetXML Error!!] Function: SetResult_2nd");
+		}	
+		window.location.reload();
+	}
+}
+function Device_Reboot()	{	HNAP.GetXMLAsync("Reboot", null, "GetXML", function(xml)	{	GetResult_Reboot(xml)	});	}
+function GetResult_Reboot(result_xml)	{	if (result_xml != null)	{	HNAP.SetXMLAsync("Reboot", result_xml, function(xml)	{	SetResult_Reboot(xml);	});	}	}
+function SetResult_Reboot(result_xml)
+{
+	var SetResult = result_xml.Get("RebootResponse/RebootResult");
+	if (SetResult == "OK" || SetResult == "REBOOT")
+	{
+		//stopGetReciprocalTime(); //Time_GetReciprocalTime = window.clearInterval(Time_GetReciprocalTime);
+		document.getElementById("dialog_msg_black2").innerHTML = I18N("j", "Rebooting");
+		Start_reciprocal_Number_Reboot();
+	}
+}
+function Start_reciprocal_Number_Reboot()
+{
+	if (_ReciprocalRebootNumber >= 0)
+	{
+		document.getElementById("reciprocal_Number").innerHTML = _ReciprocalRebootNumber + " " + I18N("j", "Sec");
+		_ReciprocalRebootNumber --;
+		setTimeout("Start_reciprocal_Number_Reboot()", 1000);
+	}
+	else
+	{
+		redirectPage(null);
+	}
+}
+function waitSettingFinished()	{	window.location.reload();	}
+
+function CheckConnectionStatus()
+{
+	$.ajax({
+		cache : false,
+		url : "./js/CheckConnection",
+		timeout : 5000,
+		type : "GET",
+		success : function(data) { SetXML(); },
+		error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+	});
+}
+//--------------------------------------------------------------
+//		Get All device status
+//--------------------------------------------------------------
+function getAllDeviceStatus() {
+
+	for (var i=0; i<deviceDataArray.length; i++) {
+		var name 	 = deviceDataArray[i].deviceName;
+		var vendor   = deviceDataArray[i].vendor;
+		var ip		 = deviceDataArray[i].ip;
+		var priority = deviceDataArray[i].priority;
+		var macaddress = deviceDataArray[i].mac;
+		var deviceNameReal = deviceDataArray[i].deviceNameReal;
+		
+		alert("name:      "+name+"\nvendor:   "+vendor+"\nip:            "+ip+"\npriority:   "+priority+"\nmac:   "+macaddress+"\ndeviceNameReal:   "+deviceNameReal);
+	}
+}
+document.onkeydown = function(e) {
+	e = e || window.event; 
+	var charCode = e.charCode || e.keyCode;
+  	if(charCode == 13) {  // ENTER
+	}
+};
+$(function() {
+	$("input").keydown(function () {        save_button_changed();  });
+});
+function save_button_changed()
+{
+	document.getElementById("Save_Disable_btn").style.display = "none";
+	document.getElementById("Save_btn").style.display = "block";
+	changeFlag = true;
+	checkFlag = true;
+	changeTimeoutAction();
+}
+</script>
+
+</body>
+<script type="text/javascript" charset="utf-8">
+	$(document).ready( function() {
+		var customError = "";
+		$.validator.addMethod("checkNumberValue", function( value, element ) {
+			var ValidIpAddressRegex = /(^[0-9]+$)/;
+			var returnVal = false;
+			if (ValidIpAddressRegex.test(value))
+			{
+				if (value >= 1 && value <= 1000)
+					returnVal = true;				
+			}
+			return returnVal;			
+		}, jQuery.validator.messages.check_qos);
+		
+		$('#qos_form').validate({
+			rules: {
+				uplink_speed: {
+					required: true,
+					checkNumberValue: true
+				},
+				downlink_speed: {
+					required: true,
+					checkNumberValue: true
+				}			
+			},
+			messages: {
+				uplink_speed: {
+					required: jQuery.validator.messages.check_qos
+				},
+				downlink_speed: {
+					required: jQuery.validator.messages.check_qos
+				}
+			},
+			submitHandler: function(form) {
+				CheckConnectionStatus();
+			},
+		});
+	});		
+</script>
+
+<script type="text/javascript">
+	Load_HTML();
+	Initial();
+	setMenu("menu_Advanced");
+	$( document ).tooltip();
+	startTimeout();
+</script>
+</html>

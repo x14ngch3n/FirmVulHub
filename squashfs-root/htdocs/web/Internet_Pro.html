@@ -1,0 +1,564 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel="stylesheet" type="text/css" href="css/style_pages.css" media="all" />
+<link href="css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="./js/comm.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hmac_md5.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery-1.8.2.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/libajax.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/hnap.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/i18n.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/pagetool.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/checkTimeout.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery.selectbox-0.2_new.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/jquery.validate.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/includeLang.js"></script>
+<script type="text/javascript" charset="utf-8" src="./js/messageDescription.js"></script>
+
+	
+<script type="text/javascript">
+	
+	var HNAP = new HNAP_XML();
+	var total_pro = 0;
+	var xml_GetProInfo = HNAP.GetXML("GetInternetProfileAlpha");
+
+	
+	/* Detect Language */
+	var NowLang = localStorage.language;
+	InitLANG(NowLang);
+	
+	function Load_HTML()
+	{ 
+		$("#header").load("header.html");
+	}
+	
+	/* init menu */
+	function Initial()
+	{
+		initialMenu();
+		initialDetectRouterConnection();
+	}
+	
+	/* init header */
+	function Load_HTML() { $("#header").load("header.html"); }
+	
+	//---------- start of tools for page
+	function OBJ(id)
+	{
+		if		(document.getElementById) return document.getElementById(id);
+		else if	(document.all) return document.all[id].style;
+		else if	(document.layers) return document.layers[id];
+		else return false;
+	}
+	
+	function InjectTable(tblID, uid, data, type)
+	{
+		var rows = OBJ(tblID).getElementsByTagName("tr");
+		var tagTR = null;
+		var tagTD = null;
+		var i;
+		var str;
+		var found = false;
+		
+		/* Search the rule by UID. */
+		for (i=0; !found && i<rows.length; i++) if (rows[i].id == uid) found = true;
+		if (found)
+		{
+			for (i=0; i<data.length; i++)
+			{
+				tagTD = OBJ(uid+"_"+i);
+				switch (type[i])
+				{
+					case "text":
+						str = data[i];
+						if(typeof(tagTD.innerText) !== "undefined")	tagTD.innerText = str;
+						else if(typeof(tagTD.textContent) !== "undefined")	tagTD.textContent = str;
+						else	tagTD.innerHTML = str;
+						break;	
+					default:
+						str = data[i];
+						tagTD.innerHTML = str;
+						break;
+				}
+			}
+			return;
+		}
+	
+		/* Add a new row for this entry */
+		tagTR = OBJ(tblID).insertRow(rows.length);
+		tagTR.id = uid;
+		/* save the rule in the table */
+		for (i=0; i<data.length; i++)
+		{
+			tagTD = tagTR.insertCell(i);
+			tagTD.id = uid+"_"+i;
+			tagTD.className = "content";
+			switch (type[i])
+			{
+				case "text":
+					str = data[i];
+					if(typeof(tagTD.innerText) !== "undefined")	tagTD.innerText = str;
+					else if(typeof(tagTD.textContent) !== "undefined")	tagTD.textContent = str;
+					else	tagTD.innerHTML = str;
+					break;
+				default:
+					str = data[i];
+					tagTD.innerHTML = str; 
+					break;
+			}
+		}
+	}
+	//---------- end of tools for page
+	
+	function OnClickDelete(i, proname)
+	{
+		var table = OBJ("pro_list");
+		var rows = table.getElementsByTagName("tr");
+		
+		for (var z=1; z<=rows.length; z++)
+		{
+			if(rows[z]!=null)
+			{
+				if (rows[z].id=="pro_no_"+i)
+				{
+					table.deleteRow(z);
+				}		
+			}
+		}
+		var xml_SetInternetProfile = HNAP.GetXML("SetInternetProfileAlpha");
+		xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/DeleteProfile", proname);
+		var xml_SetInternetProfileResult = HNAP.SetXML("SetInternetProfileAlpha", xml_SetInternetProfile);
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		document.getElementById("wait_setting_finish").style.display = "inline";
+		setTimeout("window.location.reload()", 1000);
+	}
+	
+	function getElementsByName(tag, eltname)
+	{ 
+	  var elts=document.getElementsByTagName(tag); 
+	  var count=0; 
+	  var elements=[]; 
+	  for(var i=0;i<elts.length;i++){ 
+	     if(elts[i].getAttribute("name")==eltname){ 
+	        elements[count++]=elts[i]; 
+	     } 
+	  } 
+	  return elements; 
+	}
+	
+	var activepro = "";
+	function isProfileReadyToChoose(i)
+	{
+		i = i+1;
+		var xmlPath = "GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+i;
+		var type = xml_GetProInfo.Get(xmlPath+"/ProfileType");
+		switch (type)
+		{
+			case "DHCP":
+				return true;
+			case "STATIC":
+				var ip = xml_GetProInfo.Get(xmlPath+"/IPAddress");
+				var submask = xml_GetProInfo.Get(xmlPath+"/SubnetMask");
+				var gateway = xml_GetProInfo.Get(xmlPath+"/Gateway");
+				var dns = xml_GetProInfo.Get(xmlPath+"/DNS/Primary");
+				if (ip=="" || submask=="" || gateway=="" || dns=="" )
+					return false;
+				else
+					return true;
+			case "PPPoE":
+				var username = xml_GetProInfo.Get(xmlPath+"/UserName");
+				var password = xml_GetProInfo.Get(xmlPath+"/Password");
+				if (username=="" || password=="")
+					return false;
+				else
+					return true;
+			case "WISP":
+				return true;
+			case "USB3G":
+				return true;
+			default:
+				return true;
+		}
+	}
+	var selectedProfileType = "";
+	function OnClickRadio(index, proname)
+	{
+		var id = "pro-"+index;
+		var pro_cnt = getElementsByName("span", "pro_checkbox");
+		activepro = proname;
+		
+		for(var i=0; i<pro_cnt.length; i++)
+		{
+			var pro_id = pro_cnt[i].getAttribute("id");
+			
+			if(pro_id==id)
+			{
+				if (isProfileReadyToChoose(i))
+				{
+					document.getElementById("CreatePopAlertMessage").style.display = "inline";
+					document.getElementById("check_connect_msg").style.display = "inline";
+					OBJ(pro_id).innerHTML = '<img src="image/checkBox_o.png" width="26" height="27">';
+					selectedProfileType = pro_cnt[i].getAttribute("pro_type");
+				}
+				else
+				{
+					document.getElementById("CreatePopAlertMessage").style.display = "inline";
+					document.getElementById("profile_is_not_configured").style.display = "inline";
+					OBJ(pro_id).innerHTML = '<img src="image/checkBox_o.png" width="26" height="27">';
+				}
+			}
+			else
+				OBJ(pro_id).innerHTML = '<img src="image/checkBox_c.png" width="26" height="27">';
+		}
+	}
+	
+	function OnClickOK()
+	{
+		var xml_SetInternetProfile = HNAP.GetXML("SetInternetProfileAlpha");
+		xml_SetInternetProfile.Set("SetInternetProfileAlpha/InternetProfileLists/InternetProfile/ActiveProfile", activepro);
+		var xml_SetInternetProfileResult = HNAP.SetXML("SetInternetProfileAlpha", xml_SetInternetProfile);
+		var result = xml_SetInternetProfileResult.Get("SetInternetProfileAlphaResponse/SetInternetProfileAlphaResult")
+		
+		if(result=="OK")
+		{
+			document.getElementById("CreatePopAlertMessage").style.display = "inline";
+			document.getElementById("check_connect_msg").style.display = "none";
+			document.getElementById("take_effect_msg").style.display = "inline";
+			document.getElementById("no_interface_msg").style.display = "none";
+			document.getElementById("connection_failed_msg").style.display = "none";
+			if (selectedProfileType == "WISP")	// The Wireless station mode needs more time to connect.
+				setTimeout('GetInternetConnectionStatus()',30*1000);
+			else if (selectedProfileType == "USB3G")
+				setTimeout('GetInternetConnectionStatus()',30*1000);
+			else 
+				setTimeout('GetInternetConnectionStatus()',10*1000);
+			
+		}
+		else if(result=="INFNOTFOUND")
+		{
+			document.getElementById("CreatePopAlertMessage").style.display = "inline";
+			document.getElementById("check_connect_msg").style.display = "none";
+			document.getElementById("take_effect_msg").style.display = "none";
+			document.getElementById("no_interface_msg").style.display = "inline";
+			document.getElementById("connection_failed_msg").style.display = "none";
+		}
+	}
+	
+	var GetStatusResult = "0";
+	var GetStatusCount = 0;
+	var Time_GetInternetConnectionStatus;
+	var GetStatusRestart = 0;
+	
+	function GetInternetConnectionStatus()
+	{
+		if(GetStatusResult == "0")
+		{
+			var xml_GetCurrentInternetStatus = HNAP.GetXML("GetCurrentInternetStatus", new Array("InternetStatus", "true"));
+			var GetConnStatus = xml_GetCurrentInternetStatus.Get("GetCurrentInternetStatusResponse/GetCurrentInternetStatusResult");
+			GetStatusResult = "1";
+		}
+		else
+		{
+			var xml_GetCurrentInternetStatus = HNAP.GetXML("GetCurrentInternetStatus", new Array("InternetStatus", "false"));
+			var GetConnStatus = xml_GetCurrentInternetStatus.Get("GetCurrentInternetStatusResponse/GetCurrentInternetStatusResult");
+			GetStatusCount ++;
+		}
+		
+		switch (GetConnStatus)
+		{
+			case "OK_DETECTING_2":
+				if (GetStatusCount == 5 && GetStatusRestart < 2)
+				{
+					GetStatusCount = 0;
+					GetStatusResult = "0";
+					GetStatusRestart ++;
+				}
+				
+				if (GetStatusCount <= 10)
+				{
+					// wait few seconds to get value
+					Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+					Time_GetInternetConnectionStatus = self.setInterval("GetInternetConnectionStatus()",3000);
+				}
+				break;
+			case "OK_CONNECTED":
+				window.location.reload();
+				break;
+			case "OK_NOTCONNECTED":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("CreatePopAlertMessage").style.display = "inline";
+				document.getElementById("check_connect_msg").style.display = "none";
+				document.getElementById("take_effect_msg").style.display = "none";
+				document.getElementById("no_interface_msg").style.display = "none";
+				document.getElementById("internet_connect_failed").style.display = "inline";
+				break;
+			case "ERROR":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("CreatePopAlertMessage").style.display = "inline";
+				document.getElementById("check_connect_msg").style.display = "none";
+				document.getElementById("take_effect_msg").style.display = "none";
+				document.getElementById("no_interface_msg").style.display = "none";
+				document.getElementById("connection_failed_msg").style.display = "inline";
+				break;
+		}
+	}
+	
+	function InitProInfo()
+	{
+		total_pro = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile#");
+		var active_pro = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/ActiveProfile");
+		var active_index = 0;
+		
+		for (var i=1; i<=total_pro; i++)
+		{
+			var pro_name = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+i+"/ProfileName");
+			var pro_type = xml_GetProInfo.Get("GetInternetProfileAlphaResponse/InternetProfileLists/InternetProfile:"+i+"/ProfileType");
+			
+			var checkbox = '&nbsp;<span name="pro_checkbox" id="pro-'+i+'" pro_type=\"'+pro_type+'\" onclick="OnClickRadio('+i+',\''+pro_name+'\');" style="cursor:pointer"><img src="image/checkBox_c.png" width="26" height="27"></span>';
+			
+			if(pro_type=="STATIC") pro_type = "Static IP";
+			else if(pro_type=="PPPoE") pro_type = "xDSL Broadband (PPPoE)";
+			else if(pro_type=="WISP") pro_type = "Hotspot";
+			else if(pro_type=="USB3G") pro_type = "3G/4G Network";
+			
+			var edit = '<a href="Internet_ProAdd.html?method=edit&profile='+pro_name+'"><img border="0" src="image/edit_btn.gif" width="28"/></a>';
+			var del = null;
+			
+			if(pro_type=="DHCP" || pro_type=="Static IP" || pro_type=="xDSL Broadband (PPPoE)") del = "-";
+			else del = '<img src="image/trash.gif" width="41" onclick="OnClickDelete('+i+',\''+pro_name+'\');" style="cursor:pointer"/>';
+			
+			if(active_pro==pro_name)
+				checkbox = '&nbsp;<span name="pro_checkbox" id="pro-'+i+'" onclick="OnClickRadio('+i+',\''+pro_name+'\');" style="cursor:pointer"><img src="image/checkBox_o.png" width="26" height="27"></span>';
+			pro_name = checkbox + " " + pro_name;
+			
+			var data = [pro_name, pro_type, edit, del];
+			var type = ["img", "text", "img", "img"];
+			InjectTable("pro_list", "pro_no_"+i, data, type);
+		}
+	}
+</script>
+<style>
+/* The CSS is only for this page. */
+.pro_table {
+	position: relative;
+	top: 20px;
+	width: 900px;
+	color: #56583f;
+	margin: 0px 0 15px 0;
+	font-size: 14px;
+	border: 1px solid #4496a8;
+	margin: 0;
+	padding: 0;	
+}
+.pro_table th {
+	color: #fff;
+	background: #4496a8;
+	height: 30px;
+
+}
+.pro_table td {
+	height: 47px;
+}
+.pro_table td img {
+	vertical-align: middle;
+}
+</style>
+</head>
+
+<body>
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<div id="menu"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->
+			<div id="info">
+				<div id="FunctionName"><script>I18N("h", "Internet Profiles");</script></div>
+				<div id="wallimage"><img src="image/internet_page.png" alt="" width="195" height="119"/></div>
+				<div id="directions">
+					<script>I18N("h", "Internet Profiles are networks you want the device to remember and reconnect to in the future. Profiles are created automatically the first time you connect to a particular network, and some profiles may require additional information from your Internet service provider.");</script>
+				</div>
+			</div>
+			<!-------------------- funcBar ---------------------->   
+			<div id="funcBar">		
+				<div id="pagePath">&nbsp;<script>I18N("h", "Settings");</script> >> <script>I18N("h", "Internet Profiles");</script></div>
+			</div>
+			<!-------------------- main ---------------------->
+			<div id="main">
+				<table cellspacing="0" cellpadding="0" width="900" align="center" border="0">
+					<tbody>
+						<tr>
+							<td>&nbsp;</td>
+						</tr>
+						<tr>
+							<td class="title" width="85%" valign="top">Profile List:</td>
+							<td width="15%" class="save" align="center" onclick="">
+								<a href="Internet_ProAdd.html?method=add" style="text-decoration:none;"><span class="styled_button_s"><b><script>I18N("h", "Add Profile");</script></b></span></a>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<table id="pro_list" class="pro_table" width="100%" cellspacing="0" cellpadding="3" border="0">
+					<tr>
+						<th width="270"><script>I18N("h", "Profile Name");</script></th>
+						<th width="540"><script>I18N("h", "Type");</script></th>
+						<th width="50"><script>I18N("h", "Edit");</script></th>
+						<th width="40"><script>I18N("h", "Delete");</script></th>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+	<!--- start of wait saving block --->
+	<div id="CreatePopAlertMessage" style="display:none">
+		<div id="AlertPopRect">
+			<div id="AlertPopBody">
+				<table class="myAlertPop_table_b" id="wait_setting_finish" border="0" cellspacing="0"  style="display:none">
+					<tbody>
+						<tr>
+							<td><center><div id="Loading_pop_image2"></div></center></td>
+						</tr>
+						<tr>
+							<td label id="reciprocal_Number"></label></td>
+						</tr>
+						<tr>
+							<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+						</tr>
+					</tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="check_connect_msg" border="0" cellspacing="0" style="display:none">
+				  <tbody>
+					 <tr>
+					 	<td colspan="2">
+							<div id="Information_pop_image"></div>
+						</td>
+					 </tr>
+					 <tr>
+						 <td colspan="2">
+						 	<div id="dialog_msg_black"><script>I18N("h", "Are you sure you want to change your Internet connection type?");</script></div>
+						 </td>
+					 </tr>
+					 <tr>
+						 <td>
+						 	<div id="Confirm_btn" onclick="OnClickOK()" style="cursor:pointer"><script>I18N("h", "OK");</script></div>
+						 </td>
+						 <td>
+						 	<div id="Confirm_btn" onclick="window.location.reload()" style="cursor:pointer"><script>I18N("h", "Cancel");</script></div>
+						 </td>
+					 </tr>
+				  </tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="take_effect_msg" border="0" cellspacing="0"  style="display:none">
+					<tbody>
+						<tr>
+							<td><center><div id="Loading_pop_image2"></div></center></td>
+						</tr>
+						<tr>
+							<td label id="reciprocal_Number"></label></td>
+						</tr>
+						<tr>
+							<td id="dialog_msg_black2"><script>I18N("h", "Your setting would be take effect.");</script></td>
+						</tr>
+					</tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="no_interface_msg" border="0" cellspacing="0"  style="display:none">
+					<tbody>
+					 <tr>
+					 	<td colspan="2">
+							<center><div id="Warning_pop_image"></div></center>
+						</td>
+					 </tr>
+					 <tr>
+						 <td colspan="2">
+						 	<div id="dialog_msg_black"><script>I18N("h", "Interface is not ready, please check again.");</script></div>
+						 </td>
+					 </tr>
+					 <tr>
+						 <td>
+						 	<div id="Confirm_btn" onclick="OnClickOK()" style="cursor:pointer"><script>I18N("h", "OK");</script></div>
+						 </td>
+						 <td>
+						 	<div id="Confirm_btn" onclick="window.location.reload()" style="cursor:pointer"><script>I18N("h", "Cancel");</script></div>
+						 </td>
+					 </tr>
+					</tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="connection_failed_msg" border="0" cellspacing="0"  style="display:none">
+					<tbody>
+						<tr>
+							<td><center><div id="Warning_pop_image"></div></center></td>
+						</tr>
+						<tr>
+							<td label id="reciprocal_Number"></label></td>
+						</tr>
+						<tr>
+							<td id="dialog_msg_black2"><script>I18N("h", "Fail.");</script></td>
+						</tr>
+						 <tr>
+							 <td>
+							 	<center><div id="Confirm_btn" onclick="window.location.reload()" style="cursor:pointer"><script>I18N("h", "Cancel");</script></div></center>
+							 </td>
+						 </tr>
+					</tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="profile_is_not_configured" border="0" cellspacing="0"  style="display:none">
+					<tbody>
+					 <tr>
+					 	<td colspan="2">
+							<center><div id="Warning_pop_image"></div></center>
+						</td>
+					 </tr>
+					 <tr>
+						 <td colspan="2">
+						 	<div id="dialog_msg_black"><script>I18N("h", "The selected profile is not configured.");</script></div>
+						 </td>
+					 </tr>
+					 <tr>
+						 <td>
+							<center><div id="Confirm_btn" onclick="window.location.reload()" style="cursor:pointer"><script>I18N("h", "OK");</script></div></center>
+						 </td>
+					 </tr>
+					</tbody>
+				</table>
+				<table class="myAlertPop_table_b" id="internet_connect_failed" border="0" cellspacing="0"  style="display:none">
+					<tbody>
+					 <tr>
+					 	<td colspan="2">
+							<center><div id="Warning_pop_image"></div></center>
+						</td>
+					 </tr>
+					 <tr>
+						 <td colspan="2">
+						 	<div id="dialog_msg_black"><script>I18N("h", "The selected profile does not connect to Internet. Please recheck the configuration of the profile.");</script></div>
+						 </td>
+					 </tr>
+					 <tr>
+						 <td>
+							<center><div id="Confirm_btn" onclick="window.location.reload()" style="cursor:pointer"><script>I18N("h", "OK");</script></div></center>
+						 </td>
+					 </tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+</body>
+<script>
+	Load_HTML();
+	Initial();
+	InitProInfo();
+	checkTimeout();
+	setMenu("menu_Settings");
+</script>
+</html>

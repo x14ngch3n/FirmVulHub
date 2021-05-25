@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<wrgac16_dlink.2013gui_dir880>
+	<runtime>
+		<device>
+			<vendor>D-Link</vendor>
+			<fwinfosrv>wrpd.dlink.com</fwinfosrv>
+			<fwinfopath>/router/firmware/query.aspx</fwinfopath>
+			<upnpmodelname>D-Link Router</upnpmodelname>
+		</device>
+	</runtime>
+</wrgac16_dlink.2013gui_dir880>

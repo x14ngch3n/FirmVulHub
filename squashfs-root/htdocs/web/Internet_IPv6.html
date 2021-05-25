@@ -1,0 +1,4308 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<link rel=stylesheet type="text/css" href="/css/jquery.selectbox.css" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialCSS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/commIPv6.js"></script>
+
+<style type="text/css">
+.styled-text {
+	border: 1px solid #4598aa;
+	height: 30px;
+	margin: 0 0 0 0px;
+	padding: 0 0 0 10px;
+	font-size: 14px;
+	width: 224px;
+	line-height:28px\9; //for IE8
+}
+</style>
+
+<script>
+$(document).ready(function(){
+	//Default value.
+//	presetCheckBox("autoDetection_enableDHCPPD", true);
+	presetCheckBox("autoDetection_EnableAutomaticDHCPPDinLAN", true);
+	presetCheckBox("autoDetection_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("staticIPv6_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("staticIPv6_useLinkLocalAddress", true);
+	presetCheckBox("autoConfiguration_EnableAutomaticDHCPPDinLAN", true);
+	presetCheckBox("autoConfiguration_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("autoConfiguration_enableDHCPPD", true);
+	presetCheckBox("pppoe_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("pppoe_EnableAutomaticDHCPPDinLAN", true);
+	presetCheckBox("pppoe_EnableDHCPPD", true);
+	presetCheckBox("ipv6Inv4_EnableAutomaticDHCPPDinLAN", true);
+	presetCheckBox("ipv6Inv4_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("ipv6Inv4_EnableDHCPPD", true);
+	presetCheckBox("ipv6Tov4_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("ipv6rd_EnableHubandSpokeMode", true);
+	presetCheckBox("ipv6rd_EnableAutomaticIPv6AddressAssignment", true);
+	presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_EnableULA", true);
+	presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix", true);
+
+	//jquery
+	$("div.checkbox_on" || "div.checkbox_off").click(function(e) {
+	 var checkboxId =  e.target.id +'_ck';
+		if(e.target.getAttribute("class") == "checkbox_on") {
+			var disable = I18N("j","Disabled");
+			e.target.setAttribute("class", "checkbox_off");
+			e.target.setAttribute("className", "checkbox_off");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked>'+disable;
+			document.getElementById(checkboxId).checked=false;
+
+			if (checkboxId == "autoDetection_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("autoDetection_EADPL_tr").style.display = "none";
+				document.getElementById("autoDetection_AT_tr").style.display = "none";
+				document.getElementById("autoDetection_IPSR_tr").style.display = "none";
+				document.getElementById("autoDetection_IPER_tr").style.display = "none";
+				document.getElementById("autoDetection_IPL_tr").style.display = "none";
+				document.getElementById("autoDetection_RAL_tr").style.display = "none";
+			}
+			if (checkboxId == "staticIPv6_useLinkLocalAddress_ck")
+			{
+				document.getElementById("show_StaticIPv6_IPv6Address").style.display = "table-row";
+				document.getElementById("show_StaticIPv6_SubnetPrefixLength").style.display = "table-row";
+			}
+			if (checkboxId == "staticIPv6_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_Autoconfiguration_Type").style.display = "none";
+				document.getElementById("staticIPv6_IPSR_tr").style.display = "none";
+				document.getElementById("staticIPv6_IPER_tr").style.display = "none";
+				document.getElementById("staticIPv6_IPL_tr").style.display = "none";
+				document.getElementById("staticIPv6_RAL_tr").style.display = "none";
+			}
+			if (checkboxId == "autoConfiguration_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_Enable_Automatic_DHCPPD_in_LAN").style.display = "none";
+				document.getElementById("show_AutoConfiguration_AutoconfigurationType").style.display = "none";
+				document.getElementById("autoConfiguration_IPSR_tr").style.display = "none";
+				document.getElementById("autoConfiguration_IPER_tr").style.display = "none";
+				document.getElementById("autoConfiguration_IPL_tr").style.display = "none";
+				document.getElementById("autoConfiguration_RAL_tr").style.display = "none";
+			}
+			if (checkboxId == "pppoe_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "none";
+				document.getElementById("show_PPPoE_AutoconfigurationType").style.display = "none";
+				document.getElementById("pppoe_IPSR_tr").style.display = "none";
+				document.getElementById("pppoe_IPER_tr").style.display = "none";
+				document.getElementById("pppoe_IPL_tr").style.display = "none";
+				document.getElementById("pppoe_RAL_tr").style.display = "none";
+			}
+			if (checkboxId == "ipv6Inv4_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_Enable_IPv6inIPv4_DHCPPD_in_LAN").style.display = "none";
+				document.getElementById("show_IPv6inIPv4_AutoconfigurationType").style.display = "none";
+				document.getElementById("ipv6Inv4_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_IPER_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_IPL_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_RAL_tr").style.display = "none";
+			}
+			if (checkboxId == "ipv6Tov4_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_IPv6ToIPv4_AutoconfigurationType").style.display = "none";
+				document.getElementById("ipv6Tov4_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_IPER_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_IPL_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_RAL_tr").style.display = "none";
+			}
+			if (checkboxId == "ipv6rd_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_IPv6rd_AutoconfigurationType").style.display = "none";
+				document.getElementById("ipv6rd_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6rd_IPER_tr").style.display = "none";
+				document.getElementById("ipv6rd_IPL_tr").style.display = "none";
+				document.getElementById("ipv6rd_RAL_tr").style.display = "none";
+			}
+/*
+			if (checkboxId == "autoDetection_enableDHCPPD_ck")
+			{
+				document.getElementById("show_AutoDetection_LAN_IPv6_Address").style.display = "table-row";
+				document.getElementById("autoDetection_EADPL_tr").style.display = "none";
+			}
+*/
+			if (checkboxId == "autoConfiguration_enableDHCPPD_ck")
+			{
+				document.getElementById("show_AutoConfiguration_LAN_IPv6_Address").style.display = "table-row";
+				document.getElementById("show_Enable_Automatic_DHCPPD_in_LAN").style.display = "none";
+			}
+			if (checkboxId == "pppoe_EnableDHCPPD_ck")
+			{
+				var bycase1 = document.getElementById("pppoe_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (bycase1 == 1)
+				{
+					document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "none";
+				}
+				document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "table-row";
+			}
+			if (checkboxId == "ipv6Inv4_EnableDHCPPD_ck")
+			{
+				document.getElementById("show_IPv6_In_IPv4_LAN_IPv6_Address").style.display = "table-row";
+				document.getElementById("show_Enable_IPv6inIPv4_DHCPPD_in_LAN").style.display = "none";
+				document.getElementById("show_IPv6_In_IPv4_LAN_IPv6_Address_Position").style.top = "130px";
+			}
+			if (checkboxId == "LinkLocalOnly_LocalConnectivityOnly_EnableULA_ck")
+			{
+				document.getElementById("UseDefaultULAPrefix_tr").style.display = "none";
+				document.getElementById("ULAPrefix_tr").style.display = "none";
+			}
+			if (checkboxId == "LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix_ck")
+			{
+				document.getElementById("ULAPrefix_tr").style.display = "table-row";
+			}
+
+			changeFlag = true;
+			save_button_changed();
+		}
+		else {
+			var enable = I18N("j","Enabled");
+			e.target.setAttribute("class", "checkbox_on");
+			e.target.setAttribute("className", "checkbox_on");
+			document.getElementById(e.target.id).innerHTML='<input type="checkbox" name=' + e.target.id + ' id=' + checkboxId + ' checked="">'+enable;
+			document.getElementById(checkboxId).checked=true;
+
+			if (checkboxId == "autoDetection_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+/*
+				var bycase2 = document.getElementById("autoDetection_enableDHCPPD_ck").checked;
+				if (bycase2 == 1)
+				{
+					document.getElementById("autoDetection_EADPL_tr").style.display = "table-row";
+				}
+*/
+				document.getElementById("autoDetection_EADPL_tr").style.display = "table-row";
+				document.getElementById("autoDetection_AT_tr").style.display = "table-row";
+				var value = document.getElementById("autoDetection_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("autoDetection_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("autoDetection_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("autoDetection_IPSR_tr").style.display = "table-row";
+						document.getElementById("autoDetection_IPER_tr").style.display = "table-row";
+						document.getElementById("autoDetection_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+			if (checkboxId == "staticIPv6_useLinkLocalAddress_ck")
+			{
+				document.getElementById("show_StaticIPv6_IPv6Address").style.display = "none";
+				document.getElementById("show_StaticIPv6_SubnetPrefixLength").style.display = "none";
+			}
+			if (checkboxId == "staticIPv6_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_Autoconfiguration_Type").style.display = "table-row";
+				var value = document.getElementById("staticIPv6_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("staticIPv6_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("staticIPv6_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("staticIPv6_IPSR_tr").style.display = "table-row";
+						document.getElementById("staticIPv6_IPER_tr").style.display = "table-row";
+						document.getElementById("staticIPv6_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+			if (checkboxId == "autoConfiguration_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				var bycase2 = document.getElementById("autoConfiguration_enableDHCPPD_ck").checked;
+				if (bycase2 == 1)
+				{
+					document.getElementById("show_Enable_Automatic_DHCPPD_in_LAN").style.display = "table-row";
+				}
+
+				document.getElementById("show_AutoConfiguration_AutoconfigurationType").style.display = "table-row";
+				var value = document.getElementById("autoConfiguration_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("autoConfiguration_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("autoConfiguration_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("autoConfiguration_IPSR_tr").style.display = "table-row";
+						document.getElementById("autoConfiguration_IPER_tr").style.display = "table-row";
+						document.getElementById("autoConfiguration_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+			if (checkboxId == "pppoe_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				var bycase2 = document.getElementById("pppoe_EnableDHCPPD_ck").checked;
+				if (bycase2 == 1)
+				{
+					document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "table-row";
+				}
+
+				document.getElementById("show_PPPoE_AutoconfigurationType").style.display = "table-row";
+				var value = document.getElementById("staticIPv6_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("pppoe_IPSR_tr").style.display = "table-row";
+						document.getElementById("pppoe_IPER_tr").style.display = "table-row";
+						document.getElementById("pppoe_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+			if (checkboxId == "ipv6Inv4_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				var bycase2 = document.getElementById("ipv6Inv4_EnableDHCPPD_ck").checked;
+				if (bycase2 == 1)
+				{
+					document.getElementById("show_Enable_IPv6inIPv4_DHCPPD_in_LAN").style.display = "table-row";
+				}
+
+				document.getElementById("show_IPv6inIPv4_AutoconfigurationType").style.display = "table-row";
+				var value = document.getElementById("ipv6Inv4_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("ipv6Inv4_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("ipv6Inv4_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("ipv6Inv4_IPSR_tr").style.display = "table-row";
+						document.getElementById("ipv6Inv4_IPER_tr").style.display = "table-row";
+						document.getElementById("ipv6Inv4_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+			if (checkboxId == "ipv6Tov4_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_IPv6ToIPv4_AutoconfigurationType").style.display = "table-row";
+				var value = document.getElementById("ipv6Tov4_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("ipv6Tov4_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("ipv6Tov4_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("ipv6Tov4_IPSR_tr").style.display = "table-row";
+						document.getElementById("ipv6Tov4_IPER_tr").style.display = "table-row";
+						document.getElementById("ipv6Tov4_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+			if (checkboxId == "ipv6rd_EnableAutomaticIPv6AddressAssignment_ck")
+			{
+				document.getElementById("show_IPv6rd_AutoconfigurationType").style.display = "table-row";
+				var value = document.getElementById("ipv6rd_AutoconfigurationType").value;
+				switch (value)
+				{
+					case "1":
+						document.getElementById("ipv6rd_RAL_tr").style.display = "table-row";
+						break;
+					case "2":
+						document.getElementById("ipv6rd_RAL_tr").style.display = "table-row";
+						break;
+					case "3":
+						document.getElementById("ipv6rd_IPSR_tr").style.display = "table-row";
+						document.getElementById("ipv6rd_IPER_tr").style.display = "table-row";
+						document.getElementById("ipv6rd_IPL_tr").style.display = "table-row";
+						break;
+				}
+			}
+/*
+			if (checkboxId == "autoDetection_enableDHCPPD_ck")
+			{
+				var bycase1 = document.getElementById("autoDetection_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (bycase1 == 1)
+				{
+					document.getElementById("autoDetection_EADPL_tr").style.display = "table-row";
+				}
+
+				document.getElementById("show_AutoDetection_LAN_IPv6_Address").style.display = "none";
+			}
+*/
+			if (checkboxId == "autoConfiguration_enableDHCPPD_ck")
+			{
+				var bycase1 = document.getElementById("autoConfiguration_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (bycase1 == 1)
+				{
+					document.getElementById("show_Enable_Automatic_DHCPPD_in_LAN").style.display = "table-row";
+				}
+
+				document.getElementById("show_AutoConfiguration_LAN_IPv6_Address").style.display = "none";
+			}
+			if (checkboxId == "pppoe_EnableDHCPPD_ck")
+			{
+				var bycase1 = document.getElementById("pppoe_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (bycase1 == 1)
+				{
+					document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "table-row";
+				}
+
+				document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "none";
+			}
+			if (checkboxId == "ipv6Inv4_EnableDHCPPD_ck")
+			{
+				var bycase1 = document.getElementById("ipv6Inv4_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (bycase1 == 1)
+				{
+					document.getElementById("show_Enable_IPv6inIPv4_DHCPPD_in_LAN").style.display = "table-row";
+				}
+				document.getElementById("show_IPv6_In_IPv4_LAN_IPv6_Address").style.display = "none";
+				document.getElementById("show_IPv6_In_IPv4_LAN_IPv6_Address_Position").style.top = "175px";
+			}
+			if (checkboxId == "LinkLocalOnly_LocalConnectivityOnly_EnableULA_ck")
+			{
+				document.getElementById("UseDefaultULAPrefix_tr").style.display = "table-row";
+				document.getElementById("ULAPrefix_tr").style.display = "table-row";
+				presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix", true);
+				document.getElementById("ULAPrefix_tr").style.display = "none";
+			}
+			if (checkboxId == "LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix_ck")
+			{
+				document.getElementById("ULAPrefix_tr").style.display = "none";
+			}
+
+			changeFlag = true;
+			save_button_changed();
+		}
+	});
+
+	presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_EnableULA", false);
+	presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix", true);
+
+	document.getElementById("UseDefaultULAPrefix_tr").style.display = "none";
+	document.getElementById("ULAPrefix_tr").style.display = "none";
+
+	GetXML();
+});
+
+</script>
+<script type="text/javascript">
+
+	var HNAP = new HNAP_XML();
+	var Element123;
+	var StaticPPPoE_Rule = 0;
+	var changeFlag = 0;
+	var _ReciprocalNumber = 35;
+	var ipv6_wan_type;
+
+	function Load_HTML()
+	{
+		$("#header").load("header.html");
+	}
+
+	function Initial()
+	{
+		initialMenu();
+	}
+
+	function GetXML()	// Jump to function SetXML()
+	{
+		// ULA Prefix Set Default (Hidden)
+		//document.getElementById("ULAPrefix_tr").style.display = "none";
+
+		var xml_GetIPv6WanType = HNAP.GetXML("GetIPv6WanType");
+
+		var wan_IPv6type = xml_GetIPv6WanType.Get("GetIPv6WanTypeResponse/IPv6_ConnectionType");
+
+		// Alpha HuanYao: Get IPv4 status.
+		var xml_GetWanStatus = HNAP.GetXML("GetWanStatus");
+		var getNetworkStatus = xml_GetWanStatus.Get("GetWanStatusResponse/Status");
+
+		var xml_GetWanSettings = HNAP.GetXML("GetWanSettings");
+		var get_WanType = xml_GetWanSettings.Get("GetWanSettingsResponse/Type");
+
+		if (getNetworkStatus == "CONNECTED")
+		{
+			var vpnString = "";	//for compatible
+			if (get_WanType == "StaticPPTP" || get_WanType == "DynamicPPTP" || get_WanType == "StaticL2TP" || get_WanType == "DynamicL2TP")
+			{
+				if(xml_GetWanSettings.Get("GetWanSettingsResponse/VPNIPAddress") != "")
+				{
+					vpnString = "VPN";
+				}
+			}
+			var getIPAddress = xml_GetWanSettings.Get("GetWanSettingsResponse/"+vpnString+"IPAddress");
+				
+			if (getIPAddress != "")
+			{
+				document.getElementById("ipv6Inv4_LocalIPv4Address").innerHTML = getIPAddress;
+				document.getElementById("ipv6Tov4_Address").innerHTML = getIPAddress;
+				document.getElementById("ipv6rd_IPv4Address").value = getIPAddress;
+			}
+		}
+		// Alpha HuanYao: End.
+		switch (wan_IPv6type)
+		{
+			// ### GetXML - IPv6_Link-Local Only ###
+			case "IPv6_LinkLocalOnly":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv6LinkLocalOnlySettings");
+
+				var Resp_XML = "GetIPv6LinkLocalOnlySettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[7].selected = true;
+				}
+
+				// ULA Default Prefix
+				var LanUniqueLocalAddressDefaultPrefix = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanUniqueLocalAddressDefaultPrefix");
+
+				// Enable ULA
+				var LanUniqueLocalAddressStatus = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanUniqueLocalAddressStatus");
+				if (LanUniqueLocalAddressStatus == "Enable")
+				{
+					presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_EnableULA", true);
+					document.getElementById("UseDefaultULAPrefix_tr").style.display = "table-row";
+					if (LanUniqueLocalAddressDefaultPrefix == "Enable")
+					{
+						presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix", true);
+						document.getElementById("ULAPrefix_tr").style.display = "none";
+					}
+					else
+					{
+						presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix", false);
+						document.getElementById("ULAPrefix_tr").style.display = "table-row";
+					}
+				}
+				else
+				{
+					presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_EnableULA", false);
+					presetCheckBox("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix", false);
+					document.getElementById("UseDefaultULAPrefix_tr").style.display = "none";
+					document.getElementById("ULAPrefix_tr").style.display = "none";
+				}
+
+				// ULA Prefix
+				var LanUniqueLocalAddressPrefix = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanUniqueLocalAddressPrefix");
+				var LanUniqueLocalAddressPrefixLength = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanUniqueLocalAddressPrefixLength");
+				document.getElementById("LinkLocalOnly_LocalConnectivityOnly_ULAPrefix").value = LanUniqueLocalAddressPrefix;
+
+				// Current ULA Prefix
+				if (LanUniqueLocalAddressPrefix != "")
+				{
+					document.getElementById("LinkLocalOnly_LocalConnectivityOnly_CurrentULAPrefix").innerHTML = LanUniqueLocalAddressPrefix+"/"+LanUniqueLocalAddressPrefixLength;
+				}
+				else
+				{
+					document.getElementById("LinkLocalOnly_LocalConnectivityOnly_CurrentULAPrefix").innerHTML = I18N("j", "Not Available");
+				}
+
+				// ULA
+				var LanUniqueLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanUniqueLocalAddress");
+				if (LanUniqueLocalAddress != "")
+				{
+					document.getElementById("LinkLocalOnly_LocalConnectivityOnly_LanIPv6ULA").innerHTML = LanUniqueLocalAddress+"/"+LanUniqueLocalAddressPrefixLength;
+				}
+				else
+				{
+					document.getElementById("LinkLocalOnly_LocalConnectivityOnly_LanIPv6ULA").innerHTML = I18N("j", "Not Available");
+
+				}
+				internetV6_showGeneral("linklocal");
+				break;
+
+			// ### GetXML - IPv6_AutoDetection ###
+			case "IPv6_AutoDetection":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv6AutoDetectionSettings");
+
+				var Resp_XML = "GetIPv6AutoDetectionSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[0].selected = true;
+				}
+
+				var ObtainDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_ObtainDNS");
+				if (ObtainDNS == "Automatic")
+				{
+					document.getElementById("autodetection_DnsObtain_Select").options[0].selected = true;
+					document.getElementById("show_Autodetection_Primary_DNS_Server").style.display = "none";
+					document.getElementById("show_Autodetection_Secondary_DNS_Server").style.display = "none";
+				}
+				else
+				{
+					document.getElementById("autodetection_DnsObtain_Select").options[1].selected = true;
+					document.getElementById("show_Autodetection_Primary_DNS_Server").style.display = "table-row";
+					document.getElementById("show_Autodetection_Secondary_DNS_Server").style.display = "table-row";
+				}
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("autoDetection_PrimaryDNS").value = PrimaryDNS;
+				document.getElementById("autoDetection_SecondaryDNS").value = SecondaryDNS;
+
+/*
+				var DHCPPD = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_DhcpPd");
+				if (DHCPPD == "Enable")
+				{
+					presetCheckBox("autoDetection_enableDHCPPD", true);
+					document.getElementById("show_AutoDetection_LAN_IPv6_Address").style.display = "none";
+				}
+				else
+				{
+					presetCheckBox("autoDetection_enableDHCPPD", false);
+					document.getElementById("show_AutoDetection_LAN_IPv6_Address").style.display = "table-row";
+					document.getElementById("autoDetection_EADPL_tr").style.display = "table-row";
+				}
+*/
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAddress");
+//				document.getElementById("autoDetection_LanIPv6Address").value = LanAddress;
+				document.getElementById("autoDetection_LanIPv6Address").innerHTML = LanAddress;
+				document.getElementById("autoDetection_IPv6Address_StartRange").value = LanAddress;
+				document.getElementById("autoDetection_IPv6Address_EndRange").value = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("autoDetection_LanIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("autoDetection_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("autoDetection_EnableAutomaticIPv6AddressAssignment", false);
+					document.getElementById("autoDetection_EADPL_tr").style.display = "none";
+					document.getElementById("autoDetection_AT_tr").style.display = "none";
+					document.getElementById("autoDetection_IPSR_tr").style.display = "none";
+					document.getElementById("autoDetection_IPER_tr").style.display = "none";
+					document.getElementById("autoDetection_IPL_tr").style.display = "none";
+					document.getElementById("autoDetection_RAL_tr").style.display = "none";
+				}
+
+				var LanAutomaticDhcpPd = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutomaticDhcpPd");
+				if (LanAutomaticDhcpPd == "Enable")
+				{
+					presetCheckBox("autoDetection_EnableAutomaticDHCPPDinLAN", true);
+				}
+				else
+				{
+					presetCheckBox("autoDetection_EnableAutomaticDHCPPDinLAN", false);
+				}
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("autoDetection_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("autoDetection_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("autoDetection_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("autoDetection_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("autoDetection_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("autoDetection_IPSR_tr").style.display = "table-row";
+						document.getElementById("autoDetection_IPER_tr").style.display = "table-row";
+						document.getElementById("autoDetection_IPL_tr").style.display = "table-row";
+						document.getElementById("autoDetection_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("autoDetection_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+				document.getElementById("autoDetection_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("autoDetection_IPv6Address_EndRangeSetting").value   = LanIPv6AddressRangeEnd;
+				document.getElementById("autoDetection_IPv6Address_Lifetime").value          = LanDhcpLifeTime;
+
+				internetV6_showGeneral("autodetection");
+				break;
+
+			// ### GetXML - IPv6_Static ###
+			case "IPv6_Static":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv6StaticSettings");
+
+				var Resp_XML = "GetIPv6StaticSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[1].selected = true;
+				}
+
+				var UseLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_UseLinkLocalAddress");
+
+                //+++ Grace Lin, Set Enable or Disable LL address.
+				var Address            = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_Address");
+				var SubnetPrefixLength = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SubnetPrefixLength");
+
+				if (UseLinkLocalAddress == "Enable")
+				{
+					presetCheckBox("staticIPv6_useLinkLocalAddress", true);
+					//document.getElementById("staticIPv6_IPv6Address").disabled = true;
+					//document.getElementById("staticIPv6_subnetPrefixLength").disabled = true;
+					document.getElementById("show_StaticIPv6_IPv6Address").style.display = "none";
+					document.getElementById("show_StaticIPv6_SubnetPrefixLength").style.display = "none";
+				}
+				else
+				{
+					presetCheckBox("staticIPv6_useLinkLocalAddress", false);
+					document.getElementById("staticIPv6_IPv6Address").disabled = false;
+					document.getElementById("staticIPv6_subnetPrefixLength").disabled = false;
+					document.getElementById("show_StaticIPv6_IPv6Address").style.display = "table-row";
+					document.getElementById("show_StaticIPv6_SubnetPrefixLength").style.display = "table-row";
+					document.getElementById("staticIPv6_IPv6Address").value = Address;
+					document.getElementById("staticIPv6_subnetPrefixLength").value = SubnetPrefixLength;
+				}
+				//var Address = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_Address");
+				//document.getElementById("staticIPv6_IPv6Address").value = Address;
+
+				//var SubnetPrefixLength = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SubnetPrefixLength");
+				//document.getElementById("staticIPv6_subnetPrefixLength").value = SubnetPrefixLength;
+
+				var DefaultGateway = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_DefaultGateway");
+				document.getElementById("staticIPv6_DefaultGateway").value = DefaultGateway;
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("staticIPv6_PrimaryDNS").value   = PrimaryDNS;
+				document.getElementById("staticIPv6_SecondaryDNS").value = SecondaryDNS;
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAddress");
+				document.getElementById("staticIPv6_LanIPv6Address").value = LanAddress;
+				document.getElementById("staticIPv6_IPv6Address_StartRange").value = LanAddress;
+				document.getElementById("staticIPv6_IPv6Address_EndRange").value = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("staticIPv6_LanIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("staticIPv6_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("staticIPv6_EnableAutomaticIPv6AddressAssignment", false);
+					//document.getElementById("staticIPv6_EADPL_tr").style.display = "none";
+					document.getElementById("show_Autoconfiguration_Type").style.display = "none";
+					document.getElementById("staticIPv6_IPSR_tr").style.display = "none";
+					document.getElementById("staticIPv6_IPER_tr").style.display = "none";
+					document.getElementById("staticIPv6_IPL_tr").style.display = "none";
+					document.getElementById("staticIPv6_RAL_tr").style.display = "none";
+				}
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("staticIPv6_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("staticIPv6_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("staticIPv6_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("staticIPv6_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("staticIPv6_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("staticIPv6_IPSR_tr").style.display = "table-row";
+						document.getElementById("staticIPv6_IPER_tr").style.display = "table-row";
+						document.getElementById("staticIPv6_IPL_tr").style.display = "table-row";
+						document.getElementById("staticIPv6_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("staticIPv6_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+				document.getElementById("staticIPv6_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("staticIPv6_IPv6Address_EndRangeSetting").value   = LanIPv6AddressRangeEnd;
+				document.getElementById("staticIPv6_IPv6Address_Lifetime").value          = LanDhcpLifeTime;
+
+				internetV6_showGeneral("staticIPv6");
+				break;
+
+			// ### GetXML - IPv6_AutoConfiguration ###
+			case "IPv6_AutoConfiguration":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv6AutoConfigurationSettings");
+
+				var Resp_XML = "GetIPv6AutoConfigurationSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[2].selected = true;
+				}
+
+				var ObtainDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_ObtainDNS");
+				if (ObtainDNS == "Automatic")
+				{
+					document.getElementById("autoConfiguration_DnsObtainSelect").options[0].selected = true;
+					document.getElementById("show_AutoConfiguration_Primary_DNS_Server").style.display = "none";
+					document.getElementById("show_AutoConfiguration_Secondary_DNS_Server").style.display = "none";
+				}
+				else
+				{
+					document.getElementById("autoConfiguration_DnsObtainSelect").options[1].selected = true;
+					document.getElementById("show_AutoConfiguration_Primary_DNS_Server").style.display = "table-row";
+					document.getElementById("show_AutoConfiguration_Secondary_DNS_Server").style.display = "table-row";
+				}
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("autoConfiguration_PrimaryDNS").value = PrimaryDNS;
+				document.getElementById("autoConfiguration_SecondaryDNS").value = SecondaryDNS;
+
+				var DHCPPD = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_DhcpPd");
+				if (DHCPPD == "Enable")
+				{
+					presetCheckBox("autoConfiguration_enableDHCPPD", true);
+					document.getElementById("show_AutoConfiguration_LAN_IPv6_Address").style.display = "none";
+				}
+				else
+				{
+					presetCheckBox("autoConfiguration_enableDHCPPD", false);
+					document.getElementById("show_AutoConfiguration_LAN_IPv6_Address").style.display = "table-row";
+					//+++ Jerry Kao, marked for cannot find Item autoConfiguration_EAIAA_tr.
+					//document.getElementById("autoConfiguration_EAIAA_tr").style.display = "none";
+				}
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAddress");
+				document.getElementById("autoConfiguration_LanIPv6Address").value = LanAddress;
+				document.getElementById("autoConfiguration_IPv6Address_StartRange").value = LanAddress;
+				document.getElementById("autoConfiguration_IPv6Address_EndRange").value = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("autoConfiguration_LanIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("autoConfiguration_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("autoConfiguration_EnableAutomaticIPv6AddressAssignment", false);
+					document.getElementById("show_Enable_Automatic_DHCPPD_in_LAN").style.display = "none";
+					document.getElementById("show_AutoConfiguration_AutoconfigurationType").style.display = "none";
+					document.getElementById("autoConfiguration_IPSR_tr").style.display = "none";
+					document.getElementById("autoConfiguration_IPER_tr").style.display = "none";
+					document.getElementById("autoConfiguration_IPL_tr").style.display = "none";
+					document.getElementById("autoConfiguration_RAL_tr").style.display = "none";
+				}
+
+				var LanAutomaticDhcpPd = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutomaticDhcpPd");
+				if (LanAutomaticDhcpPd == "Enable")
+				{
+					presetCheckBox("autoConfiguration_EnableAutomaticDHCPPDinLAN", true);
+				}
+				else
+				{
+					presetCheckBox("autoConfiguration_EnableAutomaticDHCPPDinLAN", false);
+				}
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("autoConfiguration_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("autoConfiguration_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("autoConfiguration_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("autoConfiguration_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("autoConfiguration_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("autoConfiguration_IPSR_tr").style.display = "table-row";
+						document.getElementById("autoConfiguration_IPER_tr").style.display = "table-row";
+						document.getElementById("autoConfiguration_IPL_tr").style.display = "table-row";
+						document.getElementById("autoConfiguration_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("autoConfiguration_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+				document.getElementById("autoConfiguration_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("autoConfiguration_IPv6Address_EndRangeSetting").value   = LanIPv6AddressRangeEnd;
+				document.getElementById("autoConfiguration_IPv6Address_Lifetime").value          = LanDhcpLifeTime;
+
+				internetV6_showGeneral("autoconfiguration");
+				break;
+
+			// ### GetXML - IPv6_PPPoE ###
+			case "IPv6_PPPoE":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv6PppoeSettings");
+
+				var Resp_XML = "GetIPv6PppoeSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[3].selected = true;
+				}
+
+				var PppoeNewSession = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeNewSession");
+
+				switch (PppoeNewSession)
+				{
+					case "SharedWithIPv4":
+						document.getElementById("pppoe_Session").options[0].selected = true;
+						document.getElementById("show_PPPoE_Username").style.display = "none";
+						document.getElementById("show_PPPoE_Password").style.display = "none";
+						document.getElementById("show_PPPoE_ServiceName").style.display = "none";
+						document.getElementById("show_PPPoE_ReconnectMode").style.display = "none";
+						break;
+					case "NewSession":
+						document.getElementById("pppoe_Session").options[1].selected = true;
+						document.getElementById("show_PPPoE_Username").style.display = "table-row";
+						document.getElementById("show_PPPoE_Password").style.display = "table-row";
+						document.getElementById("show_PPPoE_ServiceName").style.display = "table-row";
+						document.getElementById("show_PPPoE_ReconnectMode").style.display = "table-row";
+						break;
+				}
+				var PppoeType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeType");
+				switch (PppoeType)
+				{
+					case "Dynamic":
+						document.getElementById("pppoe_AddressMode").options[0].selected = true;
+						document.getElementById("pppoe_IPAddress").disabled = true;
+						document.getElementById("show_PPPoE_IP_Address").style.display = "none";
+						break;
+					case "Static":
+						document.getElementById("pppoe_AddressMode").options[1].selected = true;
+						document.getElementById("pppoe_IPAddress").disabled = false;
+						document.getElementById("show_PPPoE_IP_Address").style.display = "table-row";
+						break;
+				}
+				var PppoeStaticIp = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeStaticIp");
+				document.getElementById("pppoe_IPAddress").value = PppoeStaticIp;
+
+				var PppoeUsername = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeUsername");
+				var PppoePassword = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoePassword");
+				document.getElementById("pppoe_Username").value = PppoeUsername;
+				document.getElementById("pppoe_Password").value = PppoePassword;
+
+				var PppoeReconnectMode = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeReconnectMode");
+				switch (PppoeReconnectMode)
+				{
+					case "AlwaysOn":
+						document.getElementById("pppoe_ReconnectMode").options[0].selected = true;
+						break;
+					case "Manual":
+						document.getElementById("pppoe_ReconnectMode").options[1].selected = true;
+						break;
+				}
+
+				var PppoeMTU = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeMTU");
+				document.getElementById("pppoe_MTU").value = PppoeMTU;
+
+				var PppoeServiceName = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PppoeServiceName");
+				document.getElementById("pppoe_ServiceName").value = PppoeServiceName;
+
+				var ObtainDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_ObtainDNS");
+				switch (ObtainDNS)
+				{
+					case "Automatic":
+						document.getElementById("pppoe_AutoDnsObtain").options[0].selected = true;
+						document.getElementById("show_PPPoE_Primary_DNS_Server").style.display = "none";
+						document.getElementById("show_PPPoE_Secondary_DNS_Server").style.display = "none";
+						break;
+					case "Manual":
+						document.getElementById("pppoe_AutoDnsObtain").options[1].selected = true;
+						document.getElementById("show_PPPoE_Primary_DNS_Server").style.display = "table-row";
+						document.getElementById("show_PPPoE_Secondary_DNS_Server").style.display = "table-row";
+						break;
+				}
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("pppoe_PrimaryDNS").value   = PrimaryDNS;
+				document.getElementById("pppoe_SecondaryDNS").value = SecondaryDNS;
+
+				var DHCPPD = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_DhcpPd");
+				switch (DHCPPD)
+				{
+					case "Enable":
+						presetCheckBox("pppoe_EnableDHCPPD", true);
+						document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "none";
+						break;
+					case "Disable":
+						presetCheckBox("pppoe_EnableDHCPPD", false);
+						document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "table-row";
+						break;
+				}
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAddress");
+				document.getElementById("pppoe_LanIPv6Address").value = LanAddress;
+				document.getElementById("pppoe_IPv6Address_StartRange").value = LanAddress;
+				document.getElementById("pppoe_IPv6Address_EndRange").value = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("pppoe_LanIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("pppoe_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("pppoe_EnableAutomaticIPv6AddressAssignment", false);
+					document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "none";
+					document.getElementById("show_PPPoE_AutoconfigurationType").style.display = "none";
+					document.getElementById("pppoe_IPSR_tr").style.display = "none";
+					document.getElementById("pppoe_IPER_tr").style.display = "none";
+					document.getElementById("pppoe_IPL_tr").style.display = "none";
+					document.getElementById("pppoe_RAL_tr").style.display = "none";
+				}
+
+				var LanAutomaticDhcpPd = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutomaticDhcpPd");
+				if (LanAutomaticDhcpPd == "Enable")
+				{
+					presetCheckBox("pppoe_EnableAutomaticDHCPPDinLAN", true);
+				}
+				else
+				{
+					presetCheckBox("pppoe_EnableAutomaticDHCPPDinLAN", false);
+				}
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("pppoe_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("pppoe_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("pppoe_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("pppoe_IPSR_tr").style.display = "table-row";
+						document.getElementById("pppoe_IPER_tr").style.display = "table-row";
+						document.getElementById("pppoe_IPL_tr").style.display = "table-row";
+						document.getElementById("pppoe_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("pppoe_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+				document.getElementById("pppoe_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("pppoe_IPv6Address_EndRangeSetting").value   = LanIPv6AddressRangeEnd;
+				document.getElementById("pppoe_IPv6Address_Lifetime").value          = LanDhcpLifeTime;
+
+				internetV6_showGeneral("pppoe");
+				break;
+
+			// ### GetXML - IPv6_6in4 Tunnel ###
+			case "IPv6_IPv6InIPv4Tunnel":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv66in4TunnelSettings");
+
+				var Resp_XML = "GetIPv66in4TunnelSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[4].selected = true;
+				}
+
+				var _6In4RemoteIPv4Addresss = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6In4RemoteIPv4Address");
+				document.getElementById("ipv6Inv4_RemoteIPv4Address").value = _6In4RemoteIPv4Addresss;
+
+				var _6In4RemoteIPv6Addresss = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6In4RemoteIPv6Address");
+				document.getElementById("ipv6Inv4_RemoteIPv6Address").value = _6In4RemoteIPv6Addresss;
+
+				var _6In4LocalIPv4Address = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6In4LocalIPv4Address");
+				document.getElementById("ipv6Inv4_LocalIPv4Address").innerHTML = _6In4LocalIPv4Address;
+
+				var _6In4LocalIPv6Address = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6In4LocalIPv6Address");
+				document.getElementById("ipv6Inv4_LocalIPv6Address").value = _6In4LocalIPv6Address;
+
+				var _6In4PrefixLength = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SubnetPrefixLength");
+				document.getElementById("ipv6Inv4_SubnetPrefixLength").value = _6In4PrefixLength;
+
+
+				var ObtainDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_ObtainDNS");
+				switch (ObtainDNS)
+				{
+					case "Automatic":
+						document.getElementById("ipv6Inv4_AutoDnsObtain").options[0].selected = true;
+						document.getElementById("show_Ipv6Inv4_Primary_DNS_Server").style.display = "none";
+						document.getElementById("show_Ipv6Inv4_Secondary_DNS_Server").style.display = "none";
+						break;
+					case "Manual":
+						document.getElementById("ipv6Inv4_AutoDnsObtain").options[1].selected = true;
+						document.getElementById("show_Ipv6Inv4_Primary_DNS_Server").style.display = "table-row";
+						document.getElementById("show_Ipv6Inv4_Secondary_DNS_Server").style.display = "table-row";
+						break;
+				}
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("ipv6Inv4_PrimaryDNS").value   = PrimaryDNS;
+				document.getElementById("ipv6Inv4_SecondaryDNS").value = SecondaryDNS;
+
+				var DHCPPD = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_DhcpPd");
+				switch (DHCPPD)
+				{
+					case "Enable":
+						presetCheckBox("ipv6Inv4_EnableDHCPPD", true);
+						document.getElementById("show_IPv6_In_IPv4_LAN_IPv6_Address").style.display = "none";  // Alpha, HuanYao.
+						break;
+					case "Disable":
+						presetCheckBox("ipv6Inv4_EnableDHCPPD", false);
+						document.getElementById("show_IPv6_In_IPv4_LAN_IPv6_Address").style.display = "table-row"; // Alpha, HuanYao.
+						break;
+				}
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAddress");
+
+				document.getElementById("ipv6Inv4_LANIPv6Address").value = LanAddress;
+				document.getElementById("ipv6Inv4_IPv6Address_StartRange").value = LanAddress;
+				document.getElementById("ipv6Inv4_IPv6Address_EndRange").value = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("ipv6Inv4_LANIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("ipv6Inv4_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("ipv6Inv4_EnableAutomaticIPv6AddressAssignment", false);
+					document.getElementById("ipv6Inv4_EnableAutomaticDHCPPDinLAN").style.display = "none";
+
+					//+++ Grace, modifing ...
+					document.getElementById("show_Enable_IPv6inIPv4_DHCPPD_in_LAN").style.display = "none";
+					document.getElementById("show_IPv6inIPv4_AutoconfigurationType").style.display = "none";
+
+					document.getElementById("ipv6Inv4_IPER_tr").style.display = "none";
+					document.getElementById("ipv6Inv4_IPL_tr").style.display = "none";
+					document.getElementById("ipv6Inv4_RAL_tr").style.display = "none";
+				}
+
+				var LanAutomaticDhcpPd = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutomaticDhcpPd");
+				if (LanAutomaticDhcpPd == "Enable")
+				{
+					presetCheckBox("ipv6Inv4_EnableAutomaticDHCPPDinLAN", true);
+				}
+				else
+				{
+					presetCheckBox("ipv6Inv4_EnableAutomaticDHCPPDinLAN", false);
+				}
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("ipv6Inv4_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("ipv6Inv4_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("ipv6Inv4_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("ipv6Inv4_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("ipv6Inv4_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("ipv6Inv4_IPSR_tr").style.display = "table-row";
+						document.getElementById("ipv6Inv4_IPER_tr").style.display = "table-row";
+						document.getElementById("ipv6Inv4_IPL_tr").style.display = "table-row";
+						document.getElementById("ipv6Inv4_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("ipv6Inv4_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+				document.getElementById("ipv6Inv4_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("ipv6Inv4_IPv6Address_EndRangeSetting").value   = LanIPv6AddressRangeEnd;
+				document.getElementById("ipv6Inv4_IPv6Address_Lifetime").value          = LanDhcpLifeTime;
+
+				internetV6_showGeneral("6in4");
+				break;
+
+			// ### GetXML - IPv6_6to4 Tunnel ###
+			case "IPv6_6To4":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv66to4TunnelSettings");
+
+				var Resp_XML = "GetIPv66to4TunnelSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[5].selected = true;
+				}
+
+				var _6to4Address = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6To4Address");
+				document.getElementById("ipv6Tov4_Address").innerHTML = _6to4Address;
+
+				var _6To4Relay = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6To4Relay");
+				document.getElementById("ipv6Tov4_Relay").value = _6To4Relay;
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("ipv6Tov4_PrimaryDNS").value   = PrimaryDNS;
+				document.getElementById("ipv6Tov4_SecondaryDNS").value = SecondaryDNS;
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6to4LanAddress");
+				document.getElementById("ipv6Tov4_LANIPv6Address").value = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("ipv6Tov4_LANIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("ipv6Tov4_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("ipv6Tov4_EnableAutomaticIPv6AddressAssignment", false);
+					//document.getElementById("ipv6Tov4_EADPL_tr").style.display = "none";
+					document.getElementById("show_IPv6ToIPv4_AutoconfigurationType").style.display = "none";
+					document.getElementById("ipv6Tov4_IPSR_tr").style.display = "none";
+					document.getElementById("ipv6Tov4_IPER_tr").style.display = "none";
+					document.getElementById("ipv6Tov4_IPL_tr").style.display = "none";
+					document.getElementById("ipv6Tov4_RAL_tr").style.display = "none";
+				}
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("ipv6Tov4_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("ipv6Tov4_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("ipv6Tov4_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("ipv6Tov4_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("ipv6Tov4_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("ipv6Tov4_IPSR_tr").style.display = "table-row";
+						document.getElementById("ipv6Tov4_IPER_tr").style.display = "table-row";
+						document.getElementById("ipv6Tov4_IPL_tr").style.display = "table-row";
+						document.getElementById("ipv6Tov4_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("ipv6Tov4_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+
+				document.getElementById("ipv6Tov4_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("ipv6Tov4_IPv6Address_EndRangeSetting").value = LanIPv6AddressRangeEnd;
+				document.getElementById("ipv6Tov4_IPv6Address_Lifetime").value = LanDhcpLifeTime;
+
+				internetV6_showGeneral("6to4");
+				break;
+
+			// ### GetXML - IPv6_6rd Tunnel ###
+			case "IPv6_6RD":
+				var xml_GetTypeProfile = HNAP.GetXML("GetIPv66rdTunnelSettings");
+
+				var Resp_XML = "GetIPv66rdTunnelSettingsResponse";
+
+				var Is_Current_Type = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_IsCurrentConnectionType");
+				if (Is_Current_Type.toLowerCase() != "true")
+				{
+					GetXML();
+				}
+				else
+				{
+					document.getElementById("connectionIPv6Type").options[6].selected = true;
+				}
+
+				var _6rdHubSpokeMode = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6rdHubSpokeMode");
+				if (_6rdHubSpokeMode == "Enable")
+				{
+					presetCheckBox("ipv6rd_EnableHubandSpokeMode", true);
+				}
+				else
+				{
+					presetCheckBox("ipv6rd_EnableHubandSpokeMode", false);
+				}
+
+				var _6Rd_Configuration = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6Rd_Configuration");
+
+				switch (_6Rd_Configuration)
+				{
+					case "DHCPv4_Option":
+						document.getElementById("ipv6rd_DHCPv4Option").options[0].selected = true;
+						document.getElementById("show_6rd_IPv6_Prefix").style.display = "none";
+						document.getElementById("show_6rd_Border_Relay_IPv4_Address").style.display = "none";
+						document.getElementById("show_6rd_IPv4_Prefix").style.display = "none";
+						break;
+					case "Manual":
+						document.getElementById("ipv6rd_DHCPv4Option").options[1].selected = true;
+						document.getElementById("show_6rd_IPv6_Prefix").style.display = "table-row";
+						document.getElementById("show_6rd_Border_Relay_IPv4_Address").style.display = "table-row";
+						document.getElementById("show_6rd_IPv4_Prefix").style.display = "table-row";
+						break;
+				}
+
+				var _6Rd_IPv6Prefix = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6Rd_IPv6Prefix");
+				document.getElementById("ipv6rd_IPv6Prefix").value = _6Rd_IPv6Prefix;
+
+				var _6Rd_PrefixLength = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6Rd_IPv6PrefixLength");
+				document.getElementById("ipv6rd_IPv6PrefixLength").value = _6Rd_PrefixLength;
+
+				var _6Rd_BorderRelayIPv4Address = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6Rd_BorderRelayIPv4Address");
+				document.getElementById("ipv6rd_BorderRelayIPv4Address").value = _6Rd_BorderRelayIPv4Address;
+
+				var PrimaryDNS   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_PrimaryDNS");
+				var SecondaryDNS = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_SecondaryDNS");
+				document.getElementById("ipv6rd_PrimaryDNS").value   = PrimaryDNS;
+				document.getElementById("ipv6rd_SecondaryDNS").value = SecondaryDNS;
+
+				var LanAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAddress");
+				//document.getElementById("ipv6rd_LANIPv6Address").value = LanAddress;
+				//document.getElementById("ipv6rd_IPv6Address_StartRange").value = LanAddress;
+				//document.getElementById("ipv6rd_IPv6Address_EndRange").value = LanAddress;
+				document.getElementById("ipv6rd_LANIPv6Address").innerHTML = LanAddress;
+				document.getElementById("ipv6rd_IPv6Address_StartRange").innerHTML = LanAddress;
+				document.getElementById("ipv6rd_IPv6Address_EndRange").innerHTML = LanAddress;
+
+				var LanLinkLocalAddress = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanLinkLocalAddress");
+				document.getElementById("ipv6rd_LANIPv6LinkLocalAddress").innerHTML = LanLinkLocalAddress;
+
+				var LanIPv6AddressAutoAssignment = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressAutoAssignment");
+				if (LanIPv6AddressAutoAssignment == "Enable")
+				{
+					presetCheckBox("ipv6rd_EnableAutomaticIPv6AddressAssignment", true);
+				}
+				else
+				{
+					presetCheckBox("ipv6rd_EnableAutomaticIPv6AddressAssignment", false);
+					//+++ Grace, modifing ...
+					//document.getElementById("ipv6rd_EADPL_tr").style.display = "none";
+					document.getElementById("show_IPv6rd_AutoconfigurationType").style.display = "none";
+					document.getElementById("ipv6rd_IPSR_tr").style.display = "none";
+					document.getElementById("ipv6rd_IPER_tr").style.display = "none";
+					document.getElementById("ipv6rd_IPL_tr").style.display = "none";
+					document.getElementById("ipv6rd_RAL_tr").style.display = "none";
+				}
+
+				var xml_GetWanSettings = HNAP.GetXML("GetWanSettings");
+				var getIPAddress = xml_GetWanSettings.Get("GetWanSettingsResponse/IPAddress");
+				document.getElementById("ipv6rd_IPv4Address").value = getIPAddress;
+				document.getElementById("ipv6rd_IPv4PrefixLength").value = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6Rd_MaskLength");
+				document.getElementById("ipv6rd_AssignedIPv6Prefix").value = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_6Rd_AssignedIPv6Prefix");
+
+
+				var LanAutoConfigurationType = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanAutoConfigurationType");
+				switch (LanAutoConfigurationType)
+				{
+					case "SLAAC_RDNSS":
+						document.getElementById("ipv6rd_AutoconfigurationType").options[0].selected = true;
+						document.getElementById("ipv6rd_RAL_tr").style.display = "table-row";
+						break;
+					case "SLAAC_StatelessDhcp":
+						document.getElementById("ipv6rd_AutoconfigurationType").options[1].selected = true;
+						document.getElementById("ipv6rd_RAL_tr").style.display = "table-row";
+						break;
+					case "Stateful":
+						document.getElementById("ipv6rd_AutoconfigurationType").options[2].selected = true;
+						document.getElementById("ipv6rd_IPSR_tr").style.display = "table-row";
+						document.getElementById("ipv6rd_IPER_tr").style.display = "table-row";
+						document.getElementById("ipv6rd_IPL_tr").style.display = "table-row";
+						document.getElementById("ipv6rd_RAL_tr").style.display = "none";
+						break;
+				}
+
+				var Lan_RA_LifeTime = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanRouterAdvertisementLifeTime");
+				document.getElementById("ipv6rd_RouterAdvertisementLifetime").value = Lan_RA_LifeTime;
+
+				var LanIPv6AddressRangeStart = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeStart");
+				var LanIPv6AddressRangeEnd   = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanIPv6AddressRangeEnd");
+				var LanDhcpLifeTime          = xml_GetTypeProfile.Get(Resp_XML+"/IPv6_LanDhcpLifeTime");
+
+				document.getElementById("ipv6rd_IPv6Address_StartRangeSetting").value = LanIPv6AddressRangeStart;
+				document.getElementById("ipv6rd_IPv6Address_EndRangeSetting").value   = LanIPv6AddressRangeEnd;
+				document.getElementById("ipv6rd_IPv6Address_Lifetime").value          = LanDhcpLifeTime;
+
+				internetV6_showGeneral("6rd");
+				break;
+		}
+
+		var selectWidth = new Object;
+		selectWidth.width = 234;
+		
+		$("#connectionIPv6Type").selectbox(selectWidth);
+		$("#pppoe_Session").selectbox(selectWidth);
+		$("#autodetection_DnsObtain_Select").selectbox(selectWidth);
+		$("#autoDetection_AutoconfigurationType").selectbox(selectWidth);
+		$("#staticIPv6_AutoconfigurationType").selectbox(selectWidth);
+		$("#autoConfiguration_DnsObtainSelect").selectbox(selectWidth);
+		$("#autoConfiguration_AutoconfigurationType").selectbox(selectWidth);
+		$("#pppoe_AddressMode").selectbox(selectWidth);
+		$("#pppoe_ReconnectMode").selectbox(selectWidth);
+		$("#pppoe_AutoDnsObtain").selectbox(selectWidth);
+		$("#pppoe_AutoconfigurationType").selectbox(selectWidth);
+		$("#ipv6Inv4_AutoDnsObtain").selectbox(selectWidth);
+		$("#ipv6Inv4_AutoconfigurationType").selectbox(selectWidth);
+		$("#ipv6Tov4_AutoconfigurationType").selectbox(selectWidth);
+		$("#ipv6rd_DHCPv4Option").selectbox(selectWidth);
+		$("#ipv6rd_AutoconfigurationType").selectbox(selectWidth);
+		
+		CheckNetworkStatus();
+	}
+
+	function internetV6_showGeneral(sel) 
+	{
+		//alert(sel);
+		var Auto_Detection = document.getElementById("generalBlock_AutoDetection");
+		var StaticIPv6 = document.getElementById("generalBlock_StaticIPv6");
+		var Auto_Configuration = document.getElementById("generalBlock_AutoConfiguration");
+		var PPPoE = document.getElementById("generalBlock_PPPoE");
+		var IPv6inIPv4Tunnel = document.getElementById("generalBlock_IPv6inIPv4Tunnel");
+		var g_6to4 = document.getElementById("generalBlock_6to4");
+		var g_6rd = document.getElementById("generalBlock_6rd");
+		var LocalConnectivityOnly = document.getElementById("generalBlock_LocalConnectivityOnly");
+
+		var adv_AutoDetection = document.getElementById("advancedBlock_AutoDetection");
+		var adv_StaticIPv6 = document.getElementById("advancedBlock_StaticIPv6");
+		var adv_AutoConfiguration = document.getElementById("advancedBlock_AutoConfiguration");
+		var adv_PPPoE = document.getElementById("advancedBlock_PPPoE");
+		var adv_IPv6inIPv4Tunnel = document.getElementById("advancedBlock_IPv6inIPv4Tunnel");
+		var adv_6to4 = document.getElementById("advancedBlock_6to4");
+		var adv_6rd = document.getElementById("advancedBlock_6rd");
+		var adv_LocalConnectivityOnly = document.getElementById("advancedBlock_LocalConnectivityOnly");
+		ipv6_wan_type = sel;
+		
+		if(sel=="autodetection") 
+		{
+			//alert("AutoDetection");
+			Auto_Detection.style.display = "inline";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "inline";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="staticIPv6") 
+		{
+			//alert("StaticIPv6");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "inline";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "inline";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="autoconfiguration") 
+		{
+			//alert("AutoConfiguration");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "inline";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "inline";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="pppoe") 
+		{
+			//alert("PPPoE");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "inline";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "inline";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="6in4") 
+		{
+			//alert("IPv6inIPv4Tunnel");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "inline";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "inline";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="6to4") 
+		{
+			//alert("6to4");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "inline";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "inline";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="6rd") 
+		{
+			//alert("6rd");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "inline";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "inline";
+			adv_LocalConnectivityOnly.style.display = "none";
+		}
+		else if(sel=="linklocal") 
+		{
+			//alert("LocalConnectivityOnly");
+			Auto_Detection.style.display = "none";
+			StaticIPv6.style.display = "none";
+			Auto_Configuration.style.display = "none";
+			IPv6inIPv4Tunnel.style.display = "none";
+			g_6to4.style.display = "none";
+			g_6rd.style.display = "none";
+			PPPoE.style.display = "none";
+			adv_AutoDetection.style.display = "none";
+			adv_StaticIPv6.style.display = "none";
+			adv_AutoConfiguration.style.display = "none";
+			adv_PPPoE.style.display = "none";
+			adv_IPv6inIPv4Tunnel.style.display = "none";
+			adv_6to4.style.display = "none";
+			adv_6rd.style.display = "none";
+			adv_LocalConnectivityOnly.style.display = "inline";
+		}
+		createOnlineHelpLink();
+	}
+	
+	function CheckConnectionStatus()
+	{
+		$.ajax({
+			cache : false,
+			url : "./js/CheckConnection",
+			timeout : 2000,
+			type : "GET",
+			success : function(data) { SetXML(); },
+			error : function() { document.getElementById("DetectRouterConnection").style.display = "inline"; }
+		});
+	}
+
+	function SetXML()	// Jump to function GetXML()
+	{
+		var selectedIPv6Combobox = document.getElementById("connectionIPv6Type").value;
+
+		switch (selectedIPv6Combobox)
+		{
+			// ### SetXML - IPv6_AutoDetection ###
+			case "autodetection":
+				var Set_XML = "SetIPv6AutoDetectionSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_AutoDetection");
+
+				var GetAutodetection_DnsObtain_Select = document.getElementById("autodetection_DnsObtain_Select").value;
+				if (GetAutodetection_DnsObtain_Select == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Automatic");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Manual");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS",   document.getElementById("autoDetection_PrimaryDNS").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("autoDetection_SecondaryDNS").value);
+				}
+
+					//+++ Grace, Spec. without IPv6_DhcpPd.
+				/*Joe H.:Always enable DHCP-PD in Autodetection Mode.*/
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Enable");
+/*
+				var GetAutodetection_DHCPPD = document.getElementById("autoDetection_enableDHCPPD_ck").checked;
+				if (GetAutodetection_DHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Disable");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAddress", document.getElementById("autoDetection_LanIPv6Address").value);
+				}
+*/
+
+
+				var GetAutodetection_AutoAssignment = document.getElementById("autoDetection_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (GetAutodetection_AutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var GetAutodetection_AutoDHCPPD = document.getElementById("autoDetection_EnableAutomaticDHCPPDinLAN_ck").checked;
+				if (GetAutodetection_AutoDHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Disable");
+				}
+
+				var GetAutodetection_LanAutoConfigurationType = document.getElementById("autoDetection_AutoconfigurationType").value;
+				switch (GetAutodetection_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("autoDetection_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("autoDetection_IPv6Address_EndRangeSetting").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_Auto Detection_Save");
+				break;
+
+			// ### SetXML - IPv6_Static ###
+			case "staticIPv6":
+				var Set_XML = "SetIPv6StaticSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_Static");
+
+				var GetStatic_UseLinkLocalAddress = document.getElementById("staticIPv6_useLinkLocalAddress_ck").checked;
+				if (GetStatic_UseLinkLocalAddress == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_UseLinkLocalAddress", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_UseLinkLocalAddress", "Disable");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_Address", document.getElementById("staticIPv6_IPv6Address").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SubnetPrefixLength", document.getElementById("staticIPv6_subnetPrefixLength").value);
+				}
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DefaultGateway", document.getElementById("staticIPv6_DefaultGateway").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS",   document.getElementById("staticIPv6_PrimaryDNS").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("staticIPv6_SecondaryDNS").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAddress", document.getElementById("staticIPv6_LanIPv6Address").value);
+
+				var GetStatic_LanIPv6AddressAutoAssignment = document.getElementById("staticIPv6_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (GetStatic_LanIPv6AddressAutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var GetStatic_LanAutoConfigurationType = document.getElementById("staticIPv6_AutoconfigurationType").value;
+				switch (GetStatic_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanRouterAdvertisementLifeTime", document.getElementById("staticIPv6_RouterAdvertisementLifetime").value);
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanRouterAdvertisementLifeTime", document.getElementById("staticIPv6_RouterAdvertisementLifetime").value);
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("staticIPv6_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("staticIPv6_IPv6Address_EndRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanDhcpLifeTime", document.getElementById("staticIPv6_IPv6Address_Lifetime").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_Static_SAVE");
+				break;
+
+			// ### SetXML - IPv6_AutoConfiguration ###
+			case "autoconfiguration":
+				var Set_XML = "SetIPv6AutoConfigurationSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_AutoConfiguration");
+
+				var GetAutoConfiguration_DnsObtain_Select = document.getElementById("autoConfiguration_DnsObtainSelect").value;
+				if (GetAutoConfiguration_DnsObtain_Select == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Automatic");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Manual");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS",   document.getElementById("autoConfiguration_PrimaryDNS").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("autoConfiguration_SecondaryDNS").value);
+				}
+
+				var GetAutoConfiguration_DHCPPD = document.getElementById("autoConfiguration_enableDHCPPD_ck").checked;
+				if (GetAutoConfiguration_DHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Disable");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAddress", document.getElementById("autoConfiguration_LanIPv6Address").value);
+				}
+
+				var GetAutodetection_AutoAssignment = document.getElementById("autoConfiguration_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (GetAutodetection_AutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var GetAutodetection_AutoDHCPPD = document.getElementById("autoConfiguration_EnableAutomaticDHCPPDinLAN_ck").checked;
+				if (GetAutodetection_AutoDHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Disable");
+				}
+
+				var GetAutodetection_LanAutoConfigurationType = document.getElementById("autoConfiguration_AutoconfigurationType").value;
+				switch (GetAutodetection_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("autoConfiguration_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("autoConfiguration_IPv6Address_EndRangeSetting").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_Auto Configuration_Save");
+				break;
+
+			// ### SetXML - IPv6_Pppoe ###
+			case "pppoe":
+				var Set_XML = "SetIPv6PppoeSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_PPPoE");
+
+				var GetCheck_PPPoENewSession = document.getElementById("pppoe_Session").value;
+				if (GetCheck_PPPoENewSession == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeNewSession", "SharedWithIPv4");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeNewSession", "NewSession");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeUsername", document.getElementById("pppoe_Username").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoePassword", document.getElementById("pppoe_Password").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeServiceName", document.getElementById("pppoe_ServiceName").value);
+
+					var GetPPPoE_ReconnectMode = document.getElementById("pppoe_ReconnectMode").value;
+					if (GetPPPoE_ReconnectMode == "1")
+					{
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeReconnectMode", "AlwaysOn");
+					}
+					else
+					{
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeReconnectMode", "Manual");
+					}
+				}
+
+				var GetCheck_PPPoEAddressMode = document.getElementById("pppoe_AddressMode").value;
+
+				// Dynamic
+				if (GetCheck_PPPoEAddressMode == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeType", "Dynamic");
+				}
+				else
+				{
+					// Static
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeType", "Static");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeStaticIp", document.getElementById("pppoe_IPAddress").value);
+					document.getElementById("show_PPPoE_DHCP_PD").style.display = "none";
+					document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "table-row";
+					document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "none";
+				}
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PppoeMTU", document.getElementById("pppoe_MTU").value);
+
+				//DNS
+				var GetPPPoE_DnsObtain_Select = document.getElementById("pppoe_AutoDnsObtain").value;
+				if (GetPPPoE_DnsObtain_Select == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Automatic");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Manual");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS", document.getElementById("pppoe_PrimaryDNS").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("pppoe_SecondaryDNS").value);
+				}
+
+				var GetPPPoE_DHCPPD = document.getElementById("pppoe_EnableDHCPPD_ck").checked;
+				if (GetPPPoE_DHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Disable");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAddress", document.getElementById("pppoe_LanIPv6Address").value);
+				}
+
+				var GetPPPoE_AutoAssignment = document.getElementById("pppoe_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (GetPPPoE_AutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var GetPPPoE_AutoDHCPPD = document.getElementById("pppoe_EnableAutomaticDHCPPDinLAN_ck").checked;
+				if (GetPPPoE_AutoDHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Disable");
+				}
+
+				var GetPPPoE_LanAutoConfigurationType = document.getElementById("pppoe_AutoconfigurationType").value;
+				switch (GetPPPoE_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("pppoe_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("pppoe_IPv6Address_EndRangeSetting").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_Pppoe_Save");
+				break;
+
+			// ### SetXML - IPv6_6in4 Tunnel ###
+			case "6in4":
+				var Set_XML = "SetIPv66in4TunnelSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_IPv6InIPv4Tunnel");
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6In4RemoteIPv4Address", document.getElementById("ipv6Inv4_RemoteIPv4Address").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6In4RemoteIPv6Address", document.getElementById("ipv6Inv4_RemoteIPv6Address").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6In4LocalIPv6Address",  document.getElementById("ipv6Inv4_LocalIPv6Address").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SubnetPrefixLength", document.getElementById("ipv6Inv4_SubnetPrefixLength").value);
+
+				var Getv6Inv4_ObtainDNSSelect = document.getElementById("ipv6Inv4_AutoDnsObtain").value;
+				if (Getv6Inv4_ObtainDNSSelect == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Automatic");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ObtainDNS", "Manual");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS", document.getElementById("ipv6Inv4_PrimaryDNS").value);
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("ipv6Inv4_SecondaryDNS").value);
+				}
+
+				var Getv6Inv4_DHCPPD = document.getElementById("ipv6Inv4_EnableDHCPPD_ck").checked;
+				if (Getv6Inv4_DHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_DhcpPd", "Disable");
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAddress", document.getElementById("ipv6Inv4_LANIPv6Address").value);
+				}
+
+				var Getv6Inv4_AutoAssignment = document.getElementById("ipv6Inv4_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (Getv6Inv4_AutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var Getv6Inv4_AutoDHCPPD = document.getElementById("ipv6Inv4_EnableAutomaticDHCPPDinLAN_ck").checked;
+				if (Getv6Inv4_AutoDHCPPD == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutomaticDhcpPd", "Disable");
+				}
+
+				var Getv6Inv4_LanAutoConfigurationType = document.getElementById("ipv6Inv4_AutoconfigurationType").value;
+				//alert("6in4_"+Getv6Inv4_LanAutoConfigurationType);
+				switch (Getv6Inv4_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanRouterAdvertisementLifeTime", document.getElementById("ipv6Inv4_RouterAdvertisementLifetime").value);
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanRouterAdvertisementLifeTime", document.getElementById("ipv6Inv4_RouterAdvertisementLifetime").value);
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("ipv6Inv4_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("ipv6Inv4_IPv6Address_EndRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanDhcpLifeTime", document.getElementById("ipv6Inv4_IPv6Address_Lifetime").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_6in4_Save");
+				break;
+
+			// ### SetXML - IPv6_6to4 Tunnel ###
+			case "6to4":
+				var Set_XML = "SetIPv66to4TunnelSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_6To4");
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6To4Relay",    document.getElementById("ipv6Tov4_Relay").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS",   document.getElementById("ipv6Tov4_PrimaryDNS").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("ipv6Tov4_SecondaryDNS").value);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6to4LanAddress", document.getElementById("ipv6Tov4_LANIPv6Address").value);
+
+				var GetIPv6To4_LanIPv6AddressAutoAssignment = document.getElementById("ipv6Tov4_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (GetIPv6To4_LanIPv6AddressAutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var GetIPv6To4_LanAutoConfigurationType = document.getElementById("ipv6Tov4_AutoconfigurationType").value;
+				switch (GetIPv6To4_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("ipv6Tov4_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("ipv6Tov4_IPv6Address_EndRangeSetting").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_6to4_Save");
+				break;
+
+			// ### SetXML - IPv6_6rd Tunnel ###
+			case "6rd":
+				var Set_XML = "SetIPv66rdTunnelSettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_6RD");
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_PrimaryDNS",   document.getElementById("ipv6rd_PrimaryDNS").value);
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_SecondaryDNS", document.getElementById("ipv6rd_SecondaryDNS").value);
+
+				var GetIPv6RD_EnableHubandSpokeMode = document.getElementById("ipv6rd_EnableHubandSpokeMode_ck").checked;
+				if (GetIPv6RD_EnableHubandSpokeMode == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6rdHubSpokeMode", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6rdHubSpokeMode", "Disable");
+				}
+
+				var Getv6rd_ConfigurationType = document.getElementById("ipv6rd_DHCPv4Option").value;
+				switch (Getv6rd_ConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6Rd_Configuration", "DHCPv4_Option");
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6Rd_Configuration", "Manual");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6Rd_IPv6Prefix", document.getElementById("ipv6rd_IPv6Prefix").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6Rd_IPv6PrefixLength", document.getElementById("ipv6rd_IPv6PrefixLength").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6Rd_BorderRelayIPv4Address", document.getElementById("ipv6rd_BorderRelayIPv4Address").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_6Rd_MaskLength", document.getElementById("ipv6rd_IPv4PrefixLength").value);
+						break;
+				}
+
+				/* //+++ Grace, without IPv6_LanAddress ??
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAddress", document.getElementById("ipv6rd_LANIPv6Address").value);
+				*/
+
+				var GetIPv66rd_LanIPv6AddressAutoAssignment = document.getElementById("ipv6rd_EnableAutomaticIPv6AddressAssignment_ck").checked;
+				if (GetIPv66rd_LanIPv6AddressAutoAssignment == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressAutoAssignment", "Disable");
+				}
+
+				var GetIPv66rd_LanAutoConfigurationType = document.getElementById("ipv6rd_AutoconfigurationType").value;
+				switch (GetIPv66rd_LanAutoConfigurationType)
+				{
+					case "1":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_RDNSS");
+						break;
+					case "2":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "SLAAC_StatelessDhcp");
+						break;
+					case "3":
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanAutoConfigurationType", "Stateful");
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeStart", document.getElementById("ipv6rd_IPv6Address_StartRangeSetting").value);
+						xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanIPv6AddressRangeEnd", document.getElementById("ipv6rd_IPv6Address_EndRangeSetting").value);
+						break;
+				}
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_6rd_Save");
+				break;
+
+			// ### SetXML - IPv6_Link-Local Only ###
+			case "linklocal":
+				var Set_XML = "SetIPv6LinkLocalOnlySettings";
+
+				var xml_SetIPv6Profile = HNAP.GetXML(Set_XML);
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_ConnectionType", "IPv6_LinkLocalOnly");
+
+				var GetIPv6LinkLocalOnly_EnableULA = document.getElementById("LinkLocalOnly_LocalConnectivityOnly_EnableULA_ck").checked;
+				if (GetIPv6LinkLocalOnly_EnableULA == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanUniqueLocalAddressStatus", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanUniqueLocalAddressStatus", "Disable");
+				}
+
+				var GetIPv6LinkLocalOnly_EnableULADefaultPrefix = document.getElementById("LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix_ck").checked;
+				if (GetIPv6LinkLocalOnly_EnableULADefaultPrefix == "1")
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanUniqueLocalAddressDefaultPrefix", "Enable");
+				}
+				else
+				{
+					xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanUniqueLocalAddressDefaultPrefix", "Disable");
+				}
+
+				xml_SetIPv6Profile.Set(Set_XML+"/IPv6_LanUniqueLocalAddressPrefix", document.getElementById("LinkLocalOnly_LocalConnectivityOnly_ULAPrefix").value);
+
+				var xml_SetIPv6SettingsResult = HNAP.SetXML(Set_XML, xml_SetIPv6Profile);
+				//alert("SetIPv6_LL Only_Save");
+				break;
+		}
+		document.getElementById("CreatePopAlertMessage").style.display = "inline";
+		document.getElementById("waitSettingFinish").style.display = "inline";
+		setTimeout("Start_reciprocal_Number_RestoreConfiguration()", 1000);
+	}
+	function waitSettingFinished()	{	window.location.reload();	}
+
+	function Start_reciprocal_Number_RestoreConfiguration()
+	{
+		if (_ReciprocalNumber >= 0)
+		{
+			document.getElementById("reciprocal_Number").innerHTML = _ReciprocalNumber + " " + I18N("j", "Sec");
+			_ReciprocalNumber --;
+			setTimeout("Start_reciprocal_Number_RestoreConfiguration()", 1000);
+		}
+		else
+		{
+			document.getElementById("waitSettingFinish").style.display = "none";
+			document.getElementById("SuccessSettings").style.display = "inline";
+		}
+	}
+
+	function returnToHome()
+	{
+		window.location.reload();
+	}
+
+	function PPPoESession_Select(status)
+	{
+		if (status == 1)
+		{
+			document.getElementById("show_PPPoE_Username").style.display = "none";
+			document.getElementById("show_PPPoE_Password").style.display = "none";
+			document.getElementById("show_PPPoE_ServiceName").style.display = "none";
+			document.getElementById("show_PPPoE_ReconnectMode").style.display = "none";
+			document.getElementById("value_Session").value = "1";
+		}
+		else
+		{
+			document.getElementById("show_PPPoE_Username").style.display = "table-row";
+			document.getElementById("show_PPPoE_Password").style.display = "table-row";
+			document.getElementById("show_PPPoE_ServiceName").style.display = "table-row";
+			document.getElementById("show_PPPoE_ReconnectMode").style.display = "table-row";
+			document.getElementById("value_Session").value = "2";
+			$("#internet_form").validate().resetForm();
+		}
+	}
+	function PPPoEAddressMode_Select(status)
+	{
+		if (status == 1)
+		{
+			presetCheckBox("pppoe_EnableDHCPPD", true);
+			presetCheckBox("pppoe_EnableAutomaticIPv6AddressAssignment", true);
+			document.getElementById("show_PPPoE_IP_Address").style.display = "none";
+			document.getElementById("pppoe_IPAddress").disabled = true;
+			document.getElementById("show_PPPoE_DHCP_PD").style.display = "table-row";
+			document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "none";
+			var bycase1 = document.getElementById("pppoe_EnableAutomaticIPv6AddressAssignment_ck").checked;
+			if (bycase1)
+			{
+				document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "table-row";
+				document.getElementById("show_PPPoE_AutoconfigurationType").style.display = "table-row";
+				document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+			}
+		}
+		else
+		{
+			presetCheckBox("pppoe_EnableDHCPPD", false);
+			document.getElementById("show_PPPoE_IP_Address").style.display = "table-row";
+			document.getElementById("pppoe_IPAddress").disabled = false;
+			document.getElementById("show_PPPoE_DHCP_PD").style.display = "none";
+			document.getElementById("show_PPPoE_LAN_IPv6_Address").style.display = "table-row";
+			document.getElementById("show_Enable_PPPoE_DHCPPD_in_LAN").style.display = "none";
+		}
+	}
+	function change_AutoConfiguration_DnsObtainSelect(status)
+	{
+		if (status == 1)
+		{
+			document.getElementById("show_AutoConfiguration_Primary_DNS_Server").style.display = "none";
+			document.getElementById("show_AutoConfiguration_Secondary_DNS_Server").style.display = "none";
+		}
+		else
+		{
+			document.getElementById("show_AutoConfiguration_Primary_DNS_Server").style.display = "table-row";
+			document.getElementById("show_AutoConfiguration_Secondary_DNS_Server").style.display = "table-row";
+		}
+	}
+	function change_PPPoE_DnsObtainSelect(status)
+	{
+		if (status == 1)
+		{
+			document.getElementById("show_PPPoE_Primary_DNS_Server").style.display = "none";
+			document.getElementById("show_PPPoE_Secondary_DNS_Server").style.display = "none";
+		}
+		else
+		{
+			document.getElementById("show_PPPoE_Primary_DNS_Server").style.display = "table-row";
+			document.getElementById("show_PPPoE_Secondary_DNS_Server").style.display = "table-row";
+		}
+	}
+	function change_ipv6Inv4_DnsObtainSelect(status)
+	{
+		if (status == 1)
+		{
+			document.getElementById("show_Ipv6Inv4_Primary_DNS_Server").style.display = "none";
+			document.getElementById("show_Ipv6Inv4_Secondary_DNS_Server").style.display = "none";
+		}
+		else
+		{
+			document.getElementById("show_Ipv6Inv4_Primary_DNS_Server").style.display = "table-row";
+			document.getElementById("show_Ipv6Inv4_Secondary_DNS_Server").style.display = "table-row";
+		}
+	}
+	function change_Autodetection_DnsObtainSelect(status)
+	{
+		if (status == 1)
+		{
+			document.getElementById("show_Autodetection_Primary_DNS_Server").style.display = "none";
+			document.getElementById("show_Autodetection_Secondary_DNS_Server").style.display = "none";
+		}
+		else
+		{
+			document.getElementById("show_Autodetection_Primary_DNS_Server").style.display = "table-row";
+			document.getElementById("show_Autodetection_Secondary_DNS_Server").style.display = "table-row";
+		}
+	}
+	function change_ipv6rd_DHCPv4OptionSelect(status)
+	{
+		if (status == 1)
+		{
+			document.getElementById("show_6rd_IPv6_Prefix").style.display = "none";
+			document.getElementById("show_6rd_Border_Relay_IPv4_Address").style.display = "none";
+			document.getElementById("show_6rd_Border_Relay_IPv4_Address").style.display = "none";
+			document.getElementById("show_6rd_IPv4_Prefix").style.display = "none";
+		}
+		else
+		{
+			document.getElementById("show_6rd_IPv6_Prefix").style.display = "table-row";
+			document.getElementById("show_6rd_Border_Relay_IPv4_Address").style.display = "table-row";
+			document.getElementById("show_6rd_Border_Relay_IPv4_Address").style.display = "table-row";
+			document.getElementById("show_6rd_IPv4_Prefix").style.display = "table-row";
+		}
+	}
+	function autoDetection_changeType(value)
+	{
+		switch (value)
+		{
+			case "1":
+				document.getElementById("autoDetection_IPSR_tr").style.display = "none";
+				document.getElementById("autoDetection_IPER_tr").style.display = "none";
+				document.getElementById("autoDetection_IPL_tr").style.display = "none";
+				document.getElementById("autoDetection_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				document.getElementById("autoDetection_IPSR_tr").style.display = "none";
+				document.getElementById("autoDetection_IPER_tr").style.display = "none";
+				document.getElementById("autoDetection_IPL_tr").style.display = "none";
+				document.getElementById("autoDetection_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				document.getElementById("autoDetection_IPSR_tr").style.display = "table-row";
+				document.getElementById("autoDetection_IPER_tr").style.display = "table-row";
+				document.getElementById("autoDetection_IPL_tr").style.display = "table-row";
+				document.getElementById("autoDetection_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function staticIPv6_changeType(value) //Show Autoconfiguration_Type
+	{
+		switch (value)
+		{
+			case "1":
+				//SLAAC+RDNSS
+				document.getElementById("staticIPv6_IPSR_tr").style.display = "none";
+				document.getElementById("staticIPv6_IPER_tr").style.display = "none";
+				document.getElementById("staticIPv6_IPL_tr").style.display = "none";
+				document.getElementById("staticIPv6_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				//SLAAC+stateless DHCP
+				document.getElementById("staticIPv6_IPSR_tr").style.display = "none";
+				document.getElementById("staticIPv6_IPER_tr").style.display = "none";
+				document.getElementById("staticIPv6_IPL_tr").style.display = "none";
+				document.getElementById("staticIPv6_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				//Stateful DHCPv6
+				document.getElementById("staticIPv6_IPSR_tr").style.display = "table-row";
+				document.getElementById("staticIPv6_IPER_tr").style.display = "table-row";
+				document.getElementById("staticIPv6_IPL_tr").style.display = "table-row";
+				document.getElementById("staticIPv6_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function autoConfiguration_changeType(value)
+	{
+		switch (value)
+		{
+			case "1":
+				document.getElementById("autoConfiguration_IPSR_tr").style.display = "none";
+				document.getElementById("autoConfiguration_IPER_tr").style.display = "none";
+				document.getElementById("autoConfiguration_IPL_tr").style.display = "none";
+				document.getElementById("autoConfiguration_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				document.getElementById("autoConfiguration_IPSR_tr").style.display = "none";
+				document.getElementById("autoConfiguration_IPER_tr").style.display = "none";
+				document.getElementById("autoConfiguration_IPL_tr").style.display = "none";
+				document.getElementById("autoConfiguration_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				document.getElementById("autoConfiguration_IPSR_tr").style.display = "table-row";
+				document.getElementById("autoConfiguration_IPER_tr").style.display = "table-row";
+				document.getElementById("autoConfiguration_IPL_tr").style.display = "table-row";
+				document.getElementById("autoConfiguration_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function pppoe_changeType(value)
+	{
+		switch (value)
+		{
+			case "1":
+				document.getElementById("pppoe_IPSR_tr").style.display = "none";
+				document.getElementById("pppoe_IPER_tr").style.display = "none";
+				document.getElementById("pppoe_IPL_tr").style.display = "none";
+				document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				document.getElementById("pppoe_IPSR_tr").style.display = "none";
+				document.getElementById("pppoe_IPER_tr").style.display = "none";
+				document.getElementById("pppoe_IPL_tr").style.display = "none";
+				document.getElementById("pppoe_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				document.getElementById("pppoe_IPSR_tr").style.display = "table-row";
+				document.getElementById("pppoe_IPER_tr").style.display = "table-row";
+				document.getElementById("pppoe_IPL_tr").style.display = "table-row";
+				document.getElementById("pppoe_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function ipv6Inv4_changeType(value)
+	{
+		switch (value)
+		{
+			case "1":
+				document.getElementById("ipv6Inv4_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_IPER_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_IPL_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				document.getElementById("ipv6Inv4_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_IPER_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_IPL_tr").style.display = "none";
+				document.getElementById("ipv6Inv4_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				document.getElementById("ipv6Inv4_IPSR_tr").style.display = "table-row";
+				document.getElementById("ipv6Inv4_IPER_tr").style.display = "table-row";
+				document.getElementById("ipv6Inv4_IPL_tr").style.display = "table-row";
+				document.getElementById("ipv6Inv4_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function ipv6Tov4_changeType(value)
+	{
+		switch (value)
+		{
+			case "1":
+				document.getElementById("ipv6Tov4_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_IPER_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_IPL_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				document.getElementById("ipv6Tov4_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_IPER_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_IPL_tr").style.display = "none";
+				document.getElementById("ipv6Tov4_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				document.getElementById("ipv6Tov4_IPSR_tr").style.display = "table-row";
+				document.getElementById("ipv6Tov4_IPER_tr").style.display = "table-row";
+				document.getElementById("ipv6Tov4_IPL_tr").style.display = "table-row";
+				document.getElementById("ipv6Tov4_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function ipv6rd_changeType(value)
+	{
+		switch (value)
+		{
+			case "1":
+				document.getElementById("ipv6rd_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6rd_IPER_tr").style.display = "none";
+				document.getElementById("ipv6rd_IPL_tr").style.display = "none";
+				document.getElementById("ipv6rd_RAL_tr").style.display = "table-row";
+				break;
+			case "2":
+				document.getElementById("ipv6rd_IPSR_tr").style.display = "none";
+				document.getElementById("ipv6rd_IPER_tr").style.display = "none";
+				document.getElementById("ipv6rd_IPL_tr").style.display = "none";
+				document.getElementById("ipv6rd_RAL_tr").style.display = "table-row";
+				break;
+			case "3":
+				document.getElementById("ipv6rd_IPSR_tr").style.display = "table-row";
+				document.getElementById("ipv6rd_IPER_tr").style.display = "table-row";
+				document.getElementById("ipv6rd_IPL_tr").style.display = "table-row";
+				document.getElementById("ipv6rd_RAL_tr").style.display = "none";
+				break;
+		}
+	}
+	function checkPPPoEMTU(element, value)
+	{
+		var ValidMTURegex = /^[0-9]+$/;
+		if (!ValidMTURegex.test(value) || value == "")	{	element.value = "1492";	}
+		}
+	function IsChangeFlag()		{	changeFlag = 1;	}
+	
+	function CheckNetworkStatus()
+	{
+		var status = sessionStorage.getItem('networkStatus');
+		if ((status == 1)&&(currentDevice.helpVer != ""))
+		{
+			document.getElementById("Get_Help").style.display = "inline";
+		}
+		else
+		{
+			document.getElementById("Get_Help").style.display = "none";
+		}
+	}
+	function mouseClick(obj)	{	window.open("http://support.dlink.com/");	}
+</script>
+<script language="JavaScript">
+        // 2013/09/23 Timmy Modify
+        $(function() {
+			$("select").change(function () {	save_button_changed();	});
+			$("input").keydown(function () {	save_button_changed();	});
+        });
+
+        function save_button_changed()
+		{
+			document.getElementById("Save_Disable_btn").style.display = "none";
+			document.getElementById("Save_btn").style.display = "block";
+			changeFlag = true;
+			checkFlag = true;
+			changeTimeoutAction();
+		}
+		
+		function createOnlineHelpLink()
+		{
+			var str;
+			switch($("#connectionIPv6Type").val())
+			{
+				case "autodetection":
+					str = 'Auto Detection';
+					break;
+				case "staticIPv6":
+					str = 'Static IPv6';
+					break;
+				case "autoconfiguration":
+					str = 'Auto Configuration (SLAAC/DHCPv6)';
+					break;
+				case "pppoe":
+					str = 'PPPoE IPv6';
+					break;
+				case "6in4":
+					str = 'IPv6 in IPv4 Tunnel';
+					break;
+				case "6to4":
+					str = '6 to 4';
+					break;
+				case "6rd":
+					str = '6rd';
+					break;
+				case "linklocal":
+					str = 'Local Connectivity Only';
+					break;
+			}
+		
+			$("#Get_Help").off('click').click(function(){
+				showOnlineHelp(str);
+			});
+		}
+</script>
+<style>
+#generalBlock_AutoDetection {
+	display: none;
+}
+#generalBlock_StaticIPv6 {
+	display: none;
+}
+#generalBlock_AutoConfiguration {
+	display: none;
+}
+#generalBlock_PPPoE {
+	display: none;
+}
+#generalBlock_IPv6inIPv4Tunnel  {
+	display: none;
+}
+#generalBlock_6to4 {
+	display: none;
+}
+#generalBlock_6rd {
+	display: none;
+}
+#generalBlock_LocalConnectivityOnly {
+	display: none;
+}
+
+#advancedBlock_StaticIPv6 {
+	display: none;
+}
+#advancedBlock_AutoDetection {
+	display: inline;
+}
+#advancedBlock_AutoConfiguration {
+	display: none;
+}
+#advancedBlock_PPPoE  {
+	display: none;
+}
+#advancedBlock_IPv6inIPv4Tunnel {
+	display: none;
+}
+#advancedBlock_6to4 {
+	display: none;
+}
+#advancedBlock_6rd {
+	display: none;
+}
+#advancedBlock_LocalConnectivityOnly {
+	display: none;
+}
+#advancedBlock {
+	display: none;
+}
+</style>
+
+</head>
+
+<body>
+	<form name="internet_form" id="internet_form" method="POST" action="">
+	<div id="wrapper">
+		<!-------------------- Logo ------------------------->
+		<div id="header"></div>
+		<!-------------------- Menu ------------------------->
+		<div id="menu"></div>
+		<div id="menu_edge"></div>
+		<!-------------------- Content ---------------------->
+		<div id="content">
+			<!-------------------- info ---------------------->
+	  		<div id="info">
+			    <div id="FunctionName"><script>I18N("h", "IPv6");</script></div>
+				<div id="wall"><img src="image/page_IPv6.png" alt="" width="195" height="119"/></div>
+		        <div id="directions">
+					<script>I18N("h", "All of your IPv6 Internet and network connection details are displayed on this page.");</script>
+					<label id="Get_Help" style="cursor:pointer;display:none;text-Decoration:underline"><script>I18N("h", "Click here for help.");</script></label>
+				</div>
+			</div>
+		     <!-------------------- funcBar ---------------------->
+		     <div id="funcBar">
+				<div id="pagePath"><script>I18N("h", "Settings");</script> >> <script>I18N("h", "Internet");</script> >> <script>I18N("h", "IPv6");</script></div>
+
+				<ul id="rightFunc">
+					<li style="display:block"><div id="Save_btn" onclick="document.getElementById('sumbit_CheckData').click();changeTimeoutAction();" style="cursor:pointer; display:none"><script>I18N("h", "Save");</script></div></li>
+					<li style="display:block"><div id="Save_Disable_btn"><script>I18N("h", "Save");</script></div></li>
+					<input id="sumbit_CheckData" class="submit" type="submit" value="Submit" style="display:none" />
+					<li style="display:block"><a href="javascript:CheckHTMLStatus('Internet');" style="text-decoration:none;" onclick="return confirmExit()"><div id="page_btn" class="linkstyle_1"><script>I18N("h", "IPv4");</script></div></a></li>
+				</ul>
+			</div>
+		    <!-------------------- main ---------------------->
+		   	<!-------------------- table ---------------------->
+		   	<br />
+	   		<table class="block">
+			   <tbody>
+			   	 <tr>
+			       <th><script>I18N("h", "My Internet Connection is");</script>:</th>
+			       <td>
+						<div class="styled-select">
+						<select name="connectionIPv6Type" id="connectionIPv6Type" onChange="internetV6_showGeneral(this.value);">
+						 	<option value="autodetection">Auto Detection</option>
+						 	<option value="staticIPv6">Static IPv6</option>
+							<option value="autoconfiguration">Auto Configuration (SLAAC/DHCPv6)</option>
+							<option value="pppoe">PPPoE</option>
+							<option value="6in4">IPv6 in IPv4 Tunnel</option>
+							<option value="6to4">6to4</option>
+							<option value="6rd">6rd</option>
+							<option value="linklocal">Local Connectivity Only</option>
+						</select>
+						</div>
+						<input class="styled-text" type="text" name="conn_check_msg" size="1" id="conn_check_msg" style="visibility: hidden; position: absolute; width: 0px; height: 0px;">
+			       </td>
+			     </tr>
+			   </tbody>
+			</table>
+
+	   		<!-------------------- generalBlock_AtuoDetection---------------------->
+	   		<div id="generalBlock_AutoDetection">
+	   			<hr \>
+	   			<table class="block" style="margin: 10px 0 0 0;">
+					<tbody>
+						<tr>
+							<td><div class ="title"><script>I18N("h", "IPv6 DNS SETTINGS");</script></div></td>
+						</tr>
+						<tr>
+							<th><script>I18N("h", "DNS Type");</script>:</th>
+							<td>
+								<div class="styled-select">
+									<select name="autodetection_DnsObtain_Select" id="autodetection_DnsObtain_Select" onchange="change_Autodetection_DnsObtainSelect(this.value)">
+										<option value="1" selected>Obtain a DNS server address automatically</option>
+										<option value="2">Use the following DNS address</option>
+									</select>
+								</div>
+							</td>
+						</tr>
+						<tr id="show_Autodetection_Primary_DNS_Server" style="display:none">
+							<th><script>I18N("h", "Primary DNS Server");</script>:</th>
+							<td><input class="styled-text" type="text" name="autoDetection_PrimaryDNS" size="30" style="width: 330px;" id="autoDetection_PrimaryDNS"></td>
+						</tr>
+						<tr id="show_Autodetection_Secondary_DNS_Server" style="display:none">
+							<th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+							<td><input class="styled-text" type="text" name="autoDetection_SecondaryDNS" size="30" style="width: 330px;" id="autoDetection_SecondaryDNS"></td>
+						</tr>
+					</tbody>
+				</table>
+				<hr \>
+	   			<table class="block" style="margin: 10px 0 0 0;">
+					   <tbody>
+							 <tr>
+								<td colspan="2"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+							 </tr>
+							 <!--tr>
+							 Joe H.:DHCP-PD should be always enabled in Autodetection Mode.
+								<th><script>I18N("h", "Enable DHCP-PD");</script>:</th>
+								<td ondragstart="return false" onselectstart="return false"><div id="autoDetection_enableDHCPPD" class="checkbox_on"><input type="checkbox" name="autoDetection_enableDHCPPD" id="autoDetection_enableDHCPPD_ck" checked></div></td>
+							</tr>
+						     <tr id="show_AutoDetection_LAN_IPv6_Address" style="display:none">
+								<th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+						        <td><input class="styled-text" type="text" name="autoDetection_LanIPv6Address" size="34" style="width: 330px;" id="autoDetection_LanIPv6Address">&nbsp;/64</td>
+						     </tr-->
+							 <tr>
+								<th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><label id="autoDetection_LanIPv6Address"><script>I18N("h", "Not Available");</script></td>
+						     </tr>
+						     <tr>
+						        <th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+								<td><label id="autoDetection_LanIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+						     </tr>
+					   </tbody>
+				</table>
+	   		</div>
+
+	   		<!-------------------- generalBlock_StaticIPv6---------------------->
+	   		<div id="generalBlock_StaticIPv6">
+	   			<table class="block">
+				   <tbody>
+					     <tr>
+					        <th><script>I18N("h", "Use Link-Local Address");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="staticIPv6_useLinkLocalAddress" class="checkbox_on"><input type="checkbox" name="staticIPv6_useLinkLocalAddress" id="staticIPv6_useLinkLocalAddress_ck" checked></div></td>
+					     </tr>
+					     <tr id="show_StaticIPv6_IPv6Address" style="display:none">
+					        <th><script>I18N("h", "IPv6 Address");</script>:</th>
+					        <td><input class="styled-text" type="text" name="staticIPv6_IPv6Address" size="30" style="width: 330px;" id="staticIPv6_IPv6Address"></td>
+					     </tr>
+					     <tr id="show_StaticIPv6_SubnetPrefixLength" style="display:none">
+					        <th><script>I18N("h", "Subnet Prefix Length");</script>:</th>
+					        <td><input class="styled-text" type="text" name="staticIPv6_subnetPrefixLength" size="2" style="width: 50px;" id="staticIPv6_subnetPrefixLength" maxlength="3"></td>
+					     </tr>
+						<tr>
+					        <th><script>I18N("h", "Default Gateway");</script>:</th>
+					        <td><input class="styled-text" type="text" name="staticIPv6_DefaultGateway" size="30" style="width: 330px;" id="staticIPv6_DefaultGateway"></td>
+					     </tr>
+					     <tr>
+					        <th><script>I18N("h", "Primary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="staticIPv6_PrimaryDNS" size="30" style="width: 330px;" id="staticIPv6_PrimaryDNS"></td>
+					     </tr>
+					     <tr>
+							<th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="staticIPv6_SecondaryDNS" size="30" style="width: 330px;" id="staticIPv6_SecondaryDNS"></td>
+					     </tr>
+				   </tbody>
+				</table>
+				<hr \>
+				<table class="block" border="0" style="margin: 10px 0 0 0;">
+					<tbody>
+						<tr>
+							<td colspan="3"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+						</tr>
+						<tr>
+					     	<th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><div style = "float:left"><input class="styled-text" type="text" name="staticIPv6_LanIPv6Address" size="34" style="width: 330px;" id="staticIPv6_LanIPv6Address"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><label>&nbsp;/64</label></div></td>
+						</tr>
+						<tr>
+							<th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+							<td><label id="staticIPv6_LanIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+						</tr>
+					</tbody>
+				</table>
+	   		</div>
+
+	   		<!-------------------- generalBlock_AutoConfiguration---------------------->
+	   		<div id="generalBlock_AutoConfiguration">
+	   			<hr \>
+	   			<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "IPv6 DNS SETTINGS");</script></div></td
+						 </tr>
+						 <tr>
+					        <th><script>I18N("h", "DNS Type");</script>:</th>
+					        <td>
+	    						<div class="styled-select">
+								<select name="autoConfiguration_DnsObtainSelect" id="autoConfiguration_DnsObtainSelect" onchange="change_AutoConfiguration_DnsObtainSelect(this.value)">
+								 	<option value="1" selected>Obtain a DNS server address automatically</option>
+								 	<option value="2">Use the following DNS address</option>
+								</select>
+								</div>
+					       </td>
+					     </tr>
+					     <tr id="show_AutoConfiguration_Primary_DNS_Server" style="display:none">
+					        <th><script>I18N("h", "Primary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="autoConfiguration_PrimaryDNS" size="30" style="width: 330px;" id="autoConfiguration_PrimaryDNS"></td>
+					     </tr>
+					     <tr id="show_AutoConfiguration_Secondary_DNS_Server" style="display:none">
+					        <th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="autoConfiguration_SecondaryDNS" size="30" style="width: 330px;" id="autoConfiguration_SecondaryDNS"></td>
+					     </tr>
+					</table>
+					<hr \>
+					<table class="block" style="margin: 10px 0 0 0;">
+						<tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+						</tr>
+					   	<tr>
+							<th><script>I18N("h", "Enable DHCP-PD");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="autoConfiguration_enableDHCPPD" class="checkbox_on"><input type="checkbox" name="autoConfiguration_enableDHCPPD" id="autoConfiguration_enableDHCPPD_ck" checked></div></td>
+					    </tr>
+					     <tr id="show_AutoConfiguration_LAN_IPv6_Address" style="display:none">
+					        <th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><div style = "float:left"><input class="styled-text" type="text" name="autoConfiguration_LanIPv6Address" size="34" style="width: 330px;" id="autoConfiguration_LanIPv6Address"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><label>&nbsp;/64</label></div></td>
+					     </tr>
+					     <tr>
+					        <th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+							<td><label id="autoConfiguration_LanIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+					     </tr>
+					</table>
+	   		</div>
+
+	   		<!-------------------- generalBlock_PPPoE---------------------->
+	   		<div id="generalBlock_PPPoE">
+	   			<table class="block">
+				   <tbody>
+					    <tr>
+					       <th><script>I18N("h", "PPPoE Session");</script>:</th>
+					       <td>
+      							<div class="styled-select">
+								<select name="pppoe_Session" id="pppoe_Session" onChange="PPPoESession_Select(this.value)">
+									<option value="1" selected>Share with IPv4</option>
+									<option value="2">Create a new session</option>
+								</select>
+								</div>
+								<input class="styled-text" type="text" name="value_Session" size="1" id="value_Session" value="1" style="visibility: hidden; position: absolute; width: 0px; height: 0px;">
+					       </td>
+					    </tr>
+					    <tr id="show_PPPoE_Username" style="display:none">
+					        <th><script>I18N("h", "Username");</script>:</th>
+					        <td><input class="styled-text" type="text" name="pppoe_Username" size="30" id="pppoe_Username"></td>
+					    </tr>
+						<tr id="show_PPPoE_Password" style="display:none">
+					        <th><script>I18N("h", "Password");</script>:</th>
+					        <td><input class="styled-text" type="text" name="pppoe_Password" size="30" id="pppoe_Password"></td>
+					    </tr>
+				   </tbody>
+				</table>
+				<hr \>
+				<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+					        <th><script>I18N("h", "Address Mode");</script>:</th>
+					        <td>
+	    						<div class="styled-select">
+								<select name="pppoe_AddressMode" id="pppoe_AddressMode" onchange="PPPoEAddressMode_Select(this.value)">
+								 	<option value="1" selected>Dynamic IP</option>
+								 	<option value="2">Static IP</option>
+								</select>
+								</div>
+					       </td>
+					     </tr>
+					     <tr id="show_PPPoE_IP_Address" style="display:none">
+					        <th><script>I18N("h", "IP Address");</script>:</th>
+					        <td><input class="styled-text" type="text" name="pppoe_IPAddress" size="34" style="width: 330px;" id="pppoe_IPAddress"></td>
+					     </tr>
+					     <tr id="show_PPPoE_ServiceName" style="display:none">
+					        <th><script>I18N("h", "Service Name");</script>:</th>
+					        <td><input class="styled-text" type="text" name="pppoe_ServiceName" size="30" id="pppoe_ServiceName"></td>
+					     </tr>
+					   	 <tr id="show_PPPoE_ReconnectMode" style="display:none">
+					       <th><script>I18N("h", "Reconnect Mode");</script>:</th>
+					       <td>
+        						<div class="styled-select">
+								<select name="pppoe_ReconnectMode" id="pppoe_ReconnectMode">
+								 	<option value="1" selected>Always on</option>
+									<option value="2">Manual</option>
+								</select>
+								</div>
+					       </td>
+					     </tr>
+					  	 <tr>
+					       <th><script>I18N("h", "MTU");</script>:</th>
+					       <td><input class="styled-text" type="text" name="pppoe_MTU" size="7" id="pppoe_MTU" maxlength="4" value="1492" style="width:40px" onchange="checkPPPoEMTU(this, this.value)">&nbsp;&nbsp;<script>I18N("h", "bytes");</script></td>
+					     </tr>
+					</table>
+					<hr \>
+					<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+						 	<td colspan="2"><div class ="title"><script>I18N("h", "IPv6 DNS SETTINGS");</script></div></td>
+						 </tr>
+					   	 <tr>
+					       <th><script>I18N("h", "DNS Type");</script>:</th>
+					       <td>
+        						<div class="styled-select">
+								<select name="pppoe_AutoDnsObtain" id="pppoe_AutoDnsObtain" onchange="change_PPPoE_DnsObtainSelect(this.value)">
+								 	<option value="1" selected>Obtain a DNS server address automatically</option>
+								 	<option value="2">Use the following DNS address</option>
+								</select>
+								</div>
+					       </td>
+					     </tr>
+					     <tr id="show_PPPoE_Primary_DNS_Server" style="display:none">
+					        <th><script>I18N("h", "Primary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="pppoe_PrimaryDNS" size="30" style="width: 330px;" id="pppoe_PrimaryDNS"></td>
+					     </tr>
+					     <tr id="show_PPPoE_Secondary_DNS_Server" style="display:none">
+					        <th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="pppoe_SecondaryDNS" size="30" style="width: 330px;" id="pppoe_SecondaryDNS"></td>
+					     </tr>
+					</table>
+					<hr \>
+					<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+						 	<td colspan="2"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+						 </tr>
+					   	 <tr id="show_PPPoE_DHCP_PD">
+							<th><script>I18N("h", "Enable DHCP-PD");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="pppoe_EnableDHCPPD" class="checkbox_on"><input type="checkbox" name="pppoe_EnableDHCPPD" id="pppoe_EnableDHCPPD_ck" onchange="checkThisValueIsEnable(this, this.value)" checked></div></td>
+					     </tr>
+					     <tr id="show_PPPoE_LAN_IPv6_Address" style="display:none">
+					        <th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><div style = "float:left"><input class="styled-text" type="text" name="pppoe_LanIPv6Address" size="34" style="width: 330px;" id="pppoe_LanIPv6Address"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><label>&nbsp;/64</label></div></td>
+					     </tr>
+					     <tr>
+					        <th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+							<td><label id="pppoe_LanIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+					     </tr>
+					</table>
+	   		</div>
+	   		<!-------------------- generalBlock_IPv6inIPv4Tunnel---------------------->
+	   		<div id="generalBlock_IPv6inIPv4Tunnel">
+	   			<table class="block">
+				   <tbody>
+					    <tr>
+					        <th><script>I18N("h", "Remote IPv4 Address");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6Inv4_RemoteIPv4Address" size="15" id="ipv6Inv4_RemoteIPv4Address"></td>
+					    </tr>
+						<tr>
+					        <th><script>I18N("h", "Remote IPv6 Address");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6Inv4_RemoteIPv6Address" size="30" style="width: 330px;" id="ipv6Inv4_RemoteIPv6Address"></td>
+					    </tr>
+					    <tr>
+					        <th><script>I18N("h", "Local IPv4 Address");</script>:</th>
+					        <td><label id="ipv6Inv4_LocalIPv4Address"><script>I18N("h", "Not Available");</script></label></td>
+					    </tr>
+						<tr>
+					        <th><script>I18N("h", "Local IPv6 Address");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6Inv4_LocalIPv6Address" size="30" style="width: 330px;" id="ipv6Inv4_LocalIPv6Address"></td>
+					    </tr>
+						<tr>
+					        <th><script>I18N("h", "Subnet Prefix Length");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6Inv4_SubnetPrefixLength" size="2" maxlength="3" style="width: 40px;"  id="ipv6Inv4_SubnetPrefixLength" ></td>
+					    </tr>
+				   </tbody>
+				</table>
+				<hr \>
+				<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "IPv6 DNS SETTINGS");</script></div></td>
+						 </tr>
+					   	 <tr>
+					       <th><script>I18N("h", "DNS Type");</script>:</th>
+					       <td>
+        						<div class="styled-select">
+								<select name="ipv6Inv4_AutoDnsObtain" id="ipv6Inv4_AutoDnsObtain" onchange="change_ipv6Inv4_DnsObtainSelect(this.value)">
+								 	<option value="1" selected>Obtain a DNS server address automatically</option>
+								 	<option value="2">Use the following DNS address</option>
+								</select>
+								</div>
+					       </td>
+					     </tr>
+					     <tr id="show_Ipv6Inv4_Primary_DNS_Server" style="display:none">
+					        <th><script>I18N("h", "Primary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6Inv4_PrimaryDNS" size="30" style="width: 330px;" id="ipv6Inv4_PrimaryDNS"></td>
+					     </tr>
+					     <tr id="show_Ipv6Inv4_Secondary_DNS_Server" style="display:none">
+					        <th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6Inv4_SecondaryDNS" size="30" style="width: 330px;" id="ipv6Inv4_SecondaryDNS"></td>
+					     </tr>
+					</table>
+					<hr \>
+					<table class="block">
+						 <tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+						 </tr>
+					   	 <tr>
+							<th><script>I18N("h", "Enable DHCP-PD");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="ipv6Inv4_EnableDHCPPD" class="checkbox_on"><input type="checkbox" name="ipv6Inv4_EnableDHCPPD" id="ipv6Inv4_EnableDHCPPD_ck" checked></div></td>
+					     </tr>
+					     <tr id="show_IPv6_In_IPv4_LAN_IPv6_Address" style="display:none">
+					        <th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><div style = "float:left"><input class="styled-text" type="text" name="ipv6Inv4_LANIPv6Address" size="34" style="width: 330px;" id="ipv6Inv4_LANIPv6Address"></input></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><label>&nbsp;/64</label></div></td>
+					     </tr>
+					     <tr>
+					        <th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+							<td><label id="ipv6Inv4_LANIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+					     </tr>
+					</table>
+	   		</div>
+	   		<!-------------------- generalBlock_6to4---------------------->
+	   		<div id="generalBlock_6to4">
+				<table class="block">
+				     <tr>
+				        <th><script>I18N("h", "6to4 Address");</script>:</th>
+				        <td><label id="ipv6Tov4_Address"><script>I18N("h", "Not Available");</script></label></td>
+				     </tr>
+				     <tr>
+				        <th><script>I18N("h", "6to4 Relay");</script>:</th>
+				        <td><input class="styled-text" type="text" name="ipv6Tov4_Relay" size="30" id="ipv6Tov4_Relay" value="192.88.99.1"></td>
+				     </tr>
+				     <tr>
+				        <th><script>I18N("h", "Primary DNS Server");</script>:</th>
+				        <td><input class="styled-text" type="text" name="ipv6Tov4_PrimaryDNS" size="30" style="width: 330px;" id="ipv6Tov4_PrimaryDNS"></td>
+				     </tr>
+				     <tr>
+				        <th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+				        <td><input class="styled-text" type="text" name="ipv6Tov4_SecondaryDNS" size="30" style="width: 330px;" id="ipv6Tov4_SecondaryDNS"></td>
+				     </tr>
+				</table>
+				<hr \>
+				<table class="block" border="0" style="margin: 10px 0 0 0;">
+						<tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+						</tr>
+					     <tr>
+					        <th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><div style = "float:left"><label id="ipv6Tov4_LANIPv6Address_element123">FFFF:FFFF:FFFF:</label> <input class="styled-text" type="text" name="ipv6Tov4_LANIPv6Address" size="5" maxlength="4" style="width:80px" id="ipv6Tov4_LANIPv6Address"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><label>&nbsp;::1&nbsp;/64</label></div></td>
+					     </tr>
+					     <tr>
+					        <th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+							<td><label id="ipv6Tov4_LANIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+					     </tr>
+				</table>
+			</div>
+	   		<!-------------------- generalBlock_6rd---------------------->
+	   		<div id="generalBlock_6rd">
+				<table class="block">
+				     <tr>
+				        <th><script>I18N("h", "Assign IPv6 Prefix");</script>:</th>
+				        <td><input class="styled-text" type="text" name="ipv6rd_AssignedIPv6Prefix" size="30" id="ipv6rd_AssignedIPv6Prefix" disabled="true"></td>
+				     </tr>
+				     <tr>
+				        <th><script>I18N("h", "Primary DNS Server");</script>:</th>
+				        <td><input class="styled-text" type="text" name="ipv6rd_PrimaryDNS" size="30" style="width: 330px;" id="ipv6rd_PrimaryDNS"></td>
+				     </tr>
+				     <tr>
+				        <th><script>I18N("h", "Secondary DNS Server");</script>:</th>
+				        <td><input class="styled-text" type="text" name="ipv6rd_SecondaryDNS" size="30" style="width: 330px;" id="ipv6rd_SecondaryDNS"></td>
+				     </tr>
+				</table>
+				<hr \>
+				<table class="block" border="0" style="margin: 10px 0 0 0;">
+						<tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "6RD MANUAL CONFIGURATION");</script></div></td>
+						</tr>
+							<tr>
+							<th><script>I18N("h", "Enable Hub and Spoke Mode");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="ipv6rd_EnableHubandSpokeMode" class="checkbox_on"><input type="checkbox" name="ipv6rd_EnableHubandSpokeMode" id="ipv6rd_EnableHubandSpokeMode_ck" checked></div></td>
+							</tr>
+						     <tr>
+					       <th><script>I18N("h", "6rd Configuration");</script>:</th>
+						       <td>
+	      							<div class="styled-select">
+								<select name="ipv6rd_DHCPv4Option" id="ipv6rd_DHCPv4Option" onchange="change_ipv6rd_DHCPv4OptionSelect(this.value)">
+									<option value="1" selected>6rd DHCPv4 Option</option>
+									<option value="2">Manual Configuration</option>
+									</select>
+									</div>
+						       </td>
+						     </tr>
+					     <tr id="show_6rd_IPv6_Prefix" style="display:none">
+					        <th><script>I18N("h", "6rd IPv6 Prefix");</script>:</th>
+					        <td>
+					        	<div style = "float:left"><input class="styled-text" type="text" name="ipv6rd_IPv6Prefix" size="30" id="ipv6rd_IPv6Prefix"></div>
+								<div style = "float:left;padding-left: 5px;padding-top: 5px;">/&nbsp;&nbsp;<input class="styled-text" type="text" name="ipv6rd_IPv6PrefixLength" size="2" maxlength="3" style="width: 40px;" id="ipv6rd_IPv6PrefixLength" value="32"></div>
+					        </td>
+						     </tr>
+								 <tr id="show_6rd_IPv4_Prefix" style="display:none">
+					        <th><script>I18N("h", "WAN IPv4 Address");</script>:</th>
+					        <td>
+					        	<div style = "float:left"><input class="styled-text" type="text" name="ipv6rd_IPv4Address" size="30" id="ipv6rd_IPv4Address" disabled="true"></div>
+					        	<div style = "float:left;padding-left: 5px;padding-top: 5px;">/&nbsp;&nbsp;<input class="styled-text" type="text" name="ipv6rd_IPv4PrefixLength" size="2" maxlength="2" style="width: 40px;" id="ipv6rd_IPv4PrefixLength"></div>
+					        </td>
+						     </tr>
+								 <tr id="show_6rd_Border_Relay_IPv4_Address" style="display:none">
+					        <th><script>I18N("h", "6rd Border Relay IPv4 Address");</script>:</th>
+					        <td><input class="styled-text" type="text" name="ipv6rd_BorderRelayIPv4Address" size="30" id="ipv6rd_BorderRelayIPv4Address"></td>
+						     </tr>
+					</table>
+					<hr \>
+				    <table class="block" style="margin: 10px 0 0 0;">
+							 <tr>
+								<td colspan="2"><div class ="title"><script>I18N("h", "LAN IPv6 ADDRESS SETTINGS");</script></div></td>
+							 </tr>
+							 <tr>
+								<th><script>I18N("h", "LAN IPv6 Address");</script>:</th>
+					        <td><label id="ipv6rd_LANIPv6Address"><script>I18N("h", "Not Available");</script></td>
+						     </tr>
+						     <tr>
+						        <th><script>I18N("h", "LAN IPv6 Link-Local Address");</script>:</th>
+							<td><label id="ipv6rd_LANIPv6LinkLocalAddress"><script>I18N("h", "Not Available");</script></label></td>
+						     </tr>
+					</table>
+			</div>
+	   		<!-------------------- generalBlock_LocalConnectivityOnly---------------------->
+		    <div class="advButton" onclick="showAdv('advancedBlock');IsChangeFlag();"><script>I18N("h", "Advanced Settings");</script>...</div>
+		    <hr />
+		    <!-----------------------------------Advanced Settings------------------------------------------------->
+	   		<div id="advancedBlock">
+		   		<!-------------------- advancedBlock_Auto Detection ---------------------->
+		   		<div id="advancedBlock_AutoDetection">
+				    <table class="block" style="margin: 10px 0 0 0;">
+					   <tbody>
+							 <tr>
+								<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+							 </tr>
+						   	 <tr>
+								<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+								<td><div id="autoDetection_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="autoDetection_EnableAutomaticIPv6AddressAssignment" id="autoDetection_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+						     </tr>
+							 <tr id="autoDetection_EADPL_tr">
+						        <th><script>I18N("h", "Enable Automatic DHCP-PD in LAN");</script>:</th>
+								<td ondragstart="return false" onselectstart="return false"><div id="autoDetection_EnableAutomaticDHCPPDinLAN" class="checkbox_on"><input type="checkbox" name="autoDetection_EnableAutomaticDHCPPDinLAN" id="autoDetection_EnableAutomaticDHCPPDinLAN_ck" checked></div></td>
+						     </tr>
+						     <tr id="autoDetection_AT_tr">
+						       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+						       <td>
+	      							<div class="styled-select">
+									<select name="autoDetection_AutoconfigurationType" id="autoDetection_AutoconfigurationType" onchange="autoDetection_changeType(this.value)">
+										<option value="1">SLAAC+RDNSS</option>
+										<option value="2" selected>SLAAC+Stateless DHCP</option>
+										<option value="3">Stateful DHCPv6</option>
+									</select>
+									</div>
+						       </td>
+						     </tr>
+						     <tr id="autoDetection_IPSR_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+								<td><label id="autoDetection_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="autoDetection_IPv6Address_StartRangeSetting" id="autoDetection_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+							 </tr>
+							 <tr id="autoDetection_IPER_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+								<td><label id="autoDetection_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="autoDetection_IPv6Address_EndRangeSetting" id="autoDetection_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+							 </tr>
+							 <tr id="autoDetection_IPL_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+								<td><input class="styled-text" type="text" name="autoDetection_IPv6Address_Lifetime" id="autoDetection_IPv6Address_Lifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+							 </tr>
+							 <tr id="autoDetection_RAL_tr" style="display:table-row">
+								<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+								<td><input class="styled-text" type="text" name="autoDetection_RouterAdvertisementLifetime" id="autoDetection_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+							 </tr>
+					   </tbody>
+					</table>
+				</div>
+				<!-------------------- advancedBlock_StaticIPv6 ---------------------->
+		   		<div id="advancedBlock_StaticIPv6">
+				    <table class="block" style="margin: 10px 0 0 0;">
+					   <tbody>
+							 <tr>
+								<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+							</tr>
+						   	<tr>
+						     	<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+								<td><div id="staticIPv6_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="staticIPv6_EnableAutomaticIPv6AddressAssignment" id="staticIPv6_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+						    </tr>
+						    <tr id="show_Autoconfiguration_Type">
+						       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+						       <td>
+	      							<div class="styled-select">
+									<select name="staticIPv6_AutoconfigurationType" id="staticIPv6_AutoconfigurationType" onchange="staticIPv6_changeType(this.value)">
+										<option value="1">SLAAC+RDNSS</option>
+										<option value="2" selected>SLAAC+Stateless DHCP</option>
+										<option value="3">Stateful DHCPv6</option>
+									</select>
+									</div>
+						       </td>
+						    </tr>
+						    <tr id="staticIPv6_IPSR_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+								<td><label id="staticIPv6_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="staticIPv6_IPv6Address_StartRangeSetting" id="staticIPv6_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+							 </tr>
+							 <tr id="staticIPv6_IPER_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+								<td><label id="staticIPv6_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="staticIPv6_IPv6Address_EndRangeSetting" id="staticIPv6_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+							 </tr>
+							 <tr id="staticIPv6_IPL_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+								<td><div style = "float:left"><input class="styled-text" type="text" name="staticIPv6_IPv6Address_Lifetime" id="staticIPv6_IPv6Address_Lifetime" size="2" style="width: 40px;" maxlength="4" value="60"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><script>I18N("h", "minutes");</script></div></td>
+							 </tr>
+							 <tr id="staticIPv6_RAL_tr" style="display:table-row">
+								<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+								<td><div style = "float:left"><input class="styled-text" type="text" name="staticIPv6_RouterAdvertisementLifetime" id="staticIPv6_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" value="60"/></div><div style = "float:left;padding-left: 5px;padding-top: 5px;">&nbsp;&nbsp;<script>I18N("h", "minutes");</script></div></td>
+							 </tr>
+					   </tbody>
+					</table>
+				</div>
+
+				<!-------------------- advancedBlock_AutoConfiguration(SLAAC/DHCPv6)---------------------->
+				<div id="advancedBlock_AutoConfiguration">
+					<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+						</tr>
+					   	<tr>
+							<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="autoConfiguration_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="autoConfiguration_EnableAutomaticIPv6AddressAssignment" id="autoConfiguration_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+					    </tr>
+					   	<tr id="show_Enable_Automatic_DHCPPD_in_LAN">
+							<th><script>I18N("h", "Enable Automatic DHCP-PD in LAN");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="autoConfiguration_EnableAutomaticDHCPPDinLAN" class="checkbox_on"><input type="checkbox" name="autoConfiguration_EnableAutomaticDHCPPDinLAN" id="autoConfiguration_EnableAutomaticDHCPPDinLAN_ck" checked></div></td>
+					    </tr>
+					    <tr id="show_AutoConfiguration_AutoconfigurationType">
+					       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+					       <td>
+	  							<div class="styled-select">
+								<select name="autoConfiguration_AutoconfigurationType" id="autoConfiguration_AutoconfigurationType" onchange="autoConfiguration_changeType(this.value)">
+									<option value="1">SLAAC+RDNSS</option>
+									<option value="2" selected>SLAAC+Stateless DHCP</option>
+									<option value="3">Stateful DHCPv6</option>
+								</select>
+								</div>
+					       </td>
+					    </tr>
+					    <tr id="autoConfiguration_IPSR_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+								<td><label id="autoConfiguration_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="autoConfiguration_IPv6Address_StartRangeSetting" id="autoConfiguration_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+							 </tr>
+							 <tr id="autoConfiguration_IPER_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+								<td><label id="autoConfiguration_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="autoConfiguration_IPv6Address_EndRangeSetting" id="autoConfiguration_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+							 </tr>
+							 <tr id="autoConfiguration_IPL_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+								<td><input class="styled-text" type="text" name="autoConfiguration_IPv6Address_Lifetime" id="autoConfiguration_IPv6Address_Lifetime" size="2" maxlength="4" style="width: 40px;" disabled /><script>I18N("h", "minutes");</script></td>
+							 </tr>
+							 <tr id="autoConfiguration_RAL_tr" style="display:table-row">
+								<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+								<td><input class="styled-text" type="text" name="autoConfiguration_RouterAdvertisementLifetime" id="autoConfiguration_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+							 </tr>
+					</table>
+				</div>
+				<!-------------------- advancedBlock_PPPoE---------------------->
+				<div id="advancedBlock_PPPoE">
+					<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+						</tr>
+					   	<tr>
+							<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="pppoe_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="pppoe_EnableAutomaticIPv6AddressAssignment" id="pppoe_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+					    </tr>
+					   	<tr id="show_Enable_PPPoE_DHCPPD_in_LAN">
+							<th><script>I18N("h", "Enable Automatic DHCP-PD in LAN");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="pppoe_EnableAutomaticDHCPPDinLAN" class="checkbox_on"><input type="checkbox" name="pppoe_EnableAutomaticDHCPPDinLAN" id="pppoe_EnableAutomaticDHCPPDinLAN_ck" checked></div></td>
+					    </tr>
+					    <tr id="show_PPPoE_AutoconfigurationType">
+					       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+					       <td>
+	  							<div class="styled-select">
+								<select name="pppoe_AutoconfigurationType" id="pppoe_AutoconfigurationType" onchange="pppoe_changeType(this.value)">
+									<option value="1">SLAAC+RDNSS</option>
+									<option value="2" selected>SLAAC+Stateless DHCP</option>
+									<option value="3">Stateful DHCPv6</option>
+								</select>
+								</div>
+					       </td>
+					    </tr>
+					    <tr id="pppoe_IPSR_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+								<td><label id="pppoe_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="pppoe_IPv6Address_StartRangeSetting" id="pppoe_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+							 </tr>
+							 <tr id="pppoe_IPER_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+								<td><label id="pppoe_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="pppoe_IPv6Address_EndRangeSetting" id="pppoe_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+							 </tr>
+							 <tr id="pppoe_IPL_tr" style="display:none">
+								<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+								<td><input class="styled-text" type="text" name="pppoe_IPv6Address_Lifetime" id="pppoe_IPv6Address_Lifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+							 </tr>
+							 <tr id="pppoe_RAL_tr" style="display:table-row">
+								<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+								<td><input class="styled-text" type="text" name="pppoe_RouterAdvertisementLifetime" id="pppoe_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+							 </tr>
+					</table>
+				</div>
+				<!-------------------- advancedBlock_Pv6inIPv4Tunnel---------------------->
+				<div id="advancedBlock_IPv6inIPv4Tunnel">
+					<table class="block" style="margin: 10px 0 0 0;">
+						 <tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+						</tr>
+					   	<tr>
+							<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="ipv6Inv4_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="ipv6Inv4_EnableAutomaticIPv6AddressAssignment" id="ipv6Inv4_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+					    </tr>
+					   	<tr id="show_Enable_IPv6inIPv4_DHCPPD_in_LAN">
+							<th><script>I18N("h", "Enable Automatic DHCP-PD in LAN");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="ipv6Inv4_EnableAutomaticDHCPPDinLAN" class="checkbox_on"><input type="checkbox" name="ipv6Inv4_EnableAutomaticDHCPPDinLAN" id="ipv6Inv4_EnableAutomaticDHCPPDinLAN_ck" checked></div></td>
+					    </tr>
+					    <tr id="show_IPv6inIPv4_AutoconfigurationType">
+					       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+					       <td>
+	  							<div class="styled-select">
+								<select name="ipv6Inv4_AutoconfigurationType" id="ipv6Inv4_AutoconfigurationType" onchange="ipv6Inv4_changeType(this.value)">
+									<option value="1">SLAAC+RDNSS</option>
+									<option value="2" selected>SLAAC+Stateless DHCP</option>
+									<option value="3">Stateful DHCPv6</option>
+								</select>
+								</div>
+					       </td>
+					    </tr>
+					    <tr id="ipv6Inv4_IPSR_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+							<td><label id="ipv6Inv4_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="ipv6Inv4_IPv6Address_StartRangeSetting" id="ipv6Inv4_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+						</tr>
+						<tr id="ipv6Inv4_IPER_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+							<td><label id="ipv6Inv4_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="ipv6Inv4_IPv6Address_EndRangeSetting" id="ipv6Inv4_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+						</tr>
+						<tr id="ipv6Inv4_IPL_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+							<td><div style = "float:left"><input class="styled-text" type="text" name="ipv6Inv4_IPv6Address_Lifetime" id="ipv6Inv4_IPv6Address_Lifetime" size="2" maxlength="4" style="width: 40px;" value="60"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><script>I18N("h", "minutes");</script></div></td>
+						</tr>
+						<tr id="ipv6Inv4_RAL_tr" style="display:table-row">
+							<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+							<td><div style = "float:left"><input class="styled-text" type="text" name="ipv6Inv4_RouterAdvertisementLifetime" id="ipv6Inv4_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" value="60"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><script>I18N("h", "minutes");</script></div></td>
+						</tr>
+					</table>
+				</div>
+				<!-------------------- advancedBlock_6to4---------------------->
+				<div id="advancedBlock_6to4">
+					<table class="block" style="margin: 10px 0 0 0;">
+						<tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+						</tr>
+					   	<tr>
+							<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="ipv6Tov4_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="ipv6Tov4_EnableAutomaticIPv6AddressAssignment" id="ipv6Tov4_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+					    </tr>
+					    <tr id="show_IPv6ToIPv4_AutoconfigurationType">
+					       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+					       <td>
+	  							<div class="styled-select">
+								<select name="ipv6Tov4_AutoconfigurationType" id="ipv6Tov4_AutoconfigurationType" onchange="ipv6Tov4_changeType(this.value)">
+									<option value="1">SLAAC+RDNSS</option>
+									<option value="2" selected>SLAAC+Stateless DHCP</option>
+									<option value="3">Stateful DHCPv6</option>
+								</select>
+								</div>
+					       </td>
+					    </tr>
+					    <tr id="ipv6Tov4_IPSR_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+							<td><label id="ipv6Tov4_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="ipv6Tov4_IPv6Address_StartRangeSetting" id="ipv6Tov4_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+						</tr>
+						<tr id="ipv6Tov4_IPER_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+							<td><label id="ipv6Tov4_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="ipv6Tov4_IPv6Address_EndRangeSetting" id="ipv6Tov4_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+						</tr>
+						<tr id="ipv6Tov4_IPL_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+							<td><input class="styled-text" type="text" name="ipv6Tov4_IPv6Address_Lifetime" id="ipv6Tov4_IPv6Address_Lifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+						</tr>
+						<tr id="ipv6Tov4_RAL_tr" style="display:table-row">
+							<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+							<td><input class="styled-text" type="text" name="ipv6Tov4_RouterAdvertisementLifetime" id="ipv6Tov4_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+						</tr>
+					</table>
+				</div>
+				<!-------------------- advancedBlock_6rd---------------------->
+				<div id="advancedBlock_6rd">
+					<table class="block" style="margin: 10px 0 0 0;">
+						<tr>
+							<td colspan="2"><div class ="title"><script>I18N("h", "ADDRESS AUTOCONFIGURATION SETTINGS");</script></div></td>
+						</tr>
+					   	<tr>
+							<th><script>I18N("h", "Enable Automatic IPv6 Address Assignment");</script>:</th>
+							<td ondragstart="return false" onselectstart="return false"><div id="ipv6rd_EnableAutomaticIPv6AddressAssignment" class="checkbox_on"><input type="checkbox" name="ipv6rd_EnableAutomaticIPv6AddressAssignment" id="ipv6rd_EnableAutomaticIPv6AddressAssignment_ck" checked></div></td>
+					    </tr>
+					    <tr id="show_IPv6rd_AutoconfigurationType">
+					       <th><script>I18N("h", "Autoconfiguration Type");</script>:</th>
+					       <td>
+	  							<div class="styled-select">
+								<select name="ipv6rd_AutoconfigurationType" id="ipv6rd_AutoconfigurationType" onchange="ipv6rd_changeType(this.value)">
+									<option value="1">SLAAC+RDNSS</option>
+									<option value="2" selected>SLAAC+Stateless DHCP</option>
+									<option value="3">Stateful DHCPv6</option>
+								</select>
+								</div>
+					       </td>
+					    </tr>
+					    <tr id="ipv6rd_IPSR_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Range (Start)");</script>:</th>
+							<td><label id="ipv6rd_IPv6Address_StartRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="ipv6rd_IPv6Address_StartRangeSetting" id="ipv6rd_IPv6Address_StartRangeSetting" size="2" maxlength="2" style="width: 30px;" value="3"></td>
+						</tr>
+						<tr id="ipv6rd_IPER_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Range (End)");</script>:</th>
+							<td><label id="ipv6rd_IPv6Address_EndRange">xxxx</label>&nbsp;::00&nbsp;<input class="styled-text" type="text" name="ipv6rd_IPv6Address_EndRangeSetting" id="ipv6rd_IPv6Address_EndRangeSetting" size="2" maxlength="2" style="width: 30px;" value="16"></td>
+						</tr>
+						<tr id="ipv6rd_IPL_tr" style="display:none">
+							<th><script>I18N("h", "IPv6 Address Lifetime");</script>:</th>
+							<td><input class="styled-text" type="text" name="ipv6rd_IPv6Address_Lifetime" id="ipv6rd_IPv6Address_Lifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+						</tr>
+						<tr id="ipv6rd_RAL_tr" style="display:table-row">
+							<th><script>I18N("h", "Router Advertisement Lifetime");</script>:</th>
+							<td><input class="styled-text" type="text" name="ipv6rd_RouterAdvertisementLifetime" id="ipv6rd_RouterAdvertisementLifetime" size="2" maxlength="4" style="width: 40px;" disabled> <script>I18N("h", "minutes");</script></td>
+						</tr>
+					</table>
+				</div>
+		   		<!-------------------- advancedBlock_LocalConnectivityOnly ---------------------->
+			    <div id="advancedBlock_LocalConnectivityOnly">
+				    <table class="block" border="0" style="margin: 10px 0 0 0;">
+					   <tbody>
+							<tr>
+								<td colspan="2"><div class ="title"><script>I18N("h", "IPv6 ULA SETTINGS");</script></div></td>
+							</tr>
+						   	 <tr>
+						     	<th><script>I18N("h", "Enable ULA");</script>:</th>
+								<td ondragstart="return false" onselectstart="return false"><div id="LinkLocalOnly_LocalConnectivityOnly_EnableULA" class="checkbox_on"><input type="checkbox" name="LinkLocalOnly_LocalConnectivityOnly_EnableULA" id="LinkLocalOnly_LocalConnectivityOnly_EnableULA_ck" checked></div></td>
+						     </tr>
+						   	 <tr id="UseDefaultULAPrefix_tr">
+						     	<th><script>I18N("h", "Use Default ULA Prefix");</script>:</th>
+								<td ondragstart="return false" onselectstart="return false"><div id="LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix" class="checkbox_on"><input type="checkbox" name="LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix" id="LinkLocalOnly_LocalConnectivityOnly_UseDefaultULAPrefix_ck" checked></div></td>
+						     </tr>
+							 <tr id="ULAPrefix_tr">
+						        <th><script>I18N("h", "ULA Prefix");</script>:</th>
+						        <td><div style = "float:left"><input class="styled-text" type="text" name="LinkLocalOnly_LocalConnectivityOnly_ULAPrefix" size="34" style="width: 300px;" id="LinkLocalOnly_LocalConnectivityOnly_ULAPrefix"></div><div style = "float:left;padding-left: 5px;padding-top: 5px;"><label>&nbsp;/64</label></div></td>
+						     </tr>
+					   </tbody>
+					</table>
+					<hr />
+				    <table class="block" style="margin: 10px 0 0 0;">
+					   <tbody>
+							<tr>
+								<td colspan="2"><div class ="title"><script>I18N("h", "CURRENT IPv6 ULA SETTINGS");</script></div></td>
+							</tr>
+						   	 <tr>
+						     	<th><script>I18N("h", "Current ULA Prefix");</script>:</th>
+						     	<td><label id="LinkLocalOnly_LocalConnectivityOnly_CurrentULAPrefix"><script>I18N("h", "Not Available");</script></label></td>
+						     </tr>
+						   	 <tr>
+						     	<th><script>I18N("h", "LAN IPv6 ULA");</script>:</th>
+						     	<td><label id="LinkLocalOnly_LocalConnectivityOnly_LanIPv6ULA"><script>I18N("h", "Not Available");</script></label></td>
+						     </tr>
+					   </tbody>
+					</table>
+				</div>
+			</div>
+			<div id="CreatePopAlertMessage" style="display:none">
+				<div id="AlertPopRect">
+				<div id="AlertPopBody">
+					<table class="myAlertPop_table_b" id="waitSettingFinish" border="0" cellspacing="0">
+					   <tbody>
+							 <tr>
+							 	<td>
+									<center><div id="Loading_pop_image2"></div></center>
+								</td>
+							 </tr>
+							 <tr>
+							 	<td label id="reciprocal_Number"></label></td>
+							 </tr>
+							 <tr>
+							 	<td id="dialog_msg_black2"><script>I18N("h", "Your changes are being saved.");</script></td>
+							 </tr>
+					   </tbody>
+					</table>
+					<table class="myAlertPop_table_b" id="SuccessSettings" border="0" cellspacing="0"  style="display:none">
+					   <tbody>
+							 <tr>
+							 	<td>
+									<center><div id="Information_pop_image"></div></center>
+								</td>
+							 </tr>
+							 <tr>
+								 <td>
+								 	<div id="dialog_msg_black"><script>I18N("h", "The new settings have been saved.");</script></div>
+								 </td>
+							 </tr>
+							 <tr>
+								 <td>
+								 	<center><div id="Confirm_btn" onclick="returnToHome()" style="cursor:pointer"><script>I18N("h", "OK");</script></div></center>
+								 </td>
+							 </tr>
+					   </tbody>
+					</table>
+				</div>
+				</div>
+			</div>
+		</div>
+		<!-- Detect Router Connection, Timmy Add 2013/08/15 -->
+		<div id="DetectRouterConnection" style="display:none"></div>
+		<div id="footer">
+			<div id="copyright"><script>I18N("h", "COPYRIGHT");</script></div>
+		</div>
+	</div>
+	</form>
+</body>
+<script type="text/javascript" charset="utf-8">
+	$(document).ready( function() {
+		// Check IPv4 PPP Connection Type
+		$.validator.addMethod("checkIPv4PPPConnType", function( value, element ) {
+			var returnVal = true;
+			var xml_GetWanSettings = HNAP.GetXML("GetWanSettings");
+			var wan_type = xml_GetWanSettings.Get("GetWanSettingsResponse/Type");
+			var pppoe_Session = document.getElementById("pppoe_Session").value;
+			var tmpChkVal = "0";
+			switch (wan_type)
+			{
+				case "DHCPPPPoE":
+				case "StaticPPPoE":
+					tmpChkVal = "1";
+					break;
+				default:
+					tmpChkVal = "0";
+					break;
+			}
+
+			if (pppoe_Session == "1")	{	if (tmpChkVal != "1")	{	returnVal = false;	}	}
+			return returnVal;
+		}, jQuery.validator.messages.checkIPv4PPPConnType);
+
+		// Check IPv4 DSLite Connection Type
+		$.validator.addMethod("checkIPv4DsLiteConnType", function( value, element ) {
+			var returnVal = true;
+			var xml_GetWanSettings = HNAP.GetXML("GetWanSettings");
+			var wan_type = xml_GetWanSettings.Get("GetWanSettingsResponse/Type");
+			var v6Session = document.getElementById("connectionIPv6Type").value;
+			var tmpChkVal = "0";
+
+			switch (wan_type)
+			{
+				case "DsLite":
+					if(v6Session == "6in4" || v6Session == "6to4" || v6Session == "6rd" || v6Session == "linklocal")
+						tmpChkVal = "1";
+					else
+						tmpChkVal = "0";
+
+					break;
+				default:
+					tmpChkVal = "0";
+					break;
+			}
+
+			if (wan_type == "DsLite") {if (tmpChkVal == "1")	{	returnVal = false;	}	}
+			return returnVal;
+		}, jQuery.validator.messages.checkIPv4DsLiteConnType);
+
+		// Check Number
+		$.validator.addMethod("checkNumber", function( value, element ) {
+			var ValidHEXRegex = /^[0-9]+$/;
+			var returnVal = true;
+			if (ValidHEXRegex.test(value))
+			{
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.check_IllegalChar);
+
+		// Check Lifetime
+		$.validator.addMethod("checkLifetime", function( value, element ) {
+			var ValidHEXRegex = /^[0-9]+$/;
+			var returnVal = true;
+			if (ValidHEXRegex.test(value))
+			{
+				if(value > 0 && value <= 90)
+					returnVal = true;
+				else
+					returnVal = false;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.check_IllegalChar);
+
+		// Check HEX Value
+		$.validator.addMethod("checkHEXValue", function( value, element ) {
+			var ValidHEXRegex = /^[a-fA-F0-9]+$/;
+			var returnVal = true;
+			if (ValidHEXRegex.test(value))
+			{
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.hex_Range);
+
+		// Check HEX Illegal Char
+		$.validator.addMethod("checkHEXChar", function( value, element ) {
+			var ValidHEXRegex = /^[a-fA-F0-9]+$/;
+			var returnVal = true;
+			if (ValidHEXRegex.test(value))
+			{
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.check_IllegalChar);
+
+		// Compare HEX Value
+		$.validator.addMethod("compareHEXValue", function( value, element ) {
+			var returnVal = true;
+			var TypeID = element.id;
+			var split_TypeID = TypeID.split(/[\s_]+/);
+			var CurrentID = split_TypeID[split_TypeID.length - 3];
+
+			var start = parseInt(document.getElementById(CurrentID + "_IPv6Address_StartRangeSetting").value, 16);
+			var end = parseInt(document.getElementById(CurrentID + "_IPv6Address_EndRangeSetting").value, 16);
+
+			if (start > end || start == end)
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.range_Compare);
+
+		// Check IPv6 Format
+		$.validator.addMethod("checkIPv6Format", function( value, element, params ) {
+			var ValidIpAddressRegex = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))))(%.+)?\s*$/;
+			var returnVal = true;
+			// grammar check
+			if (ValidIpAddressRegex.test(value) == false)
+			{
+				//alert("grammar check fail");
+				return false;
+			}
+			
+			// special address check
+//			var GetStatic_UseLinkLocalAddress = document.getElementById("staticIPv6_useLinkLocalAddress_ck").checked;
+//			if(GetStatic_UseLinkLocalAddress == "0")
+//			{
+				var check_addr = true;
+				if (params == "gw")
+					check_addr = false;
+
+				if(COMM_ValidV6Format(value, check_addr) )
+				{
+					returnVal = true;
+				}
+				else
+				{
+					returnVal = false;
+				}
+//			}
+			
+			return returnVal;
+		}, jQuery.validator.messages.ipv6address_Check);
+
+		// Check IPv6 Network Format
+		$.validator.addMethod("checkIPv6NetworkFormat", function( value, element, params ) {
+
+			var ValidIpAddressRegex = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$/;
+			var ValidIpAddressRegex2 = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))))(%.+)?\s*$/;
+			var returnVal = true;
+			// grammar check
+			if (ValidIpAddressRegex.test(value))
+			{
+				if(ValidIpAddressRegex2.test(value))
+					return false;
+			}
+			else
+			{
+				return false;
+			}
+			
+			// special address check
+			if(COMM_ValidV6Prefix(value, true) )
+			{
+					returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			
+			return returnVal;
+		}, jQuery.validator.messages.ipv6networkaddress_Check);
+
+		// Check IPv6 prefix length format
+		$.validator.addMethod("checkIPv6PrefixLengthFormat", function( value, element, params ) {
+			var returnVal = true;
+			var length = parseInt(value);
+
+			if (isNaN(length))
+			{	return false; }
+			else
+			{
+				if (length < 0 || length > 128)
+				{ return false; }
+			}
+			/*
+				ipv6rd_IPv6PrefixLength - ipv6rd_IPv4PrefixLength <= 32
+				32 <= ipv6rd_IPv6PrefixLength <= 64
+				0  <= ipv6rd_IPv4PrefixLength <= 32
+			*/
+			if(element.id=="ipv6rd_IPv6PrefixLength")
+			{
+				if(length < 32 || 64 < length) return false;
+				var ipv6rd_IPv4PrefixLength = document.getElementById("ipv6rd_IPv4PrefixLength").value;
+				if(ipv6rd_IPv4PrefixLength!="")
+				{
+					if(length - parseInt(ipv6rd_IPv4PrefixLength) > 32) return false;
+				}
+			}
+			if(element.id=="ipv6rd_IPv4PrefixLength")
+			{
+				if(length < 0 || 32 < length) return false;
+				var ipv6rd_IPv6PrefixLength = document.getElementById("ipv6rd_IPv6PrefixLength").value;
+				if(ipv6rd_IPv6PrefixLength!="")
+				{
+					if(parseInt(ipv6rd_IPv6PrefixLength) - length > 32) return false;
+				}
+			}
+
+			return returnVal;
+		}, jQuery.validator.messages.prefix_Length);
+		
+		// filter IPv6 invalid value
+		/*$.validator.addMethod("checkIPv6ValidValue", function( value, element, params ) {
+
+			var ValidIpAddressRegex = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))))(%.+)?\s*$/;
+			var returnVal = true;
+			
+			var tmp_value = value;
+			var tmp = tmp_value.split(":");
+			var fvalue = tmp[0]; //get first value
+                                             
+			var tmp_f = fvalue.split("");
+			var ffvalue = tmp_f[0]; //get the first number of first value
+			
+			if (ValidIpAddressRegex.test(value))
+			{
+				if(fvalue != "fe80" && ffvalue != "2") // accept fe80 and 2xxx
+					returnVal = false;
+				else
+					returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.ipv6address_Check);*/
+
+		// Check Secondary IPv6 Format
+		$.validator.addMethod("checkSecondaryIPv6Format", function( value, element ) {
+			var ValidIpAddressRegex = /^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})))))(%.+)?\s*$/;
+			var returnVal = true;
+			if (value == "" || ValidIpAddressRegex.test(value))
+			{
+			//	alert(value);
+				returnVal = true;
+			}
+			else
+			{
+				returnVal = false;
+			}
+			return returnVal;
+		}, jQuery.validator.messages.ipv6address_Check);
+
+		// Check IPv6 Wan address
+		$.validator.addMethod("checkIPv6WanLanConflict", function( value, element, anotherElement) {
+			var ipv6_wan;
+			var ipv6_lan;
+			var ipv6_gateway;
+			var ipv6_plen;
+			var ipv6_mask;
+			var returnVal = false;
+			
+			//alert(element.name);
+			switch(ipv6_wan_type)
+			{
+				case "staticIPv6":
+					ipv6_wan = document.getElementById("staticIPv6_IPv6Address");
+					ipv6_lan = document.getElementById("staticIPv6_LanIPv6Address");
+					ipv6_gateway = document.getElementById("staticIPv6_DefaultGateway");
+					ipv6_plen = document.getElementById("staticIPv6_subnetPrefixLength");
+					var GetStatic_UseLinkLocalAddress = document.getElementById("staticIPv6_useLinkLocalAddress_ck").checked;
+					if (GetStatic_UseLinkLocalAddress == 1)
+						ipv6_mask = "64";
+					else
+						ipv6_mask = ipv6_plen.value;
+					break;
+				case "pppoe":
+					ipv6_wan = document.getElementById("pppoe_IPAddress");
+					ipv6_lan = document.getElementById("pppoe_LanIPv6Address");		
+					ipv6_mask = "64";
+					break;
+				case "6in4":
+					ipv6_wan = document.getElementById("ipv6Inv4_LocalIPv6Address");
+					ipv6_lan = document.getElementById("ipv6Inv4_LANIPv6Address");			
+					ipv6_mask = "64";
+					break;
+			};
+			if (ipv6_wan.value == "" || ipv6_lan.value == "")
+			{
+				return true;
+			}
+			//var wanAddrArray = COMM_IPv6NETWORK(ipv6_wan.value, 64);
+			//var lanAddrArray = COMM_IPv6NETWORK(ipv6_lan.value, 64);
+			var wanAddrArray = COMM_IPv6NETWORK(ipv6_wan.value, ipv6_mask);
+			var lanAddrArray = COMM_IPv6NETWORK(ipv6_lan.value, ipv6_mask);
+			if(ipv6_wan_type != "staticIPv6"){
+				for(var i = 0; i < wanAddrArray.length; i++)
+				{
+					if(wanAddrArray[i] != lanAddrArray[i])
+					{
+						returnVal = true;
+						break;
+					}
+				}
+			}
+			else{
+				var gwAddrArray = COMM_IPv6NETWORK(ipv6_gateway.value, ipv6_mask);
+				var gwlinklocal = COMM_IPv6NETWORK(ipv6_gateway.value, 10);
+				var linklocal = COMM_IPv6NETWORK("fe80::", 10);
+				var islinklocal = true;
+
+				for(var i = 0; i < gwAddrArray.length; i++)
+					if(gwlinklocal[i] != linklocal[i]) {
+						islinklocal = false;
+						break;
+					}
+
+				for(var i = 0; i < wanAddrArray.length; i++)
+					if(wanAddrArray[i] != lanAddrArray[i]) {
+						returnVal = true;
+						break;
+					}
+
+				if (GetStatic_UseLinkLocalAddress == 0) { 
+					if (returnVal == true && islinklocal == false)
+						for(var i = 0; i < wanAddrArray.length; i++)
+							if(wanAddrArray[i] != gwAddrArray[i]) {
+								returnVal = false;
+								break;
+							}
+					if (returnVal == true) {
+						gwAddrArray = COMM_IPv6NETWORK(ipv6_gateway.value, 128);
+						wanAddrArray = COMM_IPv6NETWORK(ipv6_wan.value, 128);
+						for(var i = 0; i < wanAddrArray.length; i++)
+							if(wanAddrArray[i] != gwAddrArray[i]) {
+								returnVal = true;
+								break;
+							} else {
+								returnVal = false;
+							}
+					}
+				} else {
+					for(var i = 0; i < lanAddrArray.length; i++)
+						if(lanAddrArray[i] != gwAddrArray[i]) {
+							returnVal = true;
+							break;
+						} else {
+							returnVal = false;
+						}
+				}
+			}
+			//trigger another
+			this.showMessage(anotherElement, "checkIPv6WanLanConflict", returnVal);
+	
+			return returnVal;
+		}, jQuery.validator.messages.checkIPv6WanLanConflict);
+
+		// Check IPv4 Format
+		$.validator.addMethod("checkIPFormat", function( value, element ) {
+			
+			if(!COMM_ValidV4Format(value) || !COMM_ValidV4Addr(value))
+				returnVal = false;
+			else
+				returnVal = true;
+			
+			return returnVal;
+		}, jQuery.validator.messages.address_Check);
+
+		$('#internet_form').validate({
+			rules: {
+				autoDetection_PrimaryDNS: {
+					required: true,
+					checkIPv6Format: true
+				},
+				autoDetection_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				autoDetection_LanIPv6Address: {
+					required: true,
+					checkIPv6Format: true
+				},
+				staticIPv6_IPv6Address: {
+					required: true,
+					checkIPv6Format: true,
+					//checkIPv6ValidValue: true
+					checkIPv6WanLanConflict: $("#staticIPv6_LanIPv6Address")
+//					checkIPv6WanLanConflict: true
+				},
+				staticIPv6_DefaultGateway: {
+					required: true,
+					checkIPv6Format: "gw",
+					checkIPv6WanLanConflict: $("#staticIPv6_IPv6Address")
+				},
+				staticIPv6_PrimaryDNS: {
+					required: true,
+					checkIPv6Format: true
+				},
+				staticIPv6_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				staticIPv6_subnetPrefixLength: {
+					required: true,
+					checkIPv6PrefixLengthFormat: true
+				},
+				staticIPv6_LanIPv6Address: {
+					required: true,
+					checkIPv6Format: true,
+					checkIPv6WanLanConflict: $("#staticIPv6_IPv6Address")
+				},
+				autoConfiguration_PrimaryDNS: {
+					required: true,
+					checkIPv6Format: true
+				},
+				autoConfiguration_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				autoConfiguration_LanIPv6Address: {
+					required: true,
+					checkIPv6Format: true
+				},
+				pppoe_IPAddress: {
+					required: true,
+					checkIPv6Format: true,
+					checkIPv6WanLanConflict: $("#pppoe_LanIPv6Address")
+				},
+				pppoe_PrimaryDNS: {
+					required: true,
+					checkIPv6Format: true
+				},
+				pppoe_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				pppoe_LanIPv6Address: {
+					required: true,
+					checkIPv6Format: true,
+					checkIPv6WanLanConflict: $("#pppoe_IPAddress")
+				},
+				ipv6Inv4_RemoteIPv6Address: {
+					required: true,
+					checkIPv6Format: true
+				},
+				ipv6Inv4_LocalIPv6Address: {
+					required: true,
+					checkIPv6Format: true,
+					checkIPv6WanLanConflict: $("#ipv6Inv4_LANIPv6Address")
+				},
+				ipv6Inv4_PrimaryDNS: {
+					required: true,
+					checkIPv6Format: true
+				},
+				ipv6Inv4_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				ipv6Inv4_LANIPv6Address: {
+					required: true,
+					checkIPv6Format: true,
+					checkIPv6WanLanConflict: $("#ipv6Inv4_LocalIPv6Address")
+				},
+				ipv6Tov4_Relay: {
+					required: true,
+					checkIPFormat: true
+				},
+				ipv6Tov4_PrimaryDNS: {
+					required: true,
+					checkIPv6Format: true
+				},
+				ipv6Tov4_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				ipv6Tov4_LANIPv6Address: {
+					required: true,
+					checkHEXChar: true
+				},
+				ipv6rd_PrimaryDNS: {
+					//required: true,
+					//checkIPv6Format: true
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				ipv6rd_SecondaryDNS: {
+					required: false,
+					checkSecondaryIPv6Format: true
+				},
+				ipv6rd_IPv6Prefix: {
+					required: true,
+					checkIPv6NetworkFormat: true
+				},
+				ipv6rd_LANIPv6Address: {
+					required: true,
+					checkIPv6Format: true
+				},
+				LinkLocalOnly_LocalConnectivityOnly_ULAPrefix: {
+					required: true,
+					checkIPv6NetworkFormat: true
+				},
+				ipv6Inv4_RemoteIPv4Address: {
+					required: true,
+					checkIPFormat: true
+				},
+				ipv6rd_BorderRelayIPv4Address: {
+					required: true,
+					checkIPFormat: true
+				},
+				autoDetection_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				autoDetection_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				staticIPv6_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				staticIPv6_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				autoConfiguration_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				autoConfiguration_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				pppoe_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				pppoe_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				ipv6Inv4_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				ipv6Inv4_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				ipv6Tov4_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				ipv6Tov4_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				ipv6rd_IPv6Address_StartRangeSetting: {
+					required: true,
+					checkHEXValue: true
+				},
+				ipv6rd_IPv6Address_EndRangeSetting: {
+					required: true,
+					checkHEXValue: true,
+					compareHEXValue: true
+				},
+				staticIPv6_RouterAdvertisementLifetime: {
+					required: true,
+					checkLifetime: true
+				},
+				staticIPv6_IPv6Address_Lifetime: {
+					required: true,
+					checkLifetime: true
+				},
+				ipv6Inv4_RouterAdvertisementLifetime: {
+					required: true,
+					checkLifetime: true
+				},
+				ipv6Inv4_IPv6Address_Lifetime: {
+					required: true,
+					checkLifetime: true
+				},
+				ipv6Inv4_SubnetPrefixLength: {
+					required: true,
+					checkIPv6PrefixLengthFormat: true
+				},
+				pppoe_Username: {
+					required: true
+				},
+				pppoe_Password: {
+					required: true
+				},
+				value_Session: {
+					required: false,
+					checkIPv4PPPConnType: true
+				},
+				conn_check_msg: {
+					required: false,
+					checkIPv4DsLiteConnType: true
+				},
+				ipv6rd_IPv4PrefixLength: {
+					required: true,
+					checkIPv6PrefixLengthFormat: true
+				},
+				ipv6rd_IPv6PrefixLength: {
+					required: true,
+					checkIPv6PrefixLengthFormat: true
+				}
+			},
+			messages: {
+				autoDetection_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				autoDetection_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				autoDetection_LanIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				staticIPv6_IPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				staticIPv6_DefaultGateway: {
+					required: jQuery.validator.messages.ipv6
+				},
+				staticIPv6_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				staticIPv6_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				staticIPv6_LanIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				staticIPv6_subnetPrefixLength: {
+					required: jQuery.validator.messages.prefix_Length
+				},
+				autoConfiguration_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				autoConfiguration_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				autoConfiguration_LanIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				pppoe_IPAddress: {
+					required: jQuery.validator.messages.ipv6
+				},
+				pppoe_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				pppoe_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				pppoe_LanIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Inv4_RemoteIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Inv4_LocalIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Inv4_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Inv4_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Inv4_LANIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Tov4_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Tov4_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Tov4_LANIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6rd_PrimaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6rd_SecondaryDNS: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6rd_IPv6Prefix: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6rd_LANIPv6Address: {
+					required: jQuery.validator.messages.ipv6
+				},
+				LinkLocalOnly_LocalConnectivityOnly_ULAPrefix: {
+					required: jQuery.validator.messages.ipv6
+				},
+				ipv6Inv4_RemoteIPv4Address: {
+					required: jQuery.validator.messages.ip
+				},
+				ipv6rd_BorderRelayIPv4Address: {
+					required: jQuery.validator.messages.ip
+				},
+				autoDetection_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				autoDetection_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				staticIPv6_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				staticIPv6_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				autoConfiguration_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				autoConfiguration_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				pppoe_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				pppoe_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Inv4_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Inv4_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Tov4_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Tov4_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6rd_IPv6Address_StartRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6rd_IPv6Address_EndRangeSetting: {
+					required: jQuery.validator.messages.number
+				},
+				staticIPv6_RouterAdvertisementLifetime: {
+					required: jQuery.validator.messages.number
+				},
+				staticIPv6_IPv6Address_Lifetime: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Inv4_RouterAdvertisementLifetime: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Inv4_IPv6Address_Lifetime: {
+					required: jQuery.validator.messages.number
+				},
+				ipv6Inv4_SubnetPrefixLength: {
+					required: jQuery.validator.messages.prefix_Length
+				},
+				pppoe_Username: {
+					required: jQuery.validator.messages.check_UserName
+				},
+				pppoe_Password: {
+					required: jQuery.validator.messages.check_Password
+				},
+				ipv6rd_IPv4PrefixLength: {
+					required: jQuery.validator.messages.prefix_Length
+				},
+				ipv6rd_IPv6PrefixLength: {
+					required: jQuery.validator.messages.prefix_Length
+				}
+			},
+			submitHandler: function(form) {
+				CheckConnectionStatus();
+			}
+		});
+	});
+
+</script>
+
+<script type="text/javascript">
+	Load_HTML();
+	Initial();
+	setMenu("menu_Settings");
+	startTimeout();
+</script>
+</html>

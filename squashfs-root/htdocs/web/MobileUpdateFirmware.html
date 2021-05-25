@@ -1,0 +1,411 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns= "http://www.w3c.org/1999/xhtml">
+
+<head>
+<title>D-LINK</title>
+<meta http-equiv="X-UA-Compatible" content="IE=9">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/css">
+<meta name="viewport" content="width=device-width">
+<link rel="stylesheet" type="text/css" href="css/style_mobile.css" media="all" />
+<link href="css/jquery.selectbox.css" type="text/css" rel="stylesheet" />
+<script type="text/javascript" charset="utf-8" src="/js/initialJQ.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialJS.js"></script>
+<script type="text/javascript" charset="utf-8" src="/js/initialValidate1.js"></script>
+
+<script type="text/javascript">
+	var HNAP = new HNAP_XML();
+	var _ReciprocalNumber;
+	var percent_ReciprocalNumber = 0;
+	var get_TruePercent = 0;
+	var checkORdownloadFW = 0;
+	var GetStatusResult = 0;
+	var GetStatusCount = 0;
+	
+	var Time_GetDetectFirmwarePointShow;
+	var Time_GetInternetConnectionStatus;
+	var Time_GetPollingFWDownload;
+	var Time_GetBackgroundPollingFWDownload;
+	var showPoint = 0;
+	var detectPopWindowAvailable = 0;
+	
+	function GetFwInfo()
+	{
+		var xml_GetFirmwareSettings = HNAP.GetXML("GetFirmwareSettings");
+		
+		var getFirmwareVersion = xml_GetFirmwareSettings.Get("GetFirmwareSettingsResponse/FirmwareVersion");
+		document.getElementById("mobile_current_fwver").innerHTML = getFirmwareVersion;
+		
+		var getFirmwareDate = xml_GetFirmwareSettings.Get("GetFirmwareSettingsResponse/FirmwareDate");
+		getFirmwareDate = getFirmwareDate.replace("T", " ");
+		document.getElementById("mobile_current_fwdate").innerHTML = getFirmwareDate;
+		
+		document.getElementById("mobile_ckfw_btn").style.display = "block";
+	}
+	
+	function GetInternetConnectionStatus()
+	{
+		changeTimeoutAction();
+		
+		if(GetStatusResult==0)
+		{
+			localStorage.setItem('hasNewFirmware', 'checknow');
+			var xml_GetCurrentInternetStatus = HNAP.GetXML("GetCurrentInternetStatus", new Array("InternetStatus", "true"));
+			var GetConnStatus = xml_GetCurrentInternetStatus.Get("GetCurrentInternetStatusResponse/GetCurrentInternetStatusResult");
+			document.getElementById("mobile_ckfw_btn").style.display = "none";
+			GetStatusResult = 1;
+		}
+		else
+		{
+			var xml_GetCurrentInternetStatus = HNAP.GetXML("GetCurrentInternetStatus", new Array("InternetStatus", "false"));
+			var GetConnStatus = xml_GetCurrentInternetStatus.Get("GetCurrentInternetStatusResponse/GetCurrentInternetStatusResult");
+			GetStatusCount++;
+		}
+			
+		switch (GetConnStatus)
+		{
+			case "OK_DETECTING_2":
+				if (GetStatusCount <= 10)
+				{
+					Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+					Time_GetInternetConnectionStatus = self.setInterval("GetInternetConnectionStatus()",3000);
+					document.getElementById("mobile_new_fwver").innerHTML = "--";
+					document.getElementById("mobile_new_fwdate").innerHTML = "--";
+					document.getElementById("mobile_ckfw_btn").style.display = "none";
+				}
+				break;
+			case "OK_CONNECTED":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("ckfw_btn").onclick = function() { CheckAndDownloadNewFirmware(); };
+				CheckAndDownloadNewFirmware();
+				break;
+			case "OK_NOTCONNECTED":
+			case "ERROR":
+				Time_GetInternetConnectionStatus = window.clearInterval(Time_GetInternetConnectionStatus);
+				document.getElementById("mobile_ckfw_btn").style.display = "block";
+				document.getElementById("ckfw_btn").innerHTML = I18N("j", "Retry");
+				GetStatusResult = 0;
+				break;
+		}
+	}
+	
+	function CheckAndDownloadNewFirmware()
+	{
+		switch (checkORdownloadFW)
+		{
+			case 0:
+				var xml_GetFirmwareSettings = HNAP.GetXML("GetFirmwareStatus");
+				var getCurrentFirmwareVersion = xml_GetFirmwareSettings.Get("GetFirmwareStatusResponse/CurrentFWVersion");
+				var getLastestFirmwareVersion = xml_GetFirmwareSettings.Get("GetFirmwareStatusResponse/LatestFWVersion");
+				var getLastestFirmwareVersionDate = xml_GetFirmwareSettings.Get("GetFirmwareStatusResponse/LatestFWVersionDate");
+				var getFirmwareDownloadURL = xml_GetFirmwareSettings.Get("GetFirmwareStatusResponse/FWDownloadUrl");
+				
+				if(getLastestFirmwareVersion=="." 
+				|| getFirmwareDownloadURL==""
+				|| getLastestFirmwareVersion=="null")
+				{
+					document.getElementById("mobile_ckfw_btn").style.display = "block";
+					document.getElementById("ckfw_btn").innerHTML = I18N("j", "Check for New Firmware");
+					GetStatusResult = 0;
+					document.getElementById("ckfw_btn").onclick = function() { GetInternetConnectionStatus(); };
+				}
+				else if(getCurrentFirmwareVersion===getLastestFirmwareVersion)
+				{
+					document.getElementById("mobile_ckfw_btn").style.display = "block";
+					document.getElementById("ckfw_btn").innerHTML = I18N("j", "Check for New Firmware");
+					GetStatusResult = 0;
+					document.getElementById("ckfw_btn").onclick = function() { GetInternetConnectionStatus(); };
+				}
+				else if(getCurrentFirmwareVersion > getLastestFirmwareVersion)
+				{
+					document.getElementById("mobile_ckfw_btn").style.display = "block";
+					document.getElementById("ckfw_btn").innerHTML = I18N("j", "Check for New Firmware");
+					GetStatusResult = 0;
+					document.getElementById("ckfw_btn").onclick = function() { GetInternetConnectionStatus(); };
+				}
+				else if (getCurrentFirmwareVersion < getLastestFirmwareVersion)
+				{
+					document.getElementById("mobile_newfw_info").style.display = "block";
+					document.getElementById("mobile_new_fwver").innerHTML = getLastestFirmwareVersion;
+					document.getElementById("mobile_new_fwdate").innerHTML = getLastestFirmwareVersionDate;
+					document.getElementById("mobile_ckfw_btn").style.display = "block";
+					document.getElementById("ckfw_btn").innerHTML = I18N("j", "Download New Firmware");
+					checkORdownloadFW = 1;
+				}
+				else
+				{
+					document.getElementById("mobile_ckfw_btn").style.display = "block";
+					document.getElementById("ckfw_btn").innerHTML = I18N("j", "Check for New Firmware");
+					GetStatusResult = 0;
+					document.getElementById("ckfw_btn").onclick = function() { GetInternetConnectionStatus(); };
+				}
+				break;
+			case 1:
+				//stopGetReciprocalTime(); // Time_GetReciprocalTime = window.clearInterval(Time_GetReciprocalTime);
+				
+				//document.getElementById("ckfw_btn").disabled = true;
+				//document.getElementById("ckfw_btn").innerHTML = I18N("j", "Downloading");
+				document.getElementById("mobile_ckfw_btn").style.display = "none";
+				document.getElementById("mobile_popalert").style.display = "block";
+				document.getElementById("mobile_fwup_auto").style.display = "block";
+				document.getElementById("mobile_popalert_btn").style.display = "block";
+				document.getElementById("mobile_download_percentage").innerHTML = "0";
+				detectPopWindowAvailable = 1;
+				
+				var xml_StartFirmwareDownload = HNAP.GetXML("StartFirmwareDownload");
+				var xml_StartFirmwareDownloadResult = HNAP.SetXML("StartFirmwareDownload", xml_StartFirmwareDownload);
+				var GetStartFWDownloadResult = xml_StartFirmwareDownloadResult.Get("StartFirmwareDownloadResponse/StartFirmwareDownloadResult");
+				if(GetStartFWDownloadResult=="OK")
+					GetPollingFirmwareDownloadStatus();
+				break;
+		}
+	}
+	
+	function GetPollingFirmwareDownloadStatus()
+	{
+		var xml_PollingFirmwareDownload = HNAP.GetXML("PollingFirmwareDownload");
+		var xml_PollingFirmwareDownloadResult = HNAP.SetXML("PollingFirmwareDownload", xml_PollingFirmwareDownload);
+		var GetPollingFWDownloadResult = xml_PollingFirmwareDownloadResult.Get("PollingFirmwareDownloadResponse/DownloadPercentage");
+		
+		document.getElementById("mobile_download_percentage").innerHTML = GetPollingFWDownloadResult;
+		
+		if (GetPollingFWDownloadResult != "100")
+		{
+			Time_GetPollingFWDownload = window.clearInterval(Time_GetPollingFWDownload);
+			Time_GetPollingFWDownload = self.setInterval("GetPollingFirmwareDownloadStatus()",1000);
+		}
+		else
+		{
+			Time_GetPollingFWDownload = window.clearInterval(Time_GetPollingFWDownload);
+			if (detectPopWindowAvailable != 0)
+			{
+				var xml_GetFirmwareValidation = HNAP.GetXML("GetFirmwareValidation");
+				var xml_GetFirmwareValidationResult = HNAP.SetXML("GetFirmwareValidation", xml_GetFirmwareValidation);
+				alert("fw up success");
+				//self.location.href="UpdateFirmware.html?UpdateResult=SUCCESS"; display success block
+			}
+		}
+	}
+	
+	function backgroundGetPollingFirmwareDownloadStatus()
+	{
+		var xml_PollingFirmwareDownload = HNAP.GetXML("PollingFirmwareDownload");
+		var xml_PollingFirmwareDownloadResult = HNAP.SetXML("PollingFirmwareDownload", xml_PollingFirmwareDownload);
+		var GetPollingFWDownloadResult = xml_PollingFirmwareDownloadResult.Get("PollingFirmwareDownloadResponse/DownloadPercentage");
+		
+		if (GetPollingFWDownloadResult!="100")
+		{
+			Time_GetBackgroundPollingFWDownload = window.clearInterval(Time_GetBackgroundPollingFWDownload);
+			Time_GetBackgroundPollingFWDownload = self.setInterval("backgroundGetPollingFirmwareDownloadStatus()",1000);
+		}
+		else
+		{
+			Time_GetBackgroundPollingFWDownload = window.clearInterval(Time_GetBackgroundPollingFWDownload);
+			document.getElementById("mobile_ckfw_btn").style.display = "block";
+			document.getElementById("ckfw_btn").innerHTML = I18N("j", "Download New Firmware");
+			//document.getElementById("CheckAndDownloadNewFirmware_Btn").disabled = false;
+			//document.getElementById("CheckAndDownloadNewFirmware_Btn").innerHTML = I18N("j", "Download New Firmware");
+		}
+	}
+	
+	function mobile_close_popmsg()
+	{
+		Time_GetPollingFWDownload = window.clearInterval(Time_GetPollingFWDownload);
+		Time_GetBackgroundPollingFWDownload = window.clearInterval(Time_GetBackgroundPollingFWDownload);
+		Time_GetBackgroundPollingFWDownload = self.setInterval("backgroundGetPollingFirmwareDownloadStatus()", 1000);
+		document.getElementById("mobile_popalert").style.display = "none";
+		document.getElementById("mobile_fwup_auto").style.display = "none";
+		document.getElementById("mobile_popalert_btn").style.display = "none";
+		detectPopWindowAvailable = 0;
+		//setGetReciprocalTime(); // Time_GetReciprocalTime = self.setInterval("GetReciprocalTime()",1000);
+	}
+	
+	function OnClickReturn()
+	{
+		self.location.href = "MobileHome.html";
+	}
+	
+	function returnToHome()
+	{
+		location.href="/MobileHome.html";
+	}
+	
+</script>
+</head>
+
+<body>
+	<form name="mobile_internet_form" id="mobile_internet_form" method="POST" action="">
+		<table class="mobile_div_blank" cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+			<tr>
+				<td>
+					<table class="tbl_logo">
+						<tr class="bottom">
+							<td class="btn_home" width="25%" align="center" style="cursor:pointer;" onclick="returnToHome()">
+								<img src="image/mobile_sp.gif" height="1" width="8">
+								<span class="textwhite"><script>I18N("h", "Home");</script></span>
+							</td>
+							<td width="40%" align="center">
+								<img src="image/mobile_dlink_logo.png" width="102px" height="20px">
+							</td>
+							<td width="25%"></td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<table cellspacing="0" cellpadding="0" width="100%" height="60px" align="center" border="0">
+						<tr>
+							<td id="mobile_mydlink_status" width="35%" align="right" valign="center">
+								<img src="image/mobile_update_fw.png" width="60" height="45">
+							</td>
+							<td width="65%" align="left">
+								<b><span class="textlarge"><script>I18N("h", "Firmware Information");</script></span></b>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr class="emptyline"></tr>
+			<tr>
+				<td align="center">
+					<table cellspacing="0" cellpadding="6" width="300px" align="center" border="0">
+						<tr class="mobile_frame_top" height="44px">
+							<td width="60%" align="left">
+								<b><span class="textnormal"><script>I18N("h", "Current Firmware Version");</script>:</span></b>
+							</td>
+						</tr>
+						<tr class="mobile_frame_center_b" height="44px">
+							<td width=60% align="left">
+								<span id="mobile_current_fwver" class="textnormal">--</span>
+							</td>
+						</tr>
+						<tr class="mobile_frame_center_t" height="44px">
+							<td width=60% align="left">
+								<b><span class="textnormal"><script>I18N("h", "Current Firmware Date");</script>:</span></b>
+							</td>
+						</tr>
+						<tr class="mobile_frame_buttom" height="44px">
+							<td width=60% align="left">
+								<span id="mobile_current_fwdate" class="textnormal">--</span>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr class="emptyline"></tr>
+			<tr>
+				<td id="mobile_newfw_info" align="center" style="display:none">
+					<table cellspacing="0" cellpadding="6" width="300px" align="center" border="0">
+						<tr class="mobile_frame_top" height="44px">
+							<td width=60% align="left">
+								<b><span class="textnormal"><script>I18N("h", "New Firmware Version");</script>:</span></b>
+							</td>
+						</tr>
+						<tr class="mobile_frame_center_b" height="44px">
+							<td width=60% align="left">
+								<span id="mobile_new_fwver" class="textnormal">--</span>
+							</td>
+						</tr>
+						<tr class="mobile_frame_center_t" height="44px">
+							<td width=60% align="left">
+								<b><span class="textnormal"><script>I18N("h", "New Firmware Date");</script>:</span></b>
+							</td>
+						</tr>
+						<tr class="mobile_frame_buttom" height="44px">
+							<td width=60% align="left">
+								<span id="mobile_new_fwdate" class="textnormal">--</span>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr class="emptyline"></tr>
+			<tr>
+				<td id="mobile_ckfw_btn" align="center" style="display:none">
+					<table cellspacing="0" cellpadding="0" width="300px" align="center" border="0">
+						<tr class="btn_frame" height="47px">
+							<td id="ckfw_button" onclick="GetInternetConnectionStatus();">
+								<input id="submit_check_data" style="display:none"/>
+								<b><span id="ckfw_btn" class="textnormal"><script>I18N("h", "Check for New Firmware");</script></span></b>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr class="emptyline"></tr>
+			<tr class="emptyline"></tr>
+			<tr>
+				<td align="center">
+					<table cellspacing="0" cellpadding="0" width="100%" align="center" border="0">
+						<tr>
+							<td align="center">
+								<span class="textcr"><span id="copyright"><script>I18N("h", "COPYRIGHT");</script></span></span>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+			<tr class="emptyline"></tr>
+		</table>
+		<div id="mobile_popalert" class="mobile_popalert_msg" style="display:none">
+			<div class="mobile_alertpopbody">
+				<div id="mobile_popalert_btn" class="mobile_popalert_closebtn" onclick="mobile_close_popmsg()" style="cursor:pointer;display:none"></div>
+					<!-- firmware auto download -->
+					<table id="mobile_fwup_auto" class="mobile_popalert_table" cellspacing="0" cellpadding="0" border="0" style="display:none">
+						<tbody>
+							<tr class="emptyline"></tr>
+							<tr>
+								<td align="center">
+									<span class="textsmall"><script>I18N("h", "Downloading");</script>...</span>
+									<span id="mobile_download_percentage" class="textsmall"></span><span class="textsmall">%</span>
+								</td>
+							</tr>
+							<tr>
+								<td width="250px" align="center">
+									<img src="image/loading.gif">
+								</td>
+							</tr>
+							<tr>
+								<td width="250px" align="center">
+									<span class="textsmall"><script>I18N("h", "Please do not close the browser while the firmware is being downloaded!");</script></span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<!-- firmware upgrade: success block -->
+					<table id="mobile_fwup_success" class="mobile_popalert_table" cellspacing="0" cellpadding="0" border="0" style="display:none">
+						<tbody>
+							<tr class="emptyline"></tr>
+							<tr class="emptyline"></tr>
+							<tr>
+								<td width="250px" align="center">
+									<img src="image/Infor2.png">
+								</td>
+							</tr>
+							<tr class="emptyline"></tr>
+							<tr>
+								<td width="250px" align="center">
+									<span class="textsmall"><script>I18N("h", "Firmware Upgrade success!");</script></span>
+								</td>
+							</tr>
+							<tr class="emptyline"></tr>
+							<tr>
+								<td class="btn_ok" onclick="window.location.reload()">
+									<input style="display:none"/>
+									<b><span class="textsmall"><script>I18N("h", "OK");</script></span></b>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+			</div>
+		</div>
+	</form>
+</body>
+<script type="text/javascript">
+	GetFwInfo();
+	startTimeout();
+</script>
+</html>
